@@ -1,0 +1,29 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "afurgeri/laravel-crud",
+    "description": "Declarative CRUD definitions and managers for Laravel applications.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/pagination": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Crud\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Crud\\CrudServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
