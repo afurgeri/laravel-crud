@@ -1,0 +1,65 @@
+<?php
+
+use App\Models\User;
+use Modules\Crud\Contracts\HasDefaultCrudSort;
+use Modules\Crud\CrudIndexManager;
+use Modules\Crud\CrudMutationManager;
+use Modules\{{ module }}\Crud\{{ entity }}CrudDefinition;
+use Modules\{{ module }}\Models\{{ entity }};
+
+test('{{ entityVariable }} crud definition resolves its crud definition', function () {
+    expect({{ entity }}::crudDefinition())->toBe({{ entity }}CrudDefinition::class)
+        ->and({{ entity }}::makeCrudDefinition())->toBeInstanceOf({{ entity }}CrudDefinition::class);
+});
+
+test('{{ entityVariable }} crud definition declares a default sort of name ascending', function () {
+    $definition = new {{ entity }}CrudDefinition;
+
+    expect($definition)->toBeInstanceOf(HasDefaultCrudSort::class)
+        ->and($definition->defaultSortColumn())->toBe('name')
+        ->and($definition->defaultSortDirection())->toBe('asc');
+});
+
+test('{{ entityVariable }} crud definition can paginate {{ pluralVariable }} through the crud index manager', function () {
+    $this->actingAs(User::factory()->create());
+
+    {{ entity }}::factory()->create(['name' => 'alpha']);
+    {{ entity }}::factory()->create(['name' => 'beta']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: {{ entity }}::makeCrudDefinition(),
+        sort: 'name',
+        direction: 'asc',
+    );
+
+    $names = collect($paginator->items())->pluck('name');
+
+    expect($paginator->total())->toBe(2)
+        ->and($names->first())->toBe('alpha')
+        ->and($names->last())->toBe('beta');
+});
+
+test('{{ entityVariable }} crud definition creates, updates and deletes {{ pluralVariable }} through the crud mutation manager', function () {
+    $this->actingAs(User::factory()->create());
+
+    ${{ entityVariable }} = app(CrudMutationManager::class)->create(
+        definition: {{ entity }}::makeCrudDefinition(),
+        data: ['name' => 'alpha'],
+    );
+
+    expect(${{ entityVariable }})->toBeInstanceOf({{ entity }}::class)
+        ->and(${{ entityVariable }}->name)->toBe('alpha');
+
+    $updated = app(CrudMutationManager::class)->update(
+        model: ${{ entityVariable }},
+        definition: {{ entity }}::makeCrudDefinition(),
+        data: ['name' => 'beta'],
+    );
+
+    expect($updated->name)->toBe('beta');
+
+    $deleted = app(CrudMutationManager::class)->delete($updated, {{ entity }}::makeCrudDefinition());
+
+    expect($deleted)->toBeTrue()
+        ->and({{ entity }}::query()->where('name', 'beta')->exists())->toBeFalse();
+});

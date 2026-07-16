@@ -1,0 +1,75 @@
+<script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+import CrudPage from '@/components/crud/CrudPage.vue';
+import type { CrudRecord, CrudSchema } from '@/types/crud';
+import {
+    destroy as destroy{{ entity }},
+    index as {{ resource }}Index,
+    store as store{{ entity }},
+    update as update{{ entity }},
+} from '@/routes/{{ resource }}';
+
+type {{ entity }} = CrudRecord & {
+    id: number;
+    name: string;
+    can: {
+        update: boolean;
+        delete: boolean;
+    };
+};
+
+type Paginated{{ entityPlural }} = {
+    data: {{ entity }}[];
+    total: number;
+};
+
+defineProps<{
+    crud: CrudSchema;
+    {{ pluralVariable }}: Paginated{{ entityPlural }};
+    can: {
+        create: boolean;
+    };
+}>();
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            {
+                title: '{{ title }}',
+                href: {{ resource }}Index(),
+            },
+        ],
+    },
+});
+</script>
+
+<template>
+    <Head :title="crud.title" />
+
+    <CrudPage
+        :schema="crud"
+        :records="{{ pluralVariable }}.data"
+        :create="{
+            can: can.create,
+            action: store{{ entity }}.form(),
+            label: 'Create {{ entityVariable }}',
+            title: 'Create {{ entityVariable }}',
+            description: 'Add a new {{ entityVariable }}.',
+        }"
+        :edit="{
+            action: (record) => update{{ entity }}.form.patch(record.id),
+            can: (record) => record.can.update,
+            title: (record) => `Edit ${record.name}`,
+            description: 'Update the {{ entityVariable }} details.',
+        }"
+        :destroy="{
+            action: (record) => destroy{{ entity }}.form.delete(record.id),
+            can: (record) => record.can.delete,
+            title: (record) => `Delete ${record.name}?`,
+        }"
+    >
+        <template #cell-name="{ value }">
+            <span class="font-medium">{{ value }}</span>
+        </template>
+    </CrudPage>
+</template>

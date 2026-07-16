@@ -1,0 +1,39 @@
+<?php
+
+namespace Modules\{{ module }}\Models;
+
+use Database\Factories\{{ entity }}Factory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Modules\Crud\Concerns\HasCrudDefinition;
+use Modules\Crud\Contracts\HasCrudDefinition as HasCrudDefinitionContract;
+use Modules\{{ module }}\Crud\{{ entity }}CrudDefinition;
+use Modules\{{ module }}\Policies\{{ entity }}Policy;
+
+/**
+ * @property int $id
+ * @property string $name
+ */
+#[Fillable(['name'])]
+#[UsePolicy({{ entity }}Policy::class)]
+class {{ entity }} extends Model implements HasCrudDefinitionContract
+{
+    /** @use HasFactory<{{ entity }}Factory> */
+    use HasCrudDefinition, HasFactory;
+
+    public static function crudDefinition(): string
+    {
+        return {{ entity }}CrudDefinition::class;
+    }
+
+    /**
+     * @return {{ entity }}Factory
+     */
+    protected static function newFactory(): Factory
+    {
+        return {{ entity }}Factory::new();
+    }
+}

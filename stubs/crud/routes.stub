@@ -1,0 +1,8 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Modules\{{ module }}\Http\Controllers\{{ entity }}Controller;
+
+Route::middleware(['web', 'auth', 'verified'])->group(function () {
+    Route::resource('{{ resource }}', {{ entity }}Controller::class)->only(['index', 'store', 'update', 'destroy']);
+});

@@ -29,6 +29,45 @@ For each CRUD resource:
 
 The `Role` and `User` resources in the companion application follow this structure.
 
+## Generator command
+
+The package also registers a project scaffold command through Laravel package discovery:
+
+```bash
+php artisan make:crud Product --module=Catalog
+```
+
+It generates the starting files for a complete resource:
+
+- migration;
+- Eloquent model;
+- `CrudDefinition`;
+- controller;
+- policy;
+- factory;
+- CRUD definition test;
+- Inertia/Vue index page;
+- module provider and routes when the module is new.
+
+The command is intentionally opinionated around the module structure used by this project and Laravel + Inertia/Vue applications. It is not a generic model generator. After generation, review the placeholder `name` field, authorization rules, navigation, relationships, and frontend slots.
+
+### Options
+
+```bash
+php artisan make:crud Product \
+    --module=Catalog \
+    --table=products \
+    --force
+```
+
+- `--module` is required and uses a StudlyCase module name.
+- `--table` overrides the default snake_case plural table name.
+- `--force` allows overwriting generated files that already exist.
+
+When the project has Wayfinder installed, the command regenerates route helpers automatically. Without Wayfinder, generation still succeeds and prints a warning. Pint is also used when available, but is not required for generation.
+
+The command updates the application's Composer PSR-4 mapping and `bootstrap/providers.php` only when it creates a new module. Existing modules only receive the new resource route and generated files.
+
 ## 1. Connect the model
 
 The model points to its definition through a small bridge. This keeps CRUD configuration out of the Eloquent model while allowing controllers to resolve it consistently.
