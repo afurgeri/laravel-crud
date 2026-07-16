@@ -17,6 +17,27 @@ composer require afurgeri/laravel-crud
 
 The service provider is registered automatically through Laravel package discovery.
 
+If Packagist is temporarily unavailable, Composer can install the same tagged release directly from GitHub:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/afurgeri/laravel-crud"
+        }
+    ]
+}
+```
+
+Then require the desired tag:
+
+```bash
+composer require afurgeri/laravel-crud:^0.2
+```
+
+Remove the temporary VCS repository once Packagist is available again. The VCS fallback is only an installation workaround; it does not change the package or its version constraints.
+
 ## Quick path
 
 For each CRUD resource:
