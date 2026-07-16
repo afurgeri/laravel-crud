@@ -442,6 +442,16 @@ https://github.com/afurgeri/laravel-crud
 
 Definitions should be tested with fake Eloquent models and test-created tables. Test the definition schema, validation, authorization, filters, and mutation behavior independently from application-specific entities.
 
+The package includes its own Pest and Testbench suite:
+
+```bash
+composer install
+composer lint
+composer test
+```
+
+GitHub Actions runs the manifest validation, formatting check, and tests against PHP 8.3 using both the lowest and stable dependency sets.
+
 ## API checklist for a new entity
 
 - [ ] Model implements `HasCrudDefinitionContract` and uses `HasCrudDefinition`.
