@@ -52,6 +52,18 @@ The `Role` and `User` resources in the companion application follow this structu
 
 ## Generator command
 
+Install the generic frontend integration once per consuming application:
+
+```bash
+php artisan crud:install
+```
+
+This copies the reusable Vue components and TypeScript definitions to `resources/js`. Use `--force` only when you intentionally want to replace local changes:
+
+```bash
+php artisan crud:install --force
+```
+
 The package also registers a project scaffold command through Laravel package discovery:
 
 ```bash
