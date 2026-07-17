@@ -21,6 +21,9 @@
         "pestphp/pest": "^4.7",
         "pestphp/pest-plugin-laravel": "^4.1"
     },
+    "suggest": {
+        "mongodb/laravel-mongodb": "Enable the optional MongoDB integration test suite and MongoDB-backed CRUD models."
+    },
     "autoload": {
         "psr-4": {
             "Modules\\Crud\\": "src/"
@@ -40,6 +43,7 @@
     },
     "scripts": {
         "test": "pest --compact",
+        "test:mongodb": "pest --compact --configuration phpunit.mongodb.xml",
         "lint": "pint --test --format agent"
     },
     "config": {

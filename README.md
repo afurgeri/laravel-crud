@@ -4,6 +4,8 @@ Declarative CRUD definitions, schema generation, filtering, sorting, validation,
 
 The package owns the reusable backend behavior. Resource-specific models, policies, controllers, routes, and frontend pages remain in the consuming application.
 
+The CRUD managers use Laravel's Eloquent contracts and can therefore be used with SQL connections and the official `mongodb/laravel-mongodb` driver. MongoDB support is optional; installing the package does not require the MongoDB PHP extension.
+
 ## Requirements
 
 - PHP 8.3+
@@ -37,6 +39,106 @@ composer require afurgeri/laravel-crud:^0.2
 ```
 
 Remove the temporary VCS repository once Packagist is available again. The VCS fallback is only an installation workaround; it does not change the package or its version constraints.
+
+## Optional MongoDB integration
+
+Install `mongodb/laravel-mongodb` in the consuming application when a CRUD model should use MongoDB:
+
+```bash
+composer require mongodb/laravel-mongodb
+```
+
+The model must extend `MongoDB\Laravel\Eloquent\Model` and define a MongoDB connection or use the application's MongoDB default connection. When SQL is the default connection, declare the MongoDB connection on the model explicitly:
+
+```php
+namespace App\Models;
+
+use MongoDB\Laravel\Eloquent\Model;
+
+class Citizen extends Model
+{
+    protected $connection = 'mongodb';
+
+    protected $collection = 'citizens';
+}
+```
+
+The CRUD managers continue using the same Eloquent API for pagination, filtering, sorting, eager loading, validation, and mutations.
+
+### Supported operations
+
+| Operation | SQL | MongoDB |
+| --- | --- | --- |
+| Create, update, delete, refresh | Supported | Supported |
+| Projection and sorting | Supported | Supported |
+| Pagination | Supported | Supported |
+| Text search with `like` | SQL `LIKE` | MongoDB regular expression |
+| Date filters | SQL date clauses | BSON date ranges |
+| Eager loading | Supported | Supported for supported relations |
+| `whereHas` relation filters | Supported | Supported for referenced relations |
+| Unique validation | Uses the model connection | Uses the model connection |
+
+### Referenced relationships
+
+Standard referenced relationships use the same Eloquent declarations. For example, a city can own many citizens while each citizen belongs to one city:
+
+```php
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use MongoDB\Laravel\Eloquent\Model;
+
+class City extends Model
+{
+    protected $connection = 'mongodb';
+
+    protected $collection = 'cities';
+
+    /**
+     * @return HasMany<Citizen, $this>
+     */
+    public function citizens(): HasMany
+    {
+        return $this->hasMany(Citizen::class, 'city_id', '_id');
+    }
+}
+
+class Citizen extends Model
+{
+    protected $connection = 'mongodb';
+
+    protected $collection = 'citizens';
+
+    /**
+     * @return BelongsTo<City, $this>
+     */
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class, 'city_id', '_id');
+    }
+}
+```
+
+The integration suite verifies both directions, eager loading, and CRUD relation filters with real MongoDB documents. MongoDB models use `_id` internally while exposing the usual Eloquent `id` attribute.
+
+### Integration tests
+
+MongoDB integration tests are separate from the default SQL suite, so SQL-only installations remain unchanged. From the package repository, install the optional test dependency, enable the MongoDB PHP extension, start MongoDB, and run:
+
+```bash
+composer require mongodb/laravel-mongodb:^5.8 --dev
+composer test:mongodb
+```
+
+The test suite uses MongoDB 8 in CI and verifies the CRUD managers against a real MongoDB server. MongoDB-specific indexes, embedded relations, and aggregation pipelines remain application-level concerns.
+
+### Scope and limits
+
+- SQL and MongoDB models can coexist in the same application.
+- A model's explicit connection is respected by CRUD unique validation.
+- Referenced `hasMany` and `belongsTo` relationships are supported when both models use MongoDB.
+- Embedded relationships such as `embedsMany` and `embedsOne` have different document semantics and are not covered by the generic CRUD contract.
+- SQL and MongoDB do not share one atomic transaction. Use transactions within the database that owns the operation.
+- Compatibility does not imply equivalent performance. Add MongoDB indexes for filters, sorts, and relationship keys, then benchmark with production-shaped data.
 
 ## Quick path
 

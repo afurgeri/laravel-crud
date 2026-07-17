@@ -86,7 +86,13 @@ class CrudMutationManager
             $rules[$field->name()] = $field->validationRules();
 
             if ($field->isUnique()) {
-                $rule = Rule::unique($instance->getTable(), $field->uniqueColumn() ?? $field->name());
+                $table = $instance->getTable();
+
+                if ($instance->getConnectionName() !== null) {
+                    $table = $instance->getConnectionName().'.'.$table;
+                }
+
+                $rule = Rule::unique($table, $field->uniqueColumn() ?? $field->name());
 
                 if ($model !== null) {
                     $rule->ignore($model);
