@@ -1,0 +1,25 @@
+<?php
+
+namespace {{ permissionSeederNamespace }};
+
+use Illuminate\Database\Seeder;
+use {{ permissionsNamespace }}\{{ entity }}Permissions;
+use Modules\Rbac\RbacModels;
+
+class {{ entity }}PermissionSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $permissionModel = RbacModels::permission();
+
+        foreach ({{ entity }}Permissions::all() as $permission) {
+            $attributes = ['name' => $permission];
+
+            if (config('rbac.storage', 'mysql') === 'mongodb') {
+                $attributes['role_ids'] = [];
+            }
+
+            $permissionModel::updateOrCreate(['name' => $permission], $attributes);
+        }
+    }
+}

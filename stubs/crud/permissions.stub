@@ -1,0 +1,27 @@
+<?php
+
+namespace {{ permissionsNamespace }};
+
+final class {{ entity }}Permissions
+{
+    public const VIEW = '{{ resource }}.view';
+
+    public const CREATE = '{{ resource }}.create';
+
+    public const UPDATE = '{{ resource }}.update';
+
+    public const DELETE = '{{ resource }}.delete';
+
+    /**
+     * @return list<string>
+     */
+    public static function all(): array
+    {
+        return [
+            self::VIEW,
+            self::CREATE,
+            self::UPDATE,
+            self::DELETE,
+        ];
+    }
+}

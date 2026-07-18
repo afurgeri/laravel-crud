@@ -1,0 +1,30 @@
+<?php
+
+namespace {{ policyNamespace }};
+
+use {{ modelNamespace }}\{{ entity }};
+use {{ permissionsNamespace }}\{{ entity }}Permissions;
+use Modules\Rbac\Contracts\HasPermissions;
+
+class {{ entity }}Policy
+{
+    public function viewAny(HasPermissions $user): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::VIEW);
+    }
+
+    public function create(HasPermissions $user): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::CREATE);
+    }
+
+    public function update(HasPermissions $user, {{ entity }} ${{ entityVariable }}): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::UPDATE);
+    }
+
+    public function delete(HasPermissions $user, {{ entity }} ${{ entityVariable }}): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::DELETE);
+    }
+}

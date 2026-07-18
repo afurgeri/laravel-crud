@@ -19,10 +19,18 @@ afterEach(function () {
     File::delete(base_path('app/Http/Controllers/PeopleController.php'));
     File::delete(base_path('app/Policies/PeoplePolicy.php'));
     File::delete(base_path('database/factories/PeopleFactory.php'));
+    File::delete(base_path('app/Models/RbacWidget.php'));
+    File::delete(base_path('app/Crud/RbacWidgetCrudDefinition.php'));
+    File::delete(base_path('app/Http/Controllers/RbacWidgetController.php'));
+    File::delete(base_path('app/Policies/RbacWidgetPolicy.php'));
+    File::delete(base_path('app/Permissions/RbacWidgetPermissions.php'));
+    File::delete(base_path('database/factories/RbacWidgetFactory.php'));
+    File::delete(base_path('database/seeders/RbacWidgetPermissionSeeder.php'));
     File::deleteDirectory(base_path('tests/Feature/Crud'));
     File::deleteDirectory(base_path('resources/js/pages/root-sql-widgets'));
     File::deleteDirectory(base_path('resources/js/pages/root-mongo-widgets'));
     File::deleteDirectory(base_path('resources/js/pages/people'));
+    File::deleteDirectory(base_path('resources/js/pages/rbac-widgets'));
 
     foreach (File::glob(base_path('database/migrations/*_create_root_sql_widgets_table.php')) as $migration) {
         File::delete($migration);
@@ -35,13 +43,18 @@ afterEach(function () {
     foreach (File::glob(base_path('database/migrations/*_create_people_table.php')) as $migration) {
         File::delete($migration);
     }
+
+    foreach (File::glob(base_path('database/migrations/*_create_rbac_widgets_table.php')) as $migration) {
+        File::delete($migration);
+    }
 });
 
 test('make crud command is registered by the package', function () {
     $this->artisan('help', ['command_name' => 'make:crud'])
         ->assertExitCode(0)
         ->expectsOutputToContain('Scaffold a complete CRUD admin screen')
-        ->expectsOutputToContain('--database');
+        ->expectsOutputToContain('--database')
+        ->expectsOutputToContain('--rbac');
 });
 
 test('make crud rejects an unknown database connector', function () {
@@ -78,6 +91,7 @@ PHP);
             ->and(File::get(base_path('app/Crud/RootSqlWidgetCrudDefinition.php')))
             ->toContain('namespace App\\Crud;')
             ->toContain('use App\\Models\\RootSqlWidget;')
+            ->and(File::get(base_path('app/Policies/RootSqlWidgetPolicy.php')))->not->toContain('Modules\\Rbac\\Contracts\\HasPermissions')
             ->and(File::exists(base_path('app/Http/Controllers/RootSqlWidgetController.php')))->toBeTrue()
             ->and(File::exists(base_path('app/Policies/RootSqlWidgetPolicy.php')))->toBeTrue()
             ->and(File::exists(base_path('database/factories/RootSqlWidgetFactory.php')))->toBeTrue()
@@ -160,6 +174,52 @@ PHP);
             ->toContain('$mutations->update($person, People::makeCrudDefinition(), $request->all());')
             ->toContain('public function destroy(People $person, CrudMutationManager $mutations)')
             ->toContain('$mutations->delete($person, People::makeCrudDefinition());');
+    } finally {
+        File::put($routesPath, $routes);
+        File::delete($routesPath);
+    }
+});
+
+test('make crud generates RBAC permission artifacts when requested', function () {
+    if (! interface_exists('Modules\\Rbac\\Contracts\\HasPermissions')) {
+        eval('namespace Modules\\Rbac\\Contracts; interface HasPermissions { public function hasPermission(string $permission): bool; }');
+    }
+
+    if (! class_exists('Modules\\Rbac\\RbacModels')) {
+        eval('namespace Modules\\Rbac; final class RbacModels {}');
+    }
+
+    $routesPath = base_path('routes/web.php');
+    File::ensureDirectoryExists(dirname($routesPath));
+    File::put($routesPath, <<<'PHP'
+<?php
+
+use Illuminate\Support\Facades\Route;
+PHP);
+    $routes = File::get($routesPath);
+
+    try {
+        $this->artisan('make:crud', [
+            'name' => 'RbacWidget',
+            '--rbac' => true,
+        ])->assertExitCode(0);
+
+        expect(File::get(base_path('app/Permissions/RbacWidgetPermissions.php')))
+            ->toContain('namespace App\\Permissions;')
+            ->toContain("public const VIEW = 'rbac-widgets.view';")
+            ->toContain("public const CREATE = 'rbac-widgets.create';")
+            ->toContain("public const UPDATE = 'rbac-widgets.update';")
+            ->toContain("public const DELETE = 'rbac-widgets.delete';")
+            ->and(File::get(base_path('app/Policies/RbacWidgetPolicy.php')))
+            ->toContain('use Modules\\Rbac\\Contracts\\HasPermissions;')
+            ->toContain('return $user->hasPermission(RbacWidgetPermissions::VIEW);')
+            ->toContain('return $user->hasPermission(RbacWidgetPermissions::CREATE);')
+            ->toContain('return $user->hasPermission(RbacWidgetPermissions::UPDATE);')
+            ->toContain('return $user->hasPermission(RbacWidgetPermissions::DELETE);')
+            ->and(File::get(base_path('database/seeders/RbacWidgetPermissionSeeder.php')))
+            ->toContain('namespace Database\\Seeders;')
+            ->toContain('foreach (RbacWidgetPermissions::all() as $permission)')
+            ->toContain("if (config('rbac.storage', 'mysql') === 'mongodb')");
     } finally {
         File::put($routesPath, $routes);
         File::delete($routesPath);

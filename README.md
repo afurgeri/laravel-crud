@@ -190,6 +190,14 @@ This also works without a module:
 php artisan make:crud Product --database=mongodb
 ```
 
+When the consuming application also uses `afurgeri/laravel-rbac`, generate permission constants, an RBAC policy, and an idempotent permission seeder:
+
+```bash
+php artisan make:crud Product --module=Catalog --rbac
+```
+
+The generated permissions use the resource name (`products.view`, `products.create`, `products.update`, and `products.delete`). Run the generated permission seeder before `AdminRoleSeeder` when the admin role should receive the new permissions automatically.
+
 Use a singular entity name such as `Person`. Laravel resource routes singularize the URI parameter (`/people/{person}`), and the generated controller uses that same parameter for implicit model binding. Passing a plural entity name is supported, but singular names keep the generated model and controller names conventional.
 
 It generates the starting files for a complete resource:
@@ -222,6 +230,7 @@ php artisan make:crud Product \
 - `--module` is optional and uses a StudlyCase module name. When omitted, the command generates the model, definition, controller, and policy under `app/`, adds the route to `routes/web.php`, and does not modify Composer autoloading or service providers.
 - `--table` overrides the default snake_case plural table name.
 - `--database` selects `mysql` (default) or `mongodb`. MongoDB generation creates a MongoDB model and leaves collection indexes to the consuming application.
+- `--rbac` requires `afurgeri/laravel-rbac` and generates a resource-local permissions class, policy, and idempotent permission seeder. It is opt-in so CRUD remains usable without RBAC.
 - `--force` allows overwriting generated files that already exist.
 
 When the project has Wayfinder installed, the command regenerates route helpers automatically. Without Wayfinder, generation still succeeds and prints a warning. Pint is also used when available, but is not required for generation.
