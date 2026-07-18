@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
 use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\Contracts\HasDefaultCrudPageSize;
 use Modules\Crud\Exceptions\InvalidCrudFilterRange;
 use Modules\Crud\Exceptions\InvalidCrudFilterValue;
 use Modules\Crud\Exceptions\InvalidCrudSortColumn;
@@ -26,7 +27,7 @@ class CrudIndexManager
     public function paginate(
         CrudDefinition $definition,
         int $page = 1,
-        int $perPage = 15,
+        ?int $perPage = null,
         ?string $sort = null,
         string $direction = 'asc',
         ?string $search = null,
@@ -62,7 +63,18 @@ class CrudIndexManager
             $query->orderBy($sort, $direction);
         }
 
-        return $query->paginate(perPage: $perPage, page: $page);
+        return $query->paginate(perPage: $this->resolvePerPage($definition, $perPage), page: $page);
+    }
+
+    private function resolvePerPage(CrudDefinition $definition, ?int $perPage): int
+    {
+        $resolved = $perPage;
+
+        if ($resolved === null && $definition instanceof HasDefaultCrudPageSize) {
+            $resolved = $definition->defaultPageSize();
+        }
+
+        return min(max($resolved ?? 10, 1), 100);
     }
 
     /**

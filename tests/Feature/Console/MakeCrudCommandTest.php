@@ -91,6 +91,7 @@ PHP);
             ->and(File::get(base_path('app/Crud/RootSqlWidgetCrudDefinition.php')))
             ->toContain('namespace App\\Crud;')
             ->toContain('use App\\Models\\RootSqlWidget;')
+            ->and(File::get(base_path('app/Crud/RootSqlWidgetCrudDefinition.php')))->toContain('HasDefaultCrudPageSize')
             ->and(File::get(base_path('app/Policies/RootSqlWidgetPolicy.php')))->not->toContain('Modules\\Rbac\\Contracts\\HasPermissions')
             ->and(File::exists(base_path('app/Http/Controllers/RootSqlWidgetController.php')))->toBeTrue()
             ->and(File::exists(base_path('app/Policies/RootSqlWidgetPolicy.php')))->toBeTrue()

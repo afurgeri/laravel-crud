@@ -29,7 +29,7 @@ class {{ entity }}Controller
         ${{ pluralVariable }} = $index->paginate(
             definition: $definition,
             page: $request->integer('page', 1),
-            perPage: $request->integer('per_page', 15),
+            perPage: $request->has('per_page') ? $request->integer('per_page') : null,
             sort: $sort,
             direction: $direction,
             search: $search,

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\DB;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\Contracts\HasDefaultCrudPageSize;
 use Modules\Crud\CrudFilter;
 use Modules\Crud\CrudIndexManager;
 use Modules\Crud\Exceptions\InvalidCrudFilterRange;
@@ -40,6 +41,61 @@ test('it paginates records for a crud definition', function () {
     expect($paginator->total())->toBe(2)
         ->and($paginator->perPage())->toBe(1)
         ->and($paginator->items())->toHaveCount(1);
+});
+
+test('it uses ten items per page by default', function () {
+    foreach (range(1, 11) as $number) {
+        CrudTestRecord::query()->create([
+            'name' => "Record {$number}",
+            'email' => "record{$number}@example.com",
+        ]);
+    }
+
+    $paginator = app(CrudIndexManager::class)->paginate(new CrudTestRecordDefinition);
+
+    expect($paginator->perPage())->toBe(10)
+        ->and($paginator->lastPage())->toBe(2)
+        ->and($paginator->count())->toBe(10);
+});
+
+test('it uses the page size declared by the definition unless explicitly overridden', function () {
+    foreach (range(1, 6) as $number) {
+        CrudTestRecord::query()->create([
+            'name' => "Record {$number}",
+            'email' => "record{$number}@example.com",
+        ]);
+    }
+
+    $definition = new class extends CrudTestRecordDefinition implements HasDefaultCrudPageSize
+    {
+        public function defaultPageSize(): int
+        {
+            return 5;
+        }
+    };
+
+    expect(app(CrudIndexManager::class)->paginate($definition)->perPage())->toBe(5)
+        ->and(app(CrudIndexManager::class)->paginate($definition, perPage: 2)->perPage())->toBe(2);
+});
+
+test('it returns the requested page with the resolved page size', function () {
+    foreach (range(1, 11) as $number) {
+        CrudTestRecord::query()->create([
+            'name' => sprintf('Record %02d', $number),
+            'email' => "record{$number}@example.com",
+        ]);
+    }
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordDefinition,
+        page: 2,
+        sort: 'name',
+    );
+
+    expect($paginator->currentPage())->toBe(2)
+        ->and($paginator->lastPage())->toBe(2)
+        ->and($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->name)->toBe('Record 11');
 });
 
 test('it selects only visible columns', function () {

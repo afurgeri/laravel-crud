@@ -215,6 +215,22 @@ It generates the starting files for a complete resource:
 
 MongoDB generation does not create a SQL migration. Define MongoDB indexes in the consuming application, add navigation entries, and keep generated record IDs typed as strings in application-specific frontend code.
 
+Generated pages include previous/next pagination controls. CRUD definitions use 10 items per page by default; implement `HasDefaultCrudPageSize` to override that value:
+
+```php
+use Modules\Crud\Contracts\HasDefaultCrudPageSize;
+
+class ProductCrudDefinition implements CrudDefinition, HasDefaultCrudPageSize
+{
+    public function defaultPageSize(): int
+    {
+        return 25;
+    }
+}
+```
+
+The request may still provide `per_page`; values are normalized to the supported range of 1 to 100. Sorting, search, and filters are preserved while changing pages and reset pagination when changed.
+
 The command is intentionally opinionated around the module structure used by this project and Laravel + Inertia/Vue applications. It is not a generic model generator. After generation, review the placeholder `name` field, authorization rules, navigation, relationships, and frontend slots.
 
 ### Options

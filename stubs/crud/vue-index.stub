@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CrudPage from '@/components/crud/CrudPage.vue';
-import type { CrudRecord, CrudSchema } from '@/types/crud';
+import type { CrudPaginator, CrudRecord, CrudSchema } from '@/types/crud';
 import {
     destroy as destroy{{ entity }},
     index as {{ resource }}Index,
@@ -18,14 +18,9 @@ type {{ entity }} = CrudRecord & {
     };
 };
 
-type Paginated{{ entityPlural }} = {
-    data: {{ entity }}[];
-    total: number;
-};
-
 defineProps<{
     crud: CrudSchema;
-    {{ pluralVariable }}: Paginated{{ entityPlural }};
+    {{ pluralVariable }}: CrudPaginator<{{ entity }}>;
     can: {
         create: boolean;
     };
@@ -48,7 +43,7 @@ defineOptions({
 
     <CrudPage
         :schema="crud"
-        :records="{{ pluralVariable }}.data"
+        :records="{{ pluralVariable }}"
         :create="{
             can: can.create,
             action: store{{ entity }}.form(),
