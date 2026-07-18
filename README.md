@@ -35,7 +35,7 @@ If Packagist is temporarily unavailable, Composer can install the same tagged re
 Then require the desired tag:
 
 ```bash
-composer require afurgeri/laravel-crud:^0.2
+composer require afurgeri/laravel-crud:^0.4
 ```
 
 Remove the temporary VCS repository once Packagist is available again. The VCS fallback is only an installation workaround; it does not change the package or its version constraints.
@@ -172,11 +172,25 @@ The package also registers a project scaffold command through Laravel package di
 php artisan make:crud Product --module=Catalog
 ```
 
+Omit `--module` to generate the resource in the consuming application's default Laravel locations:
+
+```bash
+php artisan make:crud Product
+```
+
 Generate a MongoDB model instead of an SQL model and migration with:
 
 ```bash
 php artisan make:crud Product --module=Catalog --database=mongodb
 ```
+
+This also works without a module:
+
+```bash
+php artisan make:crud Product --database=mongodb
+```
+
+Use a singular entity name such as `Person`. Laravel resource routes singularize the URI parameter (`/people/{person}`), and the generated controller uses that same parameter for implicit model binding. Passing a plural entity name is supported, but singular names keep the generated model and controller names conventional.
 
 It generates the starting files for a complete resource:
 
@@ -188,7 +202,10 @@ It generates the starting files for a complete resource:
 - factory;
 - CRUD definition test;
 - Inertia/Vue index page;
-- module provider and routes when the module is new.
+- module provider and routes when the module is new;
+- application routes in `routes/web.php` when no module is supplied.
+
+MongoDB generation does not create a SQL migration. Define MongoDB indexes in the consuming application, add navigation entries, and keep generated record IDs typed as strings in application-specific frontend code.
 
 The command is intentionally opinionated around the module structure used by this project and Laravel + Inertia/Vue applications. It is not a generic model generator. After generation, review the placeholder `name` field, authorization rules, navigation, relationships, and frontend slots.
 
@@ -202,7 +219,7 @@ php artisan make:crud Product \
     --force
 ```
 
-- `--module` is required and uses a StudlyCase module name.
+- `--module` is optional and uses a StudlyCase module name. When omitted, the command generates the model, definition, controller, and policy under `app/`, adds the route to `routes/web.php`, and does not modify Composer autoloading or service providers.
 - `--table` overrides the default snake_case plural table name.
 - `--database` selects `mysql` (default) or `mongodb`. MongoDB generation creates a MongoDB model and leaves collection indexes to the consuming application.
 - `--force` allows overwriting generated files that already exist.

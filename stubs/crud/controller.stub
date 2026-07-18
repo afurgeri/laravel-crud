@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\{{ module }}\Http\Controllers;
+namespace {{ controllerNamespace }};
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +12,7 @@ use Modules\Crud\Contracts\AuthorizesCrudMutations;
 use Modules\Crud\CrudIndexManager;
 use Modules\Crud\CrudMutationManager;
 use Modules\Crud\CrudSchemaManager;
-use Modules\{{ module }}\Models\{{ entity }};
+use {{ modelNamespace }}\{{ entity }};
 
 class {{ entity }}Controller
 {
@@ -69,24 +69,24 @@ class {{ entity }}Controller
         return to_route('{{ resource }}.index');
     }
 
-    public function update(Request $request, {{ entity }} ${{ entityVariable }}, CrudMutationManager $mutations): RedirectResponse
+    public function update(Request $request, {{ entity }} ${{ routeParameter }}, CrudMutationManager $mutations): RedirectResponse
     {
         $definition = {{ entity }}::makeCrudDefinition();
 
         if ($definition instanceof AuthorizesCrudMutations) {
-            $definition->authorizeUpdate(${{ entityVariable }});
+            $definition->authorizeUpdate(${{ routeParameter }});
         }
 
-        $mutations->update(${{ entityVariable }}, {{ entity }}::makeCrudDefinition(), $request->all());
+        $mutations->update(${{ routeParameter }}, {{ entity }}::makeCrudDefinition(), $request->all());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{{ entity }} updated.')]);
 
         return to_route('{{ resource }}.index');
     }
 
-    public function destroy({{ entity }} ${{ entityVariable }}, CrudMutationManager $mutations): RedirectResponse
+    public function destroy({{ entity }} ${{ routeParameter }}, CrudMutationManager $mutations): RedirectResponse
     {
-        $mutations->delete(${{ entityVariable }}, {{ entity }}::makeCrudDefinition());
+        $mutations->delete(${{ routeParameter }}, {{ entity }}::makeCrudDefinition());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{{ entity }} deleted.')]);
 

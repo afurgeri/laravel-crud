@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\{{ module }}\Crud;
+namespace {{ crudNamespace }};
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Crud\Concerns\AuthorizesViaGate;
@@ -10,7 +10,7 @@ use Modules\Crud\Contracts\HasDefaultCrudSort;
 use Modules\Crud\CrudColumn;
 use Modules\Crud\CrudDefinition;
 use Modules\Crud\CrudField;
-use Modules\{{ module }}\Models\{{ entity }};
+use {{ modelNamespace }}\{{ entity }};
 
 class {{ entity }}CrudDefinition implements AuthorizesCrudIndex, AuthorizesCrudMutations, CrudDefinition, HasDefaultCrudSort
 {

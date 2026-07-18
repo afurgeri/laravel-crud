@@ -10,7 +10,7 @@ import {
 } from '@/routes/{{ resource }}';
 
 type {{ entity }} = CrudRecord & {
-    id: number;
+    id: string | number;
     name: string;
     can: {
         update: boolean;

@@ -17,7 +17,7 @@ class MakeCrudCommand extends Command
      * @var string
      */
     protected $signature = 'make:crud {name : The singular StudlyCase entity name, e.g. Person}
-        {--module= : The StudlyCase module name, e.g. People (required)}
+        {--module= : The optional StudlyCase module name, e.g. People}
         {--table= : The database table name, defaults to the snake_case plural of the entity}
         {--database=mysql : The database connector to target (mysql or mongodb)}
         {--force : Overwrite any files that already exist}';
@@ -49,20 +49,18 @@ class MakeCrudCommand extends Command
         }
 
         $moduleOption = $this->option('module');
+        $module = is_string($moduleOption) && trim($moduleOption) !== ''
+            ? Str::studly($moduleOption)
+            : null;
 
-        if (! is_string($moduleOption) || trim($moduleOption) === '') {
-            $this->components->error('The --module option is required, e.g. --module=People.');
+        $names = $this->resolveNames($module);
+        $moduleIsNew = $module !== null && ! File::isDirectory(base_path("modules/{$module}"));
+        $migrationPath = $database === 'mysql' ? $this->migrationPath($names, $module) : null;
 
-            return self::FAILURE;
-        }
-
-        $names = $this->resolveNames($moduleOption);
-        $moduleIsNew = ! File::isDirectory(base_path("modules/{$names['module']}"));
-
-        $targets = $this->targetPaths($names, $moduleIsNew, $database);
+        $targets = $this->targetPaths($names, $module, $moduleIsNew, $migrationPath);
 
         if (! $this->option('force')) {
-            $conflicts = array_values(array_filter($targets, fn (string $path): bool => File::exists($path) || ($database === 'mysql' && $this->migrationExists($names))));
+            $conflicts = array_values(array_filter($targets, File::exists(...)));
 
             if ($conflicts !== []) {
                 $this->components->error('The following files already exist. Use --force to overwrite them:');
@@ -75,24 +73,26 @@ class MakeCrudCommand extends Command
             }
         }
 
-        $createdFiles = $this->generateEntityFiles($names, $database);
+        $createdFiles = $this->generateEntityFiles($names, $module, $migrationPath, $database);
 
         $composerChanged = false;
         $providersChanged = false;
 
-        if ($moduleIsNew) {
-            $createdFiles[] = $this->writeStub('service-provider', "modules/{$names['module']}/src/{$names['module']}ServiceProvider.php", $names);
-            $createdFiles[] = $this->writeStub('routes', "modules/{$names['module']}/routes/web.php", $names);
+        if ($moduleIsNew && $module !== null) {
+            $createdFiles[] = $this->writeStub('service-provider', "modules/{$module}/src/{$module}ServiceProvider.php", $names);
+            $createdFiles[] = $this->writeStub('routes', "modules/{$module}/routes/web.php", $names);
 
-            $composerChanged = $this->updateComposerAutoload($names['module']);
+            $composerChanged = $this->updateComposerAutoload($module);
 
             if ($composerChanged) {
                 $this->components->task('Running composer dump-autoload', fn (): bool => $this->runProcess(['composer', 'dump-autoload']));
             }
 
-            $providersChanged = $this->updateBootstrapProviders($names['module']);
+            $providersChanged = $this->updateBootstrapProviders($module);
+        } elseif ($module !== null) {
+            $this->appendRouteToExistingModule($names, $module);
         } else {
-            $this->appendRouteToExistingModule($names);
+            $this->appendRouteToApplication($names);
         }
 
         if ($this->getApplication()?->has('wayfinder:generate')) {
@@ -110,18 +110,17 @@ class MakeCrudCommand extends Command
             $this->runProcess(['vendor/bin/pint', '--dirty', '--format=agent']);
         }
 
-        $this->printSummary($names, $createdFiles, $composerChanged, $providersChanged, $database);
+        $this->printSummary($names, $module, $createdFiles, $composerChanged, $providersChanged, $database);
 
         return self::SUCCESS;
     }
 
     /**
-     * @return array{module: string, entity: string, entityVariable: string, entityPlural: string, pluralVariable: string, table: string, resource: string, title: string, description: string, emptyLabel: string}
+     * @return array<string, string>
      */
-    private function resolveNames(string $moduleOption): array
+    private function resolveNames(?string $module): array
     {
         $entity = Str::studly((string) $this->argument('name'));
-        $module = Str::studly($moduleOption);
         $entityPlural = Str::plural($entity);
 
         $table = $this->option('table');
@@ -130,14 +129,19 @@ class MakeCrudCommand extends Command
         $resource = Str::plural(Str::kebab($entity));
         $entityVariable = Str::camel($entity);
         $pluralVariable = Str::camel($entityPlural);
+        $routeParameter = Str::camel(Str::singular($resource));
         $entityPluralLower = Str::lower($entityPlural);
 
         return [
-            'module' => $module,
+            'modelNamespace' => $module === null ? 'App\\Models' : "Modules\\{$module}\\Models",
+            'crudNamespace' => $module === null ? 'App\\Crud' : "Modules\\{$module}\\Crud",
+            'controllerNamespace' => $module === null ? 'App\\Http\\Controllers' : "Modules\\{$module}\\Http\\Controllers",
+            'policyNamespace' => $module === null ? 'App\\Policies' : "Modules\\{$module}\\Policies",
             'entity' => $entity,
             'entityVariable' => $entityVariable,
             'entityPlural' => $entityPlural,
             'pluralVariable' => $pluralVariable,
+            'routeParameter' => $routeParameter,
             'table' => $table,
             'resource' => $resource,
             'title' => $entityPlural,
@@ -150,23 +154,27 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function targetPaths(array $names, bool $moduleIsNew, string $database): array
+    private function targetPaths(array $names, ?string $module, bool $moduleIsNew, ?string $migrationPath): array
     {
-        $module = $names['module'];
         $entity = $names['entity'];
         $resource = $names['resource'];
+        $applicationPath = $module === null;
 
         $targets = [
-            base_path("modules/{$module}/src/Models/{$entity}.php"),
-            base_path("modules/{$module}/src/Crud/{$entity}CrudDefinition.php"),
-            base_path("modules/{$module}/src/Http/Controllers/{$entity}Controller.php"),
-            base_path("modules/{$module}/src/Policies/{$entity}Policy.php"),
+            base_path($applicationPath ? "app/Models/{$entity}.php" : "modules/{$module}/src/Models/{$entity}.php"),
+            base_path($applicationPath ? "app/Crud/{$entity}CrudDefinition.php" : "modules/{$module}/src/Crud/{$entity}CrudDefinition.php"),
+            base_path($applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php"),
+            base_path($applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php"),
             base_path("database/factories/{$entity}Factory.php"),
-            base_path("tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php"),
+            base_path($applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php"),
             base_path("resources/js/pages/{$resource}/Index.vue"),
         ];
 
-        if ($moduleIsNew) {
+        if ($migrationPath !== null) {
+            $targets[] = $migrationPath;
+        }
+
+        if ($moduleIsNew && $module !== null) {
             $targets[] = base_path("modules/{$module}/src/{$module}ServiceProvider.php");
             $targets[] = base_path("modules/{$module}/routes/web.php");
         }
@@ -177,37 +185,35 @@ class MakeCrudCommand extends Command
     /**
      * @param  array<string, string>  $names
      */
-    private function migrationExists(array $names): bool
+    private function migrationPath(array $names, ?string $module): string
     {
-        return File::glob(base_path("modules/{$names['module']}/database/migrations/*_create_{$names['table']}_table.php")) !== [];
+        $directory = $module === null ? 'database/migrations' : "modules/{$module}/database/migrations";
+        $migrations = File::glob(base_path("{$directory}/*_create_{$names['table']}_table.php"));
+
+        return $migrations[0] ?? base_path($directory.'/'.date('Y_m_d_His')."_create_{$names['table']}_table.php");
     }
 
     /**
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function generateEntityFiles(array $names, string $database): array
+    private function generateEntityFiles(array $names, ?string $module, ?string $migrationPath, string $database): array
     {
-        $module = $names['module'];
         $entity = $names['entity'];
         $resource = $names['resource'];
+        $applicationPath = $module === null;
 
         $files = [
-            $this->writeStub($database === 'mongodb' ? 'model-mongodb' : 'model', "modules/{$module}/src/Models/{$entity}.php", $names),
-            $this->writeStub('crud-definition', "modules/{$module}/src/Crud/{$entity}CrudDefinition.php", $names),
-            $this->writeStub('controller', "modules/{$module}/src/Http/Controllers/{$entity}Controller.php", $names),
-            $this->writeStub('policy', "modules/{$module}/src/Policies/{$entity}Policy.php", $names),
+            $this->writeStub($database === 'mongodb' ? 'model-mongodb' : 'model', $applicationPath ? "app/Models/{$entity}.php" : "modules/{$module}/src/Models/{$entity}.php", $names),
+            $this->writeStub('crud-definition', $applicationPath ? "app/Crud/{$entity}CrudDefinition.php" : "modules/{$module}/src/Crud/{$entity}CrudDefinition.php", $names),
+            $this->writeStub('controller', $applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php", $names),
+            $this->writeStub('policy', $applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php", $names),
             $this->writeStub('factory', "database/factories/{$entity}Factory.php", $names),
-            $this->writeStub('test', "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php", $names),
+            $this->writeStub('test', $applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php", $names),
             $this->writeStub('vue-index', "resources/js/pages/{$resource}/Index.vue", $names),
         ];
 
-        if ($database === 'mysql') {
-            $existingMigrations = File::glob(base_path("modules/{$module}/database/migrations/*_create_{$names['table']}_table.php"));
-            $migrationPath = $existingMigrations !== []
-                ? $existingMigrations[0]
-                : base_path('modules/'.$module.'/database/migrations/'.date('Y_m_d_His')."_create_{$names['table']}_table.php");
-
+        if ($migrationPath !== null) {
             array_unshift($files, $this->writeStub('migration', Str::after($migrationPath, base_path().'/'), $names));
         }
 
@@ -326,9 +332,8 @@ class MakeCrudCommand extends Command
     /**
      * @param  array<string, string>  $names
      */
-    private function appendRouteToExistingModule(array $names): void
+    private function appendRouteToExistingModule(array $names, string $module): void
     {
-        $module = $names['module'];
         $entity = $names['entity'];
         $resource = $names['resource'];
 
@@ -382,6 +387,50 @@ class MakeCrudCommand extends Command
     }
 
     /**
+     * @param  array<string, string>  $names
+     */
+    private function appendRouteToApplication(array $names): void
+    {
+        $entity = $names['entity'];
+        $resource = $names['resource'];
+        $path = base_path('routes/web.php');
+        $contents = File::get($path);
+        $useLine = "use App\\Http\\Controllers\\{$entity}Controller;";
+        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'store', 'update', 'destroy']);";
+
+        if (str_contains($contents, $resourceLine)) {
+            return;
+        }
+
+        if (! str_contains($contents, $useLine)) {
+            $lines = preg_split('/\R/', $contents);
+
+            if ($lines === false) {
+                throw new RuntimeException('Could not parse routes/web.php.');
+            }
+
+            $lastUseIndex = null;
+
+            foreach ($lines as $index => $line) {
+                if (str_starts_with(trim($line), 'use ')) {
+                    $lastUseIndex = $index;
+                }
+            }
+
+            if ($lastUseIndex === null) {
+                throw new RuntimeException('Could not locate a use statement to anchor the new import in routes/web.php.');
+            }
+
+            array_splice($lines, $lastUseIndex + 1, 0, [$useLine]);
+            $contents = implode("\n", $lines);
+        }
+
+        $routeGroup = "Route::middleware(['web', 'auth', 'verified'])->group(function (): void {\n{$resourceLine}\n});";
+
+        File::put($path, rtrim($contents)."\n\n{$routeGroup}\n");
+    }
+
+    /**
      * @param  list<string>  $command
      */
     private function runProcess(array $command): bool
@@ -399,7 +448,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @param  list<string>  $createdFiles
      */
-    private function printSummary(array $names, array $createdFiles, bool $composerChanged, bool $providersChanged, string $database): void
+    private function printSummary(array $names, ?string $module, array $createdFiles, bool $composerChanged, bool $providersChanged, string $database): void
     {
         $this->newLine();
         $this->components->info('Files created:');
@@ -410,11 +459,11 @@ class MakeCrudCommand extends Command
 
         if ($composerChanged) {
             $this->newLine();
-            $this->line("Inserted into composer.json: \"Modules\\\\{$names['module']}\\\\\": \"modules/{$names['module']}/src/\",");
+            $this->line("Inserted into composer.json: \"Modules\\\\{$module}\\\\\": \"modules/{$module}/src/\",");
         }
 
         if ($providersChanged) {
-            $this->line("Inserted into bootstrap/providers.php: use Modules\\{$names['module']}\\{$names['module']}ServiceProvider; and {$names['module']}ServiceProvider::class,");
+            $this->line("Inserted into bootstrap/providers.php: use Modules\\{$module}\\{$module}ServiceProvider; and {$module}ServiceProvider::class,");
         }
 
         $this->newLine();

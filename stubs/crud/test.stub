@@ -4,8 +4,8 @@ use App\Models\User;
 use Modules\Crud\Contracts\HasDefaultCrudSort;
 use Modules\Crud\CrudIndexManager;
 use Modules\Crud\CrudMutationManager;
-use Modules\{{ module }}\Crud\{{ entity }}CrudDefinition;
-use Modules\{{ module }}\Models\{{ entity }};
+use {{ crudNamespace }}\{{ entity }}CrudDefinition;
+use {{ modelNamespace }}\{{ entity }};
 
 test('{{ entityVariable }} crud definition resolves its crud definition', function () {
     expect({{ entity }}::crudDefinition())->toBe({{ entity }}CrudDefinition::class)
