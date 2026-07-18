@@ -78,7 +78,7 @@ class MakeCrudCommand extends Command
         $composerChanged = false;
         $providersChanged = false;
 
-        if ($moduleIsNew && $module !== null) {
+        if ($moduleIsNew) {
             $createdFiles[] = $this->writeStub('service-provider', "modules/{$module}/src/{$module}ServiceProvider.php", $names);
             $createdFiles[] = $this->writeStub('routes', "modules/{$module}/routes/web.php", $names);
 
