@@ -172,9 +172,15 @@ The package also registers a project scaffold command through Laravel package di
 php artisan make:crud Product --module=Catalog
 ```
 
+Generate a MongoDB model instead of an SQL model and migration with:
+
+```bash
+php artisan make:crud Product --module=Catalog --database=mongodb
+```
+
 It generates the starting files for a complete resource:
 
-- migration;
+- SQL migration when `--database=mysql` is selected;
 - Eloquent model;
 - `CrudDefinition`;
 - controller;
@@ -192,11 +198,13 @@ The command is intentionally opinionated around the module structure used by thi
 php artisan make:crud Product \
     --module=Catalog \
     --table=products \
+    --database=mysql \
     --force
 ```
 
 - `--module` is required and uses a StudlyCase module name.
 - `--table` overrides the default snake_case plural table name.
+- `--database` selects `mysql` (default) or `mongodb`. MongoDB generation creates a MongoDB model and leaves collection indexes to the consuming application.
 - `--force` allows overwriting generated files that already exist.
 
 When the project has Wayfinder installed, the command regenerates route helpers automatically. Without Wayfinder, generation still succeeds and prints a warning. Pint is also used when available, but is not required for generation.

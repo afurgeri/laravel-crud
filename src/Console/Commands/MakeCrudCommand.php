@@ -19,6 +19,7 @@ class MakeCrudCommand extends Command
     protected $signature = 'make:crud {name : The singular StudlyCase entity name, e.g. Person}
         {--module= : The StudlyCase module name, e.g. People (required)}
         {--table= : The database table name, defaults to the snake_case plural of the entity}
+        {--database=mysql : The database connector to target (mysql or mongodb)}
         {--force : Overwrite any files that already exist}';
 
     /**
@@ -33,6 +34,20 @@ class MakeCrudCommand extends Command
      */
     public function handle(): int
     {
+        $database = $this->option('database');
+
+        if (! in_array($database, ['mysql', 'mongodb'], true)) {
+            $this->components->error('The --database option must be either mysql or mongodb.');
+
+            return self::FAILURE;
+        }
+
+        if ($database === 'mongodb' && ! class_exists('MongoDB\\Laravel\\Eloquent\\Model')) {
+            $this->components->error('MongoDB support is not installed. Run [composer require mongodb/laravel-mongodb] first.');
+
+            return self::FAILURE;
+        }
+
         $moduleOption = $this->option('module');
 
         if (! is_string($moduleOption) || trim($moduleOption) === '') {
@@ -44,10 +59,10 @@ class MakeCrudCommand extends Command
         $names = $this->resolveNames($moduleOption);
         $moduleIsNew = ! File::isDirectory(base_path("modules/{$names['module']}"));
 
-        $targets = $this->targetPaths($names, $moduleIsNew);
+        $targets = $this->targetPaths($names, $moduleIsNew, $database);
 
         if (! $this->option('force')) {
-            $conflicts = array_values(array_filter($targets, fn (string $path): bool => File::exists($path) || $this->migrationExists($names)));
+            $conflicts = array_values(array_filter($targets, fn (string $path): bool => File::exists($path) || ($database === 'mysql' && $this->migrationExists($names))));
 
             if ($conflicts !== []) {
                 $this->components->error('The following files already exist. Use --force to overwrite them:');
@@ -60,7 +75,7 @@ class MakeCrudCommand extends Command
             }
         }
 
-        $createdFiles = $this->generateEntityFiles($names);
+        $createdFiles = $this->generateEntityFiles($names, $database);
 
         $composerChanged = false;
         $providersChanged = false;
@@ -95,7 +110,7 @@ class MakeCrudCommand extends Command
             $this->runProcess(['vendor/bin/pint', '--dirty', '--format=agent']);
         }
 
-        $this->printSummary($names, $createdFiles, $composerChanged, $providersChanged);
+        $this->printSummary($names, $createdFiles, $composerChanged, $providersChanged, $database);
 
         return self::SUCCESS;
     }
@@ -135,7 +150,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function targetPaths(array $names, bool $moduleIsNew): array
+    private function targetPaths(array $names, bool $moduleIsNew, string $database): array
     {
         $module = $names['module'];
         $entity = $names['entity'];
@@ -171,20 +186,14 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function generateEntityFiles(array $names): array
+    private function generateEntityFiles(array $names, string $database): array
     {
         $module = $names['module'];
         $entity = $names['entity'];
         $resource = $names['resource'];
 
-        $existingMigrations = File::glob(base_path("modules/{$module}/database/migrations/*_create_{$names['table']}_table.php"));
-        $migrationPath = $existingMigrations !== []
-            ? $existingMigrations[0]
-            : base_path('modules/'.$module.'/database/migrations/'.date('Y_m_d_His')."_create_{$names['table']}_table.php");
-
-        return [
-            $this->writeStub('migration', Str::after($migrationPath, base_path().'/'), $names),
-            $this->writeStub('model', "modules/{$module}/src/Models/{$entity}.php", $names),
+        $files = [
+            $this->writeStub($database === 'mongodb' ? 'model-mongodb' : 'model', "modules/{$module}/src/Models/{$entity}.php", $names),
             $this->writeStub('crud-definition', "modules/{$module}/src/Crud/{$entity}CrudDefinition.php", $names),
             $this->writeStub('controller', "modules/{$module}/src/Http/Controllers/{$entity}Controller.php", $names),
             $this->writeStub('policy', "modules/{$module}/src/Policies/{$entity}Policy.php", $names),
@@ -192,6 +201,17 @@ class MakeCrudCommand extends Command
             $this->writeStub('test', "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php", $names),
             $this->writeStub('vue-index', "resources/js/pages/{$resource}/Index.vue", $names),
         ];
+
+        if ($database === 'mysql') {
+            $existingMigrations = File::glob(base_path("modules/{$module}/database/migrations/*_create_{$names['table']}_table.php"));
+            $migrationPath = $existingMigrations !== []
+                ? $existingMigrations[0]
+                : base_path('modules/'.$module.'/database/migrations/'.date('Y_m_d_His')."_create_{$names['table']}_table.php");
+
+            array_unshift($files, $this->writeStub('migration', Str::after($migrationPath, base_path().'/'), $names));
+        }
+
+        return $files;
     }
 
     /**
@@ -379,7 +399,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @param  list<string>  $createdFiles
      */
-    private function printSummary(array $names, array $createdFiles, bool $composerChanged, bool $providersChanged): void
+    private function printSummary(array $names, array $createdFiles, bool $composerChanged, bool $providersChanged, string $database): void
     {
         $this->newLine();
         $this->components->info('Files created:');
@@ -399,7 +419,9 @@ class MakeCrudCommand extends Command
 
         $this->newLine();
         $this->components->info('Next steps:');
-        $this->line('1. php artisan migrate');
+        $this->line($database === 'mongodb'
+            ? '1. Configure the generated model collection and indexes for your MongoDB schema.'
+            : '1. php artisan migrate');
         $this->line("2. Add a nav entry to BOTH resources/js/components/AppSidebar.vue and resources/js/components/AppHeader.vue's mainNavItems array (no central nav registry exists in this codebase) — e.g.:");
         $this->line("   import { index as {$names['resource']}Index } from '@/routes/{$names['resource']}';");
         $this->line("   { title: '{$names['title']}', href: {$names['resource']}Index(), icon: /* pick a @lucide/vue icon */ }");
