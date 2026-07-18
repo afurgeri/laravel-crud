@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { router } from '@inertiajs/vue3';
-import { Pencil } from '@lucide/vue';
-import { reactive, ref, watch } from 'vue';
+import { ChevronLeft, ChevronRight, Pencil } from '@lucide/vue';
+import { reactive, ref } from 'vue';
 import CrudDeleteDialog from '@/components/crud/CrudDeleteDialog.vue';
 import CrudFilters from '@/components/crud/CrudFilters.vue';
 import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
@@ -12,6 +12,7 @@ import type {
     CrudCreateConfig,
     CrudDestroyConfig,
     CrudEditConfig,
+    CrudPaginator,
     CrudRecord,
     CrudSchema,
 } from '@/types/crud';
@@ -19,7 +20,7 @@ import type {
 const props = withDefaults(
     defineProps<{
         schema: CrudSchema;
-        records: T[];
+        records: CrudPaginator<T>;
         create: CrudCreateConfig;
         edit: CrudEditConfig<T>;
         destroy: CrudDestroyConfig<T>;
@@ -77,6 +78,7 @@ const filterValues = reactive<Record<string, string>>(
 let navigateTimer: ReturnType<typeof setTimeout> | undefined;
 
 type CrudQuery = {
+    page?: number;
     sort?: string;
     direction?: 'asc' | 'desc';
     search?: string;
@@ -87,11 +89,14 @@ function filterSchemaValue(filter: CrudSchema['filters'][number]): string {
     return typeof filter.value === 'string' ? filter.value : '';
 }
 
-
-function navigate(): void {
+function navigate(page = 1): void {
     clearTimeout(navigateTimer);
 
     const query: CrudQuery = {};
+
+    if (page > 1) {
+        query.page = page;
+    }
 
     if (sortState.column) {
         query.sort = sortState.column;
@@ -114,6 +119,18 @@ function navigate(): void {
         preserveScroll: true,
         preserveState: true,
     });
+}
+
+function goToPage(page: number): void {
+    if (
+        page < 1 ||
+        page > props.records.last_page ||
+        page === props.records.current_page
+    ) {
+        return;
+    }
+
+    navigate(page);
 }
 
 function navigateDebounced(): void {
@@ -212,7 +229,7 @@ function handleClearFilters(): void {
 
             <CrudTable
                 :columns="schema.columns"
-                :records="records"
+                :records="records.data"
                 :sort="schema.sort"
                 :empty-label="schema.empty_label ?? 'No records found.'"
                 @sort="handleSort"
@@ -298,6 +315,47 @@ function handleClearFilters(): void {
                     </div>
                 </template>
             </CrudTable>
+
+            <div
+                v-if="records.last_page > 1"
+                class="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+            >
+                <span>
+                    Showing {{ records.from ?? 0 }} to {{ records.to ?? 0 }} of
+                    {{ records.total }}
+                </span>
+
+                <div
+                    class="flex items-center justify-between gap-3 sm:justify-end"
+                >
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        :disabled="records.current_page === 1"
+                        @click="goToPage(records.current_page - 1)"
+                    >
+                        <ChevronLeft class="size-4" />
+                        Previous
+                    </Button>
+
+                    <span class="whitespace-nowrap">
+                        Page {{ records.current_page }} of
+                        {{ records.last_page }}
+                    </span>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        :disabled="records.current_page === records.last_page"
+                        @click="goToPage(records.current_page + 1)"
+                    >
+                        Next
+                        <ChevronRight class="size-4" />
+                    </Button>
+                </div>
+            </div>
         </div>
     </TooltipProvider>
 </template>
