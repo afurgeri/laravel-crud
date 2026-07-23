@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends CrudRecord">
-import { router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Pencil } from '@lucide/vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ChevronLeft, ChevronRight, Eye, Pencil, Plus } from '@lucide/vue';
 import { reactive, ref } from 'vue';
 import CrudDeleteDialog from '@/components/crud/CrudDeleteDialog.vue';
 import CrudFilters from '@/components/crud/CrudFilters.vue';
@@ -15,6 +15,7 @@ import type {
     CrudPaginator,
     CrudRecord,
     CrudSchema,
+    CrudShowConfig,
 } from '@/types/crud';
 
 const props = withDefaults(
@@ -22,6 +23,7 @@ const props = withDefaults(
         schema: CrudSchema;
         records: CrudPaginator<T>;
         create: CrudCreateConfig;
+        show?: CrudShowConfig<T>;
         edit: CrudEditConfig<T>;
         destroy: CrudDestroyConfig<T>;
         lockedLabel?: string;
@@ -32,11 +34,28 @@ const props = withDefaults(
 );
 
 function canEditRecord(record: T): boolean {
-    return props.edit.can ? props.edit.can(record) : true;
+    return (
+        props.schema.operations.update &&
+        (props.edit.can ? props.edit.can(record) : true)
+    );
 }
 
 function canDestroyRecord(record: T): boolean {
-    return props.destroy.can ? props.destroy.can(record) : true;
+    return (
+        props.schema.operations.delete &&
+        (props.destroy.can ? props.destroy.can(record) : true)
+    );
+}
+
+function canShowRecord(record: T): boolean {
+    return (
+        props.schema.operations.show &&
+        (props.show?.can ? props.show.can(record) : true)
+    );
+}
+
+function usesFullPageForms(): boolean {
+    return props.schema.form_mode === 'page';
 }
 
 function editRecordTitle(record: T): string {
@@ -65,6 +84,7 @@ const sortState = reactive({
 });
 
 const searchValue = ref(props.schema.search.value ?? '');
+const isLoading = ref(false);
 
 const filterValues = reactive<Record<string, string>>(
     Object.fromEntries(
@@ -118,6 +138,12 @@ function navigate(page = 1): void {
     router.get(window.location.pathname, query, {
         preserveScroll: true,
         preserveState: true,
+        onStart: () => {
+            isLoading.value = true;
+        },
+        onFinish: () => {
+            isLoading.value = false;
+        },
     });
 }
 
@@ -178,7 +204,7 @@ function handleClearFilters(): void {
 
 <template>
     <TooltipProvider :delay-duration="0">
-        <div class="flex flex-col gap-6 p-4">
+        <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
             <div
                 class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
             >
@@ -197,8 +223,21 @@ function handleClearFilters(): void {
                 <div class="flex items-center gap-2">
                     <slot name="toolbar-actions" />
 
+                    <Link
+                        v-if="
+                            schema.operations.create &&
+                            create.can &&
+                            usesFullPageForms() &&
+                            create.href
+                        "
+                        :href="create.href"
+                    >
+                        <Plus class="size-4" />
+                        {{ create.label ?? 'Create' }}
+                    </Link>
+
                     <CrudFormDialog
-                        v-if="create.can"
+                        v-else-if="schema.operations.create && create.can"
                         :action="create.action"
                         :fields="schema.fields"
                         :trigger-label="create.label ?? 'Create'"
@@ -231,6 +270,7 @@ function handleClearFilters(): void {
                 :columns="schema.columns"
                 :records="records.data"
                 :sort="schema.sort"
+                :loading="isLoading"
                 :empty-label="schema.empty_label ?? 'No records found.'"
                 @sort="handleSort"
             >
@@ -248,8 +288,29 @@ function handleClearFilters(): void {
                     <div class="flex items-center justify-end gap-2">
                         <slot name="actions-before" :record="record" />
 
+                        <Link
+                            v-if="show && canShowRecord(record)"
+                            :href="show.href(record)"
+                            :aria-label="show.label ?? 'Show'"
+                            :title="show.title?.(record) ?? 'Show'"
+                        >
+                            <Eye class="size-4" />
+                        </Link>
+
+                        <Link
+                            v-if="
+                                canEditRecord(record) &&
+                                usesFullPageForms() &&
+                                edit.href
+                            "
+                            :href="edit.href(record)"
+                            :aria-label="edit.label ?? 'Edit'"
+                        >
+                            <Pencil class="size-4" />
+                        </Link>
+
                         <CrudFormDialog
-                            v-if="canEditRecord(record)"
+                            v-else-if="canEditRecord(record)"
                             :action="edit.action(record)"
                             :fields="
                                 schema.fields.filter(
@@ -303,6 +364,7 @@ function handleClearFilters(): void {
 
                         <span
                             v-if="
+                                !canShowRecord(record) &&
                                 !canEditRecord(record) &&
                                 !canDestroyRecord(record)
                             "

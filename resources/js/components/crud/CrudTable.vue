@@ -1,14 +1,23 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { ChevronDown, ChevronUp } from '@lucide/vue';
+import { computed } from 'vue';
 import type { CrudColumn, CrudRecord, CrudSort } from '@/types/crud';
 
-defineProps<{
-    columns: CrudColumn[];
-    records: T[];
-    sort?: CrudSort;
-    actionsLabel?: string;
-    emptyLabel?: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        columns: CrudColumn[];
+        records: T[];
+        sort?: CrudSort;
+        actionsLabel?: string;
+        emptyLabel?: string;
+        loading?: boolean;
+    }>(),
+    {
+        loading: false,
+    },
+);
+
+const loadingRows = computed(() => Math.max(props.records.length, 1));
 
 defineEmits<{
     sort: [column: string];
@@ -62,7 +71,15 @@ defineEmits<{
                 <tbody
                     class="divide-y divide-sidebar-border/70 dark:divide-sidebar-border"
                 >
-                    <tr v-for="record in records" :key="record.id">
+                    <template v-if="loading">
+                        <tr v-for="row in loadingRows" :key="row" aria-hidden="true">
+                            <td v-for="column in columns" :key="column.name">
+                                <div class="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                            </td>
+                            <td><div class="ml-auto h-8 w-16 animate-pulse rounded-lg bg-muted" /></td>
+                        </tr>
+                    </template>
+                    <tr v-else v-for="record in records" :key="record.id">
                         <td
                             v-for="column in columns"
                             :key="column.name"
@@ -81,7 +98,7 @@ defineEmits<{
                             <slot name="actions" :record="record" />
                         </td>
                     </tr>
-                    <tr v-if="records.length === 0">
+                    <tr v-if="!loading && records.length === 0">
                         <td
                             :colspan="columns.length + 1"
                             class="px-4 py-6 text-muted-foreground"
@@ -94,7 +111,17 @@ defineEmits<{
         </div>
 
         <div class="flex flex-col gap-3 md:hidden">
+            <template v-if="loading">
+                <div v-for="row in loadingRows" :key="row" class="rounded-xl border bg-card p-4 shadow-sm" aria-hidden="true">
+                    <div class="flex flex-col gap-3">
+                        <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                        <div class="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                        <div class="h-8 w-20 animate-pulse self-end rounded-lg bg-muted" />
+                    </div>
+                </div>
+            </template>
             <div
+                v-else
                 v-for="record in records"
                 :key="record.id"
                 class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm dark:border-sidebar-border"
@@ -131,7 +158,7 @@ defineEmits<{
             </div>
 
             <div
-                v-if="records.length === 0"
+                v-if="!loading && records.length === 0"
                 class="rounded-xl border border-sidebar-border/70 bg-card p-6 text-center text-muted-foreground dark:border-sidebar-border"
             >
                 {{ emptyLabel ?? 'No records found.' }}

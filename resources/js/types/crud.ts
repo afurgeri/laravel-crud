@@ -1,5 +1,10 @@
 import type { Method } from '@inertiajs/core';
 
+export type CrudHref = string | {
+    url: string;
+    method: 'get';
+};
+
 export type CrudColumn = {
     name: string;
     label: string;
@@ -46,6 +51,13 @@ export type CrudFilter = {
 
 export type CrudSchema = {
     resource: string;
+    form_mode: 'dialog' | 'page';
+    operations: {
+        show: boolean;
+        create: boolean;
+        update: boolean;
+        delete: boolean;
+    };
     title: string;
     description: string | null;
     empty_label: string | null;
@@ -78,6 +90,7 @@ export type FormAction = {
 export type CrudCreateConfig = {
     can: boolean;
     action: FormAction;
+    href?: CrudHref;
     label?: string;
     title?: string;
     description?: string;
@@ -86,11 +99,19 @@ export type CrudCreateConfig = {
 
 export type CrudEditConfig<T extends CrudRecord> = {
     action: (record: T) => FormAction;
+    href?: (record: T) => CrudHref;
     can?: (record: T) => boolean;
     label?: string;
     title?: (record: T) => string;
     description?: string;
     submitLabel?: string;
+};
+
+export type CrudShowConfig<T extends CrudRecord> = {
+    href: (record: T) => CrudHref;
+    can?: (record: T) => boolean;
+    label?: string;
+    title?: (record: T) => string;
 };
 
 export type CrudDestroyConfig<T extends CrudRecord> = {

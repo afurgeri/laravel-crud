@@ -16,6 +16,16 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('records: CrudPaginator<T>;')
         ->toContain(':records="records.data"')
         ->toContain('goToPage')
+        ->toContain('schema.form_mode === \'page\'')
+        ->toContain('schema.operations.show')
+        ->toContain('schema.operations.create')
+        ->toContain('schema.operations.update')
+        ->toContain('schema.operations.delete')
+        ->toContain('canShowRecord')
+        ->toContain('show.href(record)')
         ->and($types)
-        ->toContain('export type CrudPaginator<T>');
+        ->toContain("form_mode: 'dialog' | 'page';")
+        ->toContain('operations:')
+        ->toContain('export type CrudShowConfig<T extends CrudRecord>')
+        ->toContain('id: string | number;');
 });
