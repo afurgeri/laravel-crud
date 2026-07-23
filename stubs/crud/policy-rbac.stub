@@ -13,6 +13,11 @@ class {{ entity }}Policy
         return $user->hasPermission({{ entity }}Permissions::VIEW);
     }
 
+    public function view(HasPermissions $user, {{ entity }} ${{ entityVariable }}): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::VIEW);
+    }
+
     public function create(HasPermissions $user): bool
     {
         return $user->hasPermission({{ entity }}Permissions::CREATE);

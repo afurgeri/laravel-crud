@@ -3,8 +3,11 @@ import { Head } from '@inertiajs/vue3';
 import CrudPage from '@/components/crud/CrudPage.vue';
 import type { CrudPaginator, CrudRecord, CrudSchema } from '@/types/crud';
 import {
+    create as create{{ entity }},
     destroy as destroy{{ entity }},
-    index as {{ resource }}Index,
+    edit as edit{{ entity }},
+    index as {{ resourceVariable }}Index,
+    show as show{{ entity }},
     store as store{{ entity }},
     update as update{{ entity }},
 } from '@/routes/{{ resource }}';
@@ -13,6 +16,7 @@ type {{ entity }} = CrudRecord & {
     id: string | number;
     name: string;
     can: {
+        show: boolean;
         update: boolean;
         delete: boolean;
     };
@@ -31,7 +35,7 @@ defineOptions({
         breadcrumbs: [
             {
                 title: '{{ title }}',
-                href: {{ resource }}Index(),
+                href: {{ resourceVariable }}Index(),
             },
         ],
     },
@@ -46,6 +50,7 @@ defineOptions({
         :records="{{ pluralVariable }}"
         :create="{
             can: can.create,
+            href: create{{ entity }}(),
             action: store{{ entity }}.form(),
             label: 'Create {{ entityVariable }}',
             title: 'Create {{ entityVariable }}',
@@ -53,9 +58,15 @@ defineOptions({
         }"
         :edit="{
             action: (record) => update{{ entity }}.form.patch(record.id),
+            href: (record) => edit{{ entity }}(record.id),
             can: (record) => record.can.update,
             title: (record) => `Edit ${record.name}`,
             description: 'Update the {{ entityVariable }} details.',
+        }"
+        :show="{
+            href: (record) => show{{ entity }}(record.id),
+            can: (record) => record.can.show,
+            title: (record) => `View ${record.name}`,
         }"
         :destroy="{
             action: (record) => destroy{{ entity }}.form.delete(record.id),

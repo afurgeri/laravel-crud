@@ -16,6 +16,8 @@ class CrudMutationManager
      */
     public function create(CrudDefinition $definition, array $data): Model
     {
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Create);
+
         if ($definition instanceof AuthorizesCrudMutations) {
             $definition->authorizeCreate();
         }
@@ -35,6 +37,8 @@ class CrudMutationManager
      */
     public function update(Model $model, CrudDefinition $definition, array $data): Model
     {
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Update);
+
         if ($definition instanceof AuthorizesCrudMutations) {
             $definition->authorizeUpdate($model);
         }
@@ -47,6 +51,8 @@ class CrudMutationManager
 
     public function delete(Model $model, CrudDefinition $definition): bool
     {
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Delete);
+
         if ($definition instanceof AuthorizesCrudMutations) {
             $definition->authorizeDelete($model);
         }

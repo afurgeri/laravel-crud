@@ -4,6 +4,8 @@ namespace Modules\Crud;
 
 use Illuminate\Support\Str;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\Contracts\HasCrudFormMode;
+use Modules\Crud\Contracts\HasCrudOperations;
 
 class CrudSchemaManager
 {
@@ -16,6 +18,8 @@ class CrudSchemaManager
      * @param  array<string, mixed>  $filterValues
      * @return array{
      *     resource: string,
+     *     form_mode: 'dialog'|'page',
+     *     operations: array{show: bool, create: bool, update: bool, delete: bool},
      *     title: string,
      *     description: string|null,
      *     empty_label: string|null,
@@ -33,8 +37,20 @@ class CrudSchemaManager
             ? $this->filterValues->for($filters, $filterValues)
             : [];
 
+        $operations = array_fill_keys(array_column(CrudOperation::cases(), 'value'), true);
+
+        if ($definition instanceof HasCrudOperations) {
+            foreach ($definition->disabledOperations() as $operation) {
+                $operations[$operation->value] = false;
+            }
+        }
+
         return [
             'resource' => $resource,
+            'form_mode' => ($definition instanceof HasCrudFormMode
+                ? $definition->formMode()
+                : CrudFormMode::Page)->value,
+            'operations' => $operations,
             'title' => $definition->title(),
             'description' => $definition->description(),
             'empty_label' => $definition->emptyLabel(),

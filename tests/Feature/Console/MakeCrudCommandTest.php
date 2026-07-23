@@ -58,7 +58,8 @@ test('make crud command is registered by the package', function () {
         ->assertExitCode(0)
         ->expectsOutputToContain('Scaffold a complete CRUD admin screen')
         ->expectsOutputToContain('--database')
-        ->expectsOutputToContain('--rbac');
+        ->expectsOutputToContain('--rbac')
+        ->expectsOutputToContain('--test');
 });
 
 test('make crud rejects an unknown database connector', function () {
@@ -97,6 +98,7 @@ PHP);
     try {
         $this->artisan('make:crud', [
             'name' => 'RootSqlWidget',
+            '--test' => true,
         ])->assertExitCode(0);
 
         expect(File::get(base_path('app/Models/RootSqlWidget.php')))
@@ -114,12 +116,18 @@ PHP);
             ->and(File::exists(base_path('database/factories/RootSqlWidgetFactory.php')))->toBeTrue()
             ->and(File::exists(base_path('tests/Feature/Crud/RootSqlWidgetCrudDefinitionTest.php')))->toBeTrue()
             ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Index.vue')))->toBeTrue()
+            ->and(File::get(base_path('resources/js/pages/root-sql-widgets/Index.vue')))
+            ->toContain('rootSqlWidgetsIndex')
+            ->not->toContain('root-sql-widgetsIndex')
+            ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Create.vue')))->toBeTrue()
+            ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Edit.vue')))->toBeTrue()
             ->and(File::glob(base_path('database/migrations/*_create_root_sql_widgets_table.php')))->not->toBeEmpty()
             ->and(File::isDirectory(base_path('modules/RootSqlWidgets')))->toBeFalse()
             ->and(File::get(base_path('composer.json')))->toBe($composer)
             ->and(File::get(base_path('bootstrap/providers.php')))->toBe($providers)
             ->and(File::get($routesPath))->toContain('use App\\Http\\Controllers\\RootSqlWidgetController;')
-            ->toContain("Route::resource('root-sql-widgets', RootSqlWidgetController::class)");
+            ->toContain("Route::resource('root-sql-widgets', RootSqlWidgetController::class)")
+            ->toContain("['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']");
     } finally {
         File::put($routesPath, $routes);
         File::delete($routesPath);

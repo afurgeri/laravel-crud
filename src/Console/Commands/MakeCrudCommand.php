@@ -19,9 +19,10 @@ class MakeCrudCommand extends Command
     protected $signature = 'make:crud {name : The singular StudlyCase entity name, e.g. Person}
         {--module= : The optional StudlyCase module name, e.g. People}
         {--table= : The database table name, defaults to the snake_case plural of the entity}
-        {--database=mysql : The database connector to target (mysql or mongodb)}
-        {--rbac : Generate permission constants, an RBAC policy, and a permission seeder}
-        {--force : Overwrite any files that already exist}';
+         {--database=mysql : The database connector to target (mysql or mongodb)}
+         {--rbac : Generate permission constants, an RBAC policy, and a permission seeder}
+         {--test : Generate the CRUD definition test}
+         {--force : Overwrite any files that already exist}';
 
     /**
      * The console command description.
@@ -50,6 +51,7 @@ class MakeCrudCommand extends Command
         }
 
         $usesRbac = (bool) $this->option('rbac');
+        $generatesTest = (bool) $this->option('test');
 
         if ($usesRbac && (! interface_exists('Modules\\Rbac\\Contracts\\HasPermissions') || ! class_exists('Modules\\Rbac\\RbacModels'))) {
             $this->components->error('RBAC support is not installed. Run [composer require afurgeri/laravel-rbac] first.');
@@ -59,7 +61,7 @@ class MakeCrudCommand extends Command
 
         $moduleOption = $this->option('module');
 
-        if ($moduleOption !== null && (! is_string($moduleOption) || (trim($moduleOption) !== '' && ! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', trim($moduleOption))))) {
+        if ($moduleOption !== null && trim($moduleOption) !== '' && ! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', trim($moduleOption))) {
             $this->components->error('The --module option must be a valid module identifier (letters and numbers only, starting with a letter).');
 
             return self::FAILURE;
@@ -73,7 +75,7 @@ class MakeCrudCommand extends Command
         $moduleIsNew = $module !== null && ! File::isDirectory(base_path("modules/{$module}"));
         $migrationPath = $database === 'mysql' ? $this->migrationPath($names, $module) : null;
 
-        $targets = $this->targetPaths($names, $module, $moduleIsNew, $migrationPath, $usesRbac);
+        $targets = $this->targetPaths($names, $module, $moduleIsNew, $migrationPath, $usesRbac, $generatesTest);
 
         if (! $this->option('force')) {
             $conflicts = array_values(array_filter($targets, File::exists(...)));
@@ -89,7 +91,7 @@ class MakeCrudCommand extends Command
             }
         }
 
-        $createdFiles = $this->generateEntityFiles($names, $module, $migrationPath, $database, $usesRbac);
+        $createdFiles = $this->generateEntityFiles($names, $module, $migrationPath, $database, $usesRbac, $generatesTest);
 
         $composerChanged = false;
         $providersChanged = false;
@@ -126,7 +128,7 @@ class MakeCrudCommand extends Command
             $this->runProcess(['vendor/bin/pint', '--dirty', '--format=agent']);
         }
 
-        $this->printSummary($names, $module, $createdFiles, $composerChanged, $providersChanged, $database, $usesRbac);
+        $this->printSummary($names, $module, $createdFiles, $composerChanged, $providersChanged, $database, $usesRbac, $generatesTest);
 
         return self::SUCCESS;
     }
@@ -143,6 +145,7 @@ class MakeCrudCommand extends Command
         $table = is_string($table) && trim($table) !== '' ? $table : Str::snake($entityPlural);
 
         $resource = Str::plural(Str::kebab($entity));
+        $resourceVariable = Str::camel($resource);
         $entityVariable = Str::camel($entity);
         $pluralVariable = Str::camel($entityPlural);
         $routeParameter = Str::camel(Str::singular($resource));
@@ -163,6 +166,7 @@ class MakeCrudCommand extends Command
             'routeParameter' => $routeParameter,
             'table' => $table,
             'resource' => $resource,
+            'resourceVariable' => $resourceVariable,
             'title' => $entityPlural,
             'description' => "Manage application {$entityPluralLower}.",
             'emptyLabel' => "No {$entityPluralLower} found.",
@@ -173,7 +177,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function targetPaths(array $names, ?string $module, bool $moduleIsNew, ?string $migrationPath, bool $usesRbac): array
+    private function targetPaths(array $names, ?string $module, bool $moduleIsNew, ?string $migrationPath, bool $usesRbac, bool $generatesTest): array
     {
         $entity = $names['entity'];
         $resource = $names['resource'];
@@ -185,9 +189,15 @@ class MakeCrudCommand extends Command
             base_path($applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php"),
             base_path($applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php"),
             base_path("database/factories/{$entity}Factory.php"),
-            base_path($applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php"),
             base_path("resources/js/pages/{$resource}/Index.vue"),
+            base_path("resources/js/pages/{$resource}/Create.vue"),
+            base_path("resources/js/pages/{$resource}/Edit.vue"),
+            base_path("resources/js/pages/{$resource}/Show.vue"),
         ];
+
+        if ($generatesTest) {
+            $targets[] = base_path($applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php");
+        }
 
         if ($migrationPath !== null) {
             $targets[] = $migrationPath;
@@ -221,7 +231,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @return list<string>
      */
-    private function generateEntityFiles(array $names, ?string $module, ?string $migrationPath, string $database, bool $usesRbac): array
+    private function generateEntityFiles(array $names, ?string $module, ?string $migrationPath, string $database, bool $usesRbac, bool $generatesTest): array
     {
         $entity = $names['entity'];
         $resource = $names['resource'];
@@ -233,9 +243,15 @@ class MakeCrudCommand extends Command
             $this->writeStub('controller', $applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php", $names),
             $this->writeStub($usesRbac ? 'policy-rbac' : 'policy', $applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php", $names),
             $this->writeStub('factory', "database/factories/{$entity}Factory.php", $names),
-            $this->writeStub('test', $applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php", $names),
             $this->writeStub('vue-index', "resources/js/pages/{$resource}/Index.vue", $names),
+            $this->writeStub('vue-create', "resources/js/pages/{$resource}/Create.vue", $names),
+            $this->writeStub('vue-edit', "resources/js/pages/{$resource}/Edit.vue", $names),
+            $this->writeStub('vue-show', "resources/js/pages/{$resource}/Show.vue", $names),
         ];
+
+        if ($generatesTest) {
+            $files[] = $this->writeStub('test', $applicationPath ? "tests/Feature/Crud/{$entity}CrudDefinitionTest.php" : "tests/Feature/{$module}/Crud/{$entity}CrudDefinitionTest.php", $names);
+        }
 
         if ($migrationPath !== null) {
             array_unshift($files, $this->writeStub('migration', Str::after($migrationPath, base_path().'/'), $names));
@@ -384,7 +400,7 @@ class MakeCrudCommand extends Command
         $contents = File::get($path);
 
         $useLine = "use Modules\\{$module}\\Http\\Controllers\\{$entity}Controller;";
-        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'store', 'update', 'destroy']);";
+        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);";
 
         if (str_contains($contents, $resourceLine)) {
             return;
@@ -434,7 +450,7 @@ class MakeCrudCommand extends Command
         $path = base_path('routes/web.php');
         $contents = File::get($path);
         $useLine = "use App\\Http\\Controllers\\{$entity}Controller;";
-        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'store', 'update', 'destroy']);";
+        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);";
 
         if (str_contains($contents, $resourceLine)) {
             return;
@@ -486,7 +502,7 @@ class MakeCrudCommand extends Command
      * @param  array<string, string>  $names
      * @param  list<string>  $createdFiles
      */
-    private function printSummary(array $names, ?string $module, array $createdFiles, bool $composerChanged, bool $providersChanged, string $database, bool $usesRbac): void
+    private function printSummary(array $names, ?string $module, array $createdFiles, bool $composerChanged, bool $providersChanged, string $database, bool $usesRbac, bool $generatesTest): void
     {
         $this->newLine();
         $this->components->info('Files created:');
@@ -514,10 +530,14 @@ class MakeCrudCommand extends Command
         $this->line("   { title: '{$names['title']}', href: {$names['resource']}Index(), icon: /* pick a @lucide/vue icon */ }");
         $this->line('3. Replace the placeholder `name` column with real fields across: the migration, #[Fillable] on the Model, columns()/fields() on the CrudDefinition, the Factory\'s definition(), and Index.vue\'s slots.');
 
+        if (! $generatesTest) {
+            $this->line('4. Add --test to generate the CRUD definition test.');
+        }
+
         if ($usesRbac) {
-            $this->line("4. Seed {$names['permissionSeederNamespace']}\\{$names['entity']}PermissionSeeder before AdminRoleSeeder so the admin role receives the generated permissions.");
+            $this->line("5. Seed {$names['permissionSeederNamespace']}\\{$names['entity']}PermissionSeeder before AdminRoleSeeder so the admin role receives the generated permissions.");
         } else {
-            $this->line("4. Review authorization rules in {$names['entity']}Policy.php (currently `return true` for every ability).");
+            $this->line('5. Review authorization rules in '.$names['entity'].'Policy.php (currently `return true` for every ability).');
         }
     }
 }

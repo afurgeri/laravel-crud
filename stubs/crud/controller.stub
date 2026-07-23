@@ -11,6 +11,8 @@ use Inertia\Response;
 use Modules\Crud\Contracts\AuthorizesCrudMutations;
 use Modules\Crud\CrudIndexManager;
 use Modules\Crud\CrudMutationManager;
+use Modules\Crud\CrudOperation;
+use Modules\Crud\CrudOperationGuard;
 use Modules\Crud\CrudSchemaManager;
 use {{ modelNamespace }}\{{ entity }};
 
@@ -42,6 +44,7 @@ class {{ entity }}Controller
             'can' => [
                 'update' => Gate::allows('update', ${{ entityVariable }}),
                 'delete' => Gate::allows('delete', ${{ entityVariable }}),
+                'show' => Gate::allows('view', ${{ entityVariable }}),
             ],
         ]);
 
@@ -51,6 +54,20 @@ class {{ entity }}Controller
             'can' => [
                 'create' => Gate::allows('create', {{ entity }}::class),
             ],
+        ]);
+    }
+
+    public function create(CrudSchemaManager $schema): Response
+    {
+        $definition = {{ entity }}::makeCrudDefinition();
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Create);
+
+        if ($definition instanceof AuthorizesCrudMutations) {
+            $definition->authorizeCreate();
+        }
+
+        return Inertia::render('{{ resource }}/Create', [
+            'crud' => $schema->for($definition, '{{ resource }}'),
         ]);
     }
 
@@ -67,6 +84,39 @@ class {{ entity }}Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{{ entity }} created.')]);
 
         return to_route('{{ resource }}.index');
+    }
+
+    public function edit({{ entity }} ${{ routeParameter }}, CrudSchemaManager $schema): Response
+    {
+        $definition = {{ entity }}::makeCrudDefinition();
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Update);
+
+        if ($definition instanceof AuthorizesCrudMutations) {
+            $definition->authorizeUpdate(${{ routeParameter }});
+        }
+
+        return Inertia::render('{{ resource }}/Edit', [
+            'crud' => $schema->for($definition, '{{ resource }}'),
+            '{{ entityVariable }}' => [
+                'id' => ${{ routeParameter }}->id,
+                'name' => ${{ routeParameter }}->name,
+            ],
+        ]);
+    }
+
+    public function show({{ entity }} ${{ routeParameter }}, CrudSchemaManager $schema): Response
+    {
+        $definition = {{ entity }}::makeCrudDefinition();
+        CrudOperationGuard::ensureEnabled($definition, CrudOperation::Show);
+        Gate::authorize('view', ${{ routeParameter }});
+
+        return Inertia::render('{{ resource }}/Show', [
+            'crud' => $schema->for($definition, '{{ resource }}'),
+            '{{ entityVariable }}' => [
+                'id' => ${{ routeParameter }}->id,
+                'name' => ${{ routeParameter }}->name,
+            ],
+        ]);
     }
 
     public function update(Request $request, {{ entity }} ${{ routeParameter }}, CrudMutationManager $mutations): RedirectResponse

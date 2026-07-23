@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+import CrudFormPage from '@/components/crud/CrudFormPage.vue';
+import type { CrudSchema } from '@/types/crud';
+import { index as {{ resourceVariable }}Index } from '@/routes/{{ resource }}';
+
+defineProps<{
+    crud: CrudSchema;
+    {{ entityVariable }}: {
+        id: string | number;
+        name: string;
+    };
+}>();
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            {
+                title: '{{ title }}',
+                href: {{ resourceVariable }}Index(),
+            },
+            {
+                title: 'View {{ entityVariable }}',
+            },
+        ],
+    },
+});
+</script>
+
+<template>
+    <Head :title="'View ' + {{ entityVariable }}.name" />
+
+    <CrudFormPage
+        :schema="crud"
+        :back-href="{{ resourceVariable }}Index()"
+        :title="'View ' + {{ entityVariable }}.name"
+        description="Review the {{ entityVariable }} details."
+        submit-label=""
+        :defaults="{{ entityVariable }}"
+        :read-only="true"
+    />
+</template>
