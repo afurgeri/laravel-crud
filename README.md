@@ -48,6 +48,33 @@ Install `mongodb/laravel-mongodb` in the consuming application when a CRUD model
 composer require mongodb/laravel-mongodb
 ```
 
+Add the MongoDB connection to `config/database.php` in the consuming application:
+
+```php
+'connections' => [
+    // ...
+
+    'mongodb' => [
+        'driver' => 'mongodb',
+        'dsn' => env('MONGODB_URI', 'mongodb://127.0.0.1:27017'),
+        'database' => env('MONGODB_DATABASE', 'laravel'),
+    ],
+],
+```
+
+Configure the connection string and database name in `.env`:
+
+```ini
+MONGODB_URI="mongodb://127.0.0.1:27017"
+MONGODB_DATABASE="laravel"
+```
+
+The `mongodb` PHP extension must be installed and enabled. Install it with PECL when it is not already available:
+
+```bash
+pecl install mongodb
+```
+
 The model must extend `MongoDB\Laravel\Eloquent\Model` and define a MongoDB connection or use the application's MongoDB default connection. When SQL is the default connection, declare the MongoDB connection on the model explicitly:
 
 ```php
