@@ -220,7 +220,7 @@ function handleClearFilters(): void {
                     </p>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="relative mt-5 flex items-center gap-2 md:mt-0">
                     <slot name="toolbar-actions" />
 
                     <Link
@@ -231,6 +231,7 @@ function handleClearFilters(): void {
                             create.href
                         "
                         :href="create.href"
+                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium whitespace-nowrap text-primary-foreground shadow-lg shadow-indigo-500/20 transition-all hover:bg-primary/90"
                     >
                         <Plus class="size-4" />
                         {{ create.label ?? 'Create' }}
@@ -249,6 +250,15 @@ function handleClearFilters(): void {
                         reset-on-success
                         :field-id-prefix="`${schema.resource}-create`"
                     >
+                        <template #trigger>
+                            <Button
+                                type="button"
+                                class="gap-2 shadow-lg shadow-indigo-500/20"
+                            >
+                                <Plus class="size-4" />
+                                {{ create.label ?? 'Create' }}
+                            </Button>
+                        </template>
                         <template #fields="slotProps">
                             <slot name="create-fields" v-bind="slotProps" />
                         </template>
@@ -256,15 +266,19 @@ function handleClearFilters(): void {
                 </div>
             </div>
 
-            <CrudFilters
-                :search="schema.search"
-                :filters="schema.filters"
-                :search-value="searchValue"
-                :filter-values="filterValues"
-                @search="handleSearch"
-                @filter="handleFilter"
-                @clear="handleClearFilters"
-            />
+            <div
+                class="rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.45)]"
+            >
+                <CrudFilters
+                    :search="schema.search"
+                    :filters="schema.filters"
+                    :search-value="searchValue"
+                    :filter-values="filterValues"
+                    @search="handleSearch"
+                    @filter="handleFilter"
+                    @clear="handleClearFilters"
+                />
+            </div>
 
             <CrudTable
                 :columns="schema.columns"
@@ -291,6 +305,7 @@ function handleClearFilters(): void {
                         <Link
                             v-if="show && canShowRecord(record)"
                             :href="show.href(record)"
+                            class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                             :aria-label="show.label ?? 'Show'"
                             :title="show.title?.(record) ?? 'Show'"
                         >
@@ -304,6 +319,7 @@ function handleClearFilters(): void {
                                 edit.href
                             "
                             :href="edit.href(record)"
+                            class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                             :aria-label="edit.label ?? 'Edit'"
                         >
                             <Pencil class="size-4" />
