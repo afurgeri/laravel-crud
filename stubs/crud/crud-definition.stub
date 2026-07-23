@@ -51,7 +51,7 @@ class {{ entity }}CrudDefinition implements AuthorizesCrudIndex, AuthorizesCrudM
     public function fields(): array
     {
         return [
-            CrudField::make('name', ['required', 'string', 'max:255']),
+            CrudField::make('name', ['required', 'string', 'max:255'])->unique(),
         ];
     }
 

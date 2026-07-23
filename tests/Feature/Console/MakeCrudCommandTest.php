@@ -25,12 +25,16 @@ afterEach(function () {
     File::delete(base_path('app/Policies/RbacWidgetPolicy.php'));
     File::delete(base_path('app/Permissions/RbacWidgetPermissions.php'));
     File::delete(base_path('database/factories/RbacWidgetFactory.php'));
+    File::delete(base_path('database/factories/ModuleWidgetFactory.php'));
     File::delete(base_path('database/seeders/RbacWidgetPermissionSeeder.php'));
+    File::deleteDirectory(base_path('modules/ModuleWidgets'));
+    File::deleteDirectory(base_path('tests/Feature/ModuleWidgets'));
     File::deleteDirectory(base_path('tests/Feature/Crud'));
     File::deleteDirectory(base_path('resources/js/pages/root-sql-widgets'));
     File::deleteDirectory(base_path('resources/js/pages/root-mongo-widgets'));
     File::deleteDirectory(base_path('resources/js/pages/people'));
     File::deleteDirectory(base_path('resources/js/pages/rbac-widgets'));
+    File::deleteDirectory(base_path('resources/js/pages/module-widgets'));
 
     foreach (File::glob(base_path('database/migrations/*_create_root_sql_widgets_table.php')) as $migration) {
         File::delete($migration);
@@ -67,6 +71,17 @@ test('make crud rejects an unknown database connector', function () {
         ->expectsOutputToContain('The --database option must be either mysql or mongodb.');
 });
 
+test('make crud rejects an invalid module identifier before generating files', function () {
+    $this->artisan('make:crud', [
+        'name' => 'InvalidModuleWidget',
+        '--module' => '../Tasks',
+    ])
+        ->assertExitCode(1)
+        ->expectsOutputToContain('The --module option must be a valid module identifier');
+
+    expect(File::exists(base_path('modules/Tasks/src/Models/InvalidModuleWidget.php')))->toBeFalse();
+});
+
 test('make crud generates an application-scoped SQL resource when no module is provided', function () {
     $routesPath = base_path('routes/web.php');
     File::ensureDirectoryExists(dirname($routesPath));
@@ -91,6 +106,7 @@ PHP);
             ->and(File::get(base_path('app/Crud/RootSqlWidgetCrudDefinition.php')))
             ->toContain('namespace App\\Crud;')
             ->toContain('use App\\Models\\RootSqlWidget;')
+            ->toContain("CrudField::make('name', ['required', 'string', 'max:255'])->unique()")
             ->and(File::get(base_path('app/Crud/RootSqlWidgetCrudDefinition.php')))->toContain('HasDefaultCrudPageSize')
             ->and(File::get(base_path('app/Policies/RootSqlWidgetPolicy.php')))->not->toContain('Modules\\Rbac\\Contracts\\HasPermissions')
             ->and(File::exists(base_path('app/Http/Controllers/RootSqlWidgetController.php')))->toBeTrue()
@@ -107,6 +123,46 @@ PHP);
     } finally {
         File::put($routesPath, $routes);
         File::delete($routesPath);
+    }
+});
+
+test('make crud resolves the module placeholder in generated module files', function () {
+    $composerPath = base_path('composer.json');
+    $providersPath = base_path('bootstrap/providers.php');
+    $composer = File::get($composerPath);
+    $providersExisted = File::exists($providersPath);
+    $providers = File::get($providersPath);
+    File::put($providersPath, <<<'PHP'
+<?php
+
+use App\Providers\AppServiceProvider;
+
+return [
+    AppServiceProvider::class,
+];
+PHP);
+
+    try {
+        $this->artisan('make:crud', [
+            'name' => 'ModuleWidget',
+            '--module' => 'ModuleWidgets',
+        ])->assertExitCode(0);
+
+        expect(File::get(base_path('modules/ModuleWidgets/routes/web.php')))
+            ->toContain('use Modules\\ModuleWidgets\\Http\\Controllers\\ModuleWidgetController;')
+            ->not->toContain('{{ module }}')
+            ->and(File::get(base_path('modules/ModuleWidgets/src/ModuleWidgetsServiceProvider.php')))
+            ->toContain('namespace Modules\\ModuleWidgets;')
+            ->toContain('class ModuleWidgetsServiceProvider')
+            ->not->toContain('{{ module }}');
+    } finally {
+        File::put($composerPath, $composer);
+
+        if ($providersExisted) {
+            File::put($providersPath, $providers);
+        } else {
+            File::delete($providersPath);
+        }
     }
 });
 

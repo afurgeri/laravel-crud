@@ -58,6 +58,13 @@ class MakeCrudCommand extends Command
         }
 
         $moduleOption = $this->option('module');
+
+        if ($moduleOption !== null && (! is_string($moduleOption) || (trim($moduleOption) !== '' && ! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', trim($moduleOption))))) {
+            $this->components->error('The --module option must be a valid module identifier (letters and numbers only, starting with a letter).');
+
+            return self::FAILURE;
+        }
+
         $module = is_string($moduleOption) && trim($moduleOption) !== ''
             ? Str::studly($moduleOption)
             : null;
@@ -148,6 +155,7 @@ class MakeCrudCommand extends Command
             'policyNamespace' => $module === null ? 'App\\Policies' : "Modules\\{$module}\\Policies",
             'permissionsNamespace' => $module === null ? 'App\\Permissions' : "Modules\\{$module}\\Permissions",
             'permissionSeederNamespace' => $module === null ? 'Database\\Seeders' : "Modules\\{$module}\\Database\\Seeders",
+            'module' => $module ?? '',
             'entity' => $entity,
             'entityVariable' => $entityVariable,
             'entityPlural' => $entityPlural,
@@ -262,9 +270,18 @@ class MakeCrudCommand extends Command
     {
         $stub = File::get(dirname(__DIR__, 3)."/stubs/crud/{$stubName}.stub");
 
-        $search = array_map(fn (string $key): string => '{{ '.$key.' }}', array_keys($replacements));
+        preg_match_all('/\{\{\s*([A-Za-z][A-Za-z0-9]*)\s*\}\}/', $stub, $matches);
 
-        return str_replace($search, array_values($replacements), $stub);
+        $unresolved = array_values(array_diff(array_unique($matches[1]), array_keys($replacements), ['value']));
+
+        if ($unresolved !== []) {
+            throw new RuntimeException('Stub ['.$stubName.'] requires missing replacements: ['.implode(', ', $unresolved).'].');
+        }
+
+        $search = array_map(fn (string $key): string => '{{ '.$key.' }}', array_keys($replacements));
+        $contents = str_replace($search, array_values($replacements), $stub);
+
+        return $contents;
     }
 
     private function updateComposerAutoload(string $module): bool
