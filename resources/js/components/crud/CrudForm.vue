@@ -4,11 +4,11 @@ import CrudField from '@/components/crud/CrudField.vue';
 import { Button } from '@/components/ui/button';
 import type { CrudField as CrudFieldConfig, FormAction } from '@/types/crud';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         action: FormAction;
         fields: CrudFieldConfig[];
-        defaults?: Record<string, unknown>;
+        initialValues?: Record<string, unknown>;
         submitLabel: string;
         resetOnSuccess?: boolean;
         formClass?: string;
@@ -16,7 +16,7 @@ withDefaults(
         fieldIdPrefix?: string;
     }>(),
     {
-        defaults: () => ({}),
+        initialValues: () => ({}),
         resetOnSuccess: false,
         formClass: 'flex flex-col gap-4',
         fieldLabelClass: undefined,
@@ -27,6 +27,14 @@ withDefaults(
 const emit = defineEmits<{
     success: [];
 }>();
+
+function fieldDefault(field: CrudFieldConfig): unknown {
+    if (Object.prototype.hasOwnProperty.call(props.initialValues, field.name)) {
+        return props.initialValues[field.name];
+    }
+
+    return field.defaultValue;
+}
 </script>
 
 <template>
@@ -42,7 +50,7 @@ const emit = defineEmits<{
             :key="field.name"
             :field="field"
             :error="errors[field.name]"
-            :default-value="defaults[field.name]"
+            :default-value="fieldDefault(field)"
             :label-class="fieldLabelClass"
             :id-prefix="fieldIdPrefix"
         />

@@ -14,11 +14,12 @@ export type CrudColumn = {
 export type CrudField = {
     name: string;
     label: string;
-    type: string;
+    type: 'text' | 'email' | 'password' | 'checkbox' | 'number' | 'date';
     confirmed: boolean;
     required: boolean;
     rules: string[];
     visible_on_update: boolean;
+    defaultValue?: unknown;
 };
 
 export type CrudSort = {

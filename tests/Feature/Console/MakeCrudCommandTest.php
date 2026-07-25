@@ -120,6 +120,7 @@ PHP);
             ->and(File::get(base_path('resources/js/pages/root-sql-widgets/Index.vue')))
             ->toContain('rootSqlWidgetsIndex')
             ->toContain('useTranslation')
+            ->toContain("t('rootSqlWidget')")
             ->not->toContain("title: t('{{ title }}')")
             ->and(File::get(base_path('lang/en.json')))
             ->toContain('RootSqlWidgets')

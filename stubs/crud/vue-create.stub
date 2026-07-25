@@ -27,15 +27,15 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="t('Create :name', { name: '{{ entityVariable }}' })" />
+    <Head :title="t('Create :name', { name: t('{{ entityVariable }}') })" />
 
     <CrudFormPage
         :schema="crud"
         :action="store{{ entity }}.form()"
         :back-href="{{ resourceVariable }}Index()"
-        :title="t('Create :name', { name: '{{ entityVariable }}' })"
-        :description="t('Add a new :name.', { name: '{{ entityVariable }}' })"
-        :submit-label="t('Create :name', { name: '{{ entityVariable }}' })"
+        :title="t('Create :name', { name: t('{{ entityVariable }}') })"
+        :description="t('Add a new :name.', { name: t('{{ entityVariable }}') })"
+        :submit-label="t('Create :name', { name: t('{{ entityVariable }}') })"
     >
         <template #fields="slotProps">
             <slot name="fields" v-bind="slotProps" />

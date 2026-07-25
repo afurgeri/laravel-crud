@@ -335,7 +335,7 @@ function handleClearFilters(): void {
                                     (field) => field.visible_on_update,
                                 )
                             "
-                            :defaults="record"
+                            :initial-values="record"
                             :trigger-label="translated(edit.label, 'Edit')"
                             :trigger-tooltip="translated(edit.label, 'Edit')"
                             :title="editRecordTitle(record)"

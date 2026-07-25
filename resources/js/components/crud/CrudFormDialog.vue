@@ -25,14 +25,14 @@ withDefaults(
         title: string;
         submitLabel: string;
         description?: string;
-        defaults?: Record<string, unknown>;
+        initialValues?: Record<string, unknown>;
         resetOnSuccess?: boolean;
         fieldIdPrefix?: string;
         triggerTooltip?: string;
     }>(),
     {
         description: undefined,
-        defaults: () => ({}),
+        initialValues: () => ({}),
         resetOnSuccess: false,
         fieldIdPrefix: undefined,
         triggerTooltip: undefined,
@@ -74,7 +74,7 @@ const open = ref(false);
             <CrudForm
                 :action="action"
                 :fields="fields"
-                :defaults="defaults"
+                :initial-values="initialValues"
                 :submit-label="submitLabel"
                 :reset-on-success="resetOnSuccess"
                 :field-id-prefix="fieldIdPrefix"

@@ -37,9 +37,9 @@ defineOptions({
         :schema="crud"
         :back-href="{{ resourceVariable }}Index()"
         :title="t('View :name', { name: String({{ entityVariable }}.name) })"
-        :description="t('Review the :name details.', { name: '{{ entityVariable }}' })"
+        :description="t('Review the :name details.', { name: t('{{ entityVariable }}') })"
         submit-label=""
-        :defaults="{{ entityVariable }}"
+        :initial-values="{{ entityVariable }}"
         :read-only="true"
     />
 </template>

@@ -55,16 +55,16 @@ defineOptions({
             can: can.create,
             href: create{{ entity }}(),
             action: store{{ entity }}.form(),
-            label: t('Create :name', { name: '{{ entityVariable }}' }),
-            title: t('Create :name', { name: '{{ entityVariable }}' }),
-            description: t('Add a new :name.', { name: '{{ entityVariable }}' }),
+            label: t('Create :name', { name: t('{{ entityVariable }}') }),
+            title: t('Create :name', { name: t('{{ entityVariable }}') }),
+            description: t('Add a new :name.', { name: t('{{ entityVariable }}') }),
         }"
         :edit="{
             action: (record) => update{{ entity }}.form.patch(record.id),
             href: (record) => edit{{ entity }}(record.id),
             can: (record) => record.can.update,
             title: (record) => t('Edit :name', { name: String(record.name) }),
-            description: t('Update the :name details.', { name: '{{ entityVariable }}' }),
+            description: t('Update the :name details.', { name: t('{{ entityVariable }}') }),
         }"
         :show="{
             href: (record) => show{{ entity }}(record.id),

@@ -38,8 +38,8 @@ defineOptions({
         :action="update{{ entity }}.form.patch({{ entityVariable }}.id)"
         :back-href="{{ resourceVariable }}Index()"
         :title="t('Edit :name', { name: String({{ entityVariable }}.name) })"
-        :description="t('Update the :name details.', { name: '{{ entityVariable }}' })"
+        :description="t('Update the :name details.', { name: t('{{ entityVariable }}') })"
         :submit-label="t('Save changes')"
-        :defaults="{{ entityVariable }}"
+        :initial-values="{{ entityVariable }}"
     />
 </template>

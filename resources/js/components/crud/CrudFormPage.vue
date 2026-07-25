@@ -26,14 +26,14 @@ const props = withDefaults(
         title: string;
         submitLabel: string;
         description?: string;
-        defaults?: Record<string, unknown>;
+        initialValues?: Record<string, unknown>;
         fields?: CrudFieldConfig[];
         fieldIdPrefix?: string;
         readOnly?: boolean;
     }>(),
     {
         description: undefined,
-        defaults: () => ({}),
+        initialValues: () => ({}),
         fields: undefined,
         fieldIdPrefix: undefined,
         readOnly: false,
@@ -41,6 +41,17 @@ const props = withDefaults(
 );
 
 const { t } = useTranslation();
+
+function fieldDefault(
+    field: CrudFieldConfig,
+    initialValues: Record<string, unknown>,
+): unknown {
+    if (Object.prototype.hasOwnProperty.call(initialValues, field.name)) {
+        return initialValues[field.name];
+    }
+
+    return field.defaultValue;
+}
 </script>
 
 <template>
@@ -74,7 +85,7 @@ const { t } = useTranslation();
                 v-if="!readOnly && action"
                 :action="action"
                 :fields="fields ?? schema.fields"
-                :defaults="defaults"
+                :initial-values="initialValues"
                 :submit-label="submitLabel"
                 :field-id-prefix="fieldIdPrefix"
                 form-class="flex w-full flex-col gap-6"
@@ -89,7 +100,7 @@ const { t } = useTranslation();
                     v-for="field in fields ?? schema.fields"
                     :key="field.name"
                     :field="field"
-                    :default-value="defaults[field.name]"
+                    :default-value="fieldDefault(field, initialValues)"
                     :id-prefix="fieldIdPrefix"
                 />
 

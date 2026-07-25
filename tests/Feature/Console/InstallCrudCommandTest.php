@@ -26,8 +26,25 @@ test('crud install can preserve existing frontend files while installing missing
     }
 });
 
+test('crud install copies the translation composable when it is missing', function () {
+    $target = base_path('resources/js/composables/useTranslation.ts');
+
+    File::delete($target);
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        expect(File::exists($target))->toBeTrue()
+            ->and(File::get($target))->toContain('export function useTranslation()');
+    } finally {
+        File::delete($target);
+    }
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
+    $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
     $types = File::get(dirname(__DIR__, 3).'/resources/js/types/crud.ts');
 
     expect($component)
@@ -42,6 +59,10 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('canShowRecord')
         ->toContain('show.href(record)')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
+        ->and($types)
+        ->and($form)
+        ->toContain('initialValues')
+        ->toContain('defaultValue')
         ->and($types)
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
