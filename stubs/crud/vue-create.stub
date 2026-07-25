@@ -15,11 +15,11 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: t('{{ title }}'),
+                title: '{{ title }}',
                 href: {{ resourceVariable }}Index(),
             },
             {
-                title: t('Create :name', { name: '{{ entityVariable }}' }),
+                title: 'Create {{ entityVariable }}',
             },
         ],
     },

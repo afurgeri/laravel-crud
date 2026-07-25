@@ -59,5 +59,6 @@ test('crud frontend resources expose the translation helper and catalog', functi
         ->and($translations)
         ->toContain('"No records found."')
         ->toContain('"Create :name"')
+        ->toContain('"Back to :name"')
         ->toContain('"Search records..."');
 });

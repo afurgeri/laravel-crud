@@ -324,6 +324,9 @@ class MakeCrudCommand extends Command
 
         $keys = [
             $names['title'] => $names['title'],
+            'Create '.$names['entityVariable'] => 'Create '.$names['entityVariable'],
+            'Edit '.$names['entityVariable'] => 'Edit '.$names['entityVariable'],
+            'View '.$names['entityVariable'] => 'View '.$names['entityVariable'],
             $names['description'] => $names['description'],
             $names['emptyLabel'] => $names['emptyLabel'],
         ];

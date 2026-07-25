@@ -19,11 +19,11 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: t('{{ title }}'),
+                title: '{{ title }}',
                 href: {{ resourceVariable }}Index(),
             },
             {
-                title: t('View :name', { name: '{{ entityVariable }}' }),
+                title: 'View {{ entityVariable }}',
             },
         ],
     },
