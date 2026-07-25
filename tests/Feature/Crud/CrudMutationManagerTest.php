@@ -29,6 +29,21 @@ test('it creates records using configured fields only', function () {
         ->and($record->internal_notes)->toBeNull();
 });
 
+test('it normalizes casted values before persisting records', function () {
+    $record = app(CrudMutationManager::class)->create(
+        definition: new CrudTestRecordDefinition,
+        data: [
+            'name' => 'Ada',
+            'email' => 'ada@example.com',
+            'is_active' => '1',
+            'duration_minutes' => '15',
+        ],
+    );
+
+    expect($record->getRawOriginal('is_active'))->toBeTrue()
+        ->and($record->getRawOriginal('duration_minutes'))->toBe(15);
+});
+
 test('it validates data before creating records', function () {
     app(CrudMutationManager::class)->create(
         definition: new CrudTestRecordDefinition,

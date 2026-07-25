@@ -45,6 +45,8 @@ test('it builds frontend schema from crud definitions', function () {
             return [
                 CrudField::make('name', ['required', 'string', 'max:255']),
                 CrudField::make('email', ['required', 'email'])->email(),
+                CrudField::make('is_active', ['required', 'boolean'])->checkbox(),
+                CrudField::make('duration_minutes', ['required', 'integer'])->number(),
             ];
         }
     };
@@ -80,6 +82,24 @@ test('it builds frontend schema from crud definitions', function () {
                 'confirmed' => false,
                 'required' => true,
                 'rules' => ['required', 'email'],
+                'visible_on_update' => true,
+            ],
+            [
+                'name' => 'is_active',
+                'label' => 'Is Active',
+                'type' => 'checkbox',
+                'confirmed' => false,
+                'required' => true,
+                'rules' => ['required', 'boolean'],
+                'visible_on_update' => true,
+            ],
+            [
+                'name' => 'duration_minutes',
+                'label' => 'Duration Minutes',
+                'type' => 'number',
+                'confirmed' => false,
+                'required' => true,
+                'rules' => ['required', 'integer'],
                 'visible_on_update' => true,
             ],
         ],

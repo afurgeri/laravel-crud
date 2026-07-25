@@ -103,6 +103,27 @@ final class CrudField
         return $this;
     }
 
+    public function checkbox(): self
+    {
+        $this->type = 'checkbox';
+
+        return $this;
+    }
+
+    public function number(): self
+    {
+        $this->type = 'number';
+
+        return $this;
+    }
+
+    public function date(): self
+    {
+        $this->type = 'date';
+
+        return $this;
+    }
+
     public function type(): string
     {
         return $this->type;

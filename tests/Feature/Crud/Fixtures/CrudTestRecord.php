@@ -15,6 +15,11 @@ class CrudTestRecord extends Model implements HasCrudDefinitionContract
 
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+        'duration_minutes' => 'integer',
+    ];
+
     public static function crudDefinition(): string
     {
         return CrudTestRecordDefinition::class;

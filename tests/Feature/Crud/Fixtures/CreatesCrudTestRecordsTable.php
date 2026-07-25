@@ -15,6 +15,8 @@ trait CreatesCrudTestRecordsTable
             $table->id();
             $table->string('name');
             $table->string('email');
+            $table->boolean('is_active')->nullable();
+            $table->unsignedInteger('duration_minutes')->nullable();
             $table->text('internal_notes')->nullable();
             $table->timestamps();
         });

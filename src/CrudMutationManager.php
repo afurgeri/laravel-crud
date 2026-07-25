@@ -70,7 +70,22 @@ class CrudMutationManager
      */
     private function validatedData(CrudDefinition $definition, array $data, ?Model $model): array
     {
-        return Validator::make($data, $this->validationRules($definition, $model))->validate();
+        $validated = Validator::make($data, $this->validationRules($definition, $model))->validate();
+        $modelClass = $definition->model();
+
+        /** @var Model $caster */
+        $caster = new $modelClass;
+
+        foreach (array_keys($validated) as $attribute) {
+            if (! $caster->hasCast($attribute)) {
+                continue;
+            }
+
+            $caster->setAttribute($attribute, $validated[$attribute]);
+            $validated[$attribute] = $caster->getAttribute($attribute);
+        }
+
+        return $validated;
     }
 
     /**

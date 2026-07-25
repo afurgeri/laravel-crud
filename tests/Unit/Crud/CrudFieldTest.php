@@ -33,3 +33,14 @@ test('crud fields can define a translation label key', function () {
 
     expect($field->labelKey())->toBe('Email address');
 });
+
+test('crud fields configure visual input types explicitly', function () {
+    expect(CrudField::make('is_active', ['required', 'boolean'])->checkbox()->type())->toBe('checkbox')
+        ->and(CrudField::make('duration_minutes', ['required', 'integer'])->number()->type())->toBe('number')
+        ->and(CrudField::make('starts_on', ['nullable', 'date'])->date()->type())->toBe('date')
+        ->and(CrudField::make('name', ['required', 'string'])->type())->toBe('text');
+});
+
+test('crud fields allow explicit input type overrides', function () {
+    expect(CrudField::make('is_active', ['boolean'])->number()->type())->toBe('number');
+});
