@@ -86,7 +86,7 @@ class CrudSchemaManager
     {
         return [
             'name' => $column->name(),
-            'label' => $this->label($column->name()),
+            'label' => $this->label($column->labelKey(), $column->name()),
             'sortable' => $column->isSortable(),
         ];
     }
@@ -100,7 +100,7 @@ class CrudSchemaManager
 
         return [
             'name' => $field->name(),
-            'label' => $this->label($field->name()),
+            'label' => $this->label($field->labelKey(), $field->name()),
             'type' => $field->type(),
             'confirmed' => $field->requiresConfirmation(),
             'required' => in_array('required', $rules, true),
@@ -117,7 +117,7 @@ class CrudSchemaManager
     {
         $schema = [
             'name' => $filter->name(),
-            'label' => $this->label($filter->name()),
+            'label' => $this->label($filter->labelKey(), $filter->name()),
             'type' => $filter->type(),
             'operator' => $filter->comparisonOperator(),
             'relation' => $filter->isRelation(),
@@ -153,8 +153,10 @@ class CrudSchemaManager
         return collect($definition->columns())->contains(fn (CrudColumn $column): bool => $column->isSearchable());
     }
 
-    private function label(string $name): string
+    private function label(?string $labelKey, string $name): string
     {
-        return Str::of($name)->replace('_', ' ')->headline()->toString();
+        $key = $labelKey ?? Str::of($name)->replace('_', ' ')->headline()->toString();
+
+        return app()->bound('translator') ? __($key) : $key;
     }
 }

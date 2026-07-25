@@ -169,3 +169,10 @@ test('crud filters can be marked as clearable', function () {
 
     expect($filter->isClearable())->toBeTrue();
 });
+
+test('crud filters can define a translation label key without changing their technical name', function () {
+    $filter = CrudFilter::make('created_from', 'created_at')->label('created_from');
+
+    expect($filter->name())->toBe('created_from')
+        ->and($filter->labelKey())->toBe('created_from');
+});

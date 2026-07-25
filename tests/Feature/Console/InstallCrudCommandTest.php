@@ -8,6 +8,24 @@ test('crud install command is registered by the package', function () {
         ->expectsOutputToContain('Install the generic CRUD frontend components and types');
 });
 
+test('crud install can preserve existing frontend files while installing missing resources', function () {
+    $source = dirname(__DIR__, 3).'/resources/js/composables/useTranslation.ts';
+    $target = base_path('resources/js/composables/useTranslation.ts');
+
+    File::ensureDirectoryExists(dirname($target));
+    File::put($target, 'custom translation helper');
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        expect(File::get($target))->toBe('custom translation helper')
+            ->and(File::get(dirname($source).'/../types/crud.ts'))->toContain('CrudSchema');
+    } finally {
+        File::delete($target);
+    }
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $types = File::get(dirname(__DIR__, 3).'/resources/js/types/crud.ts');
@@ -23,9 +41,23 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('schema.operations.delete')
         ->toContain('canShowRecord')
         ->toContain('show.href(record)')
+        ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($types)
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
         ->toContain('export type CrudShowConfig<T extends CrudRecord>')
         ->toContain('id: string | number;');
+});
+
+test('crud frontend resources expose the translation helper and catalog', function () {
+    $composable = File::get(dirname(__DIR__, 3).'/resources/js/composables/useTranslation.ts');
+    $translations = File::get(dirname(__DIR__, 3).'/resources/lang/en.json');
+
+    expect($composable)
+        ->toContain('export function useTranslation()')
+        ->toContain('page.props.translations')
+        ->and($translations)
+        ->toContain('"No records found."')
+        ->toContain('"Create :name"')
+        ->toContain('"Search records..."');
 });

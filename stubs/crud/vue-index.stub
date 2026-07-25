@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CrudPage from '@/components/crud/CrudPage.vue';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudPaginator, CrudRecord, CrudSchema } from '@/types/crud';
 import {
     create as create{{ entity }},
@@ -30,11 +31,13 @@ defineProps<{
     };
 }>();
 
+const { t } = useTranslation();
+
 defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: '{{ title }}',
+                title: t('{{ title }}'),
                 href: {{ resourceVariable }}Index(),
             },
         ],
@@ -52,26 +55,26 @@ defineOptions({
             can: can.create,
             href: create{{ entity }}(),
             action: store{{ entity }}.form(),
-            label: 'Create {{ entityVariable }}',
-            title: 'Create {{ entityVariable }}',
-            description: 'Add a new {{ entityVariable }}.',
+            label: t('Create :name', { name: '{{ entityVariable }}' }),
+            title: t('Create :name', { name: '{{ entityVariable }}' }),
+            description: t('Add a new :name.', { name: '{{ entityVariable }}' }),
         }"
         :edit="{
             action: (record) => update{{ entity }}.form.patch(record.id),
             href: (record) => edit{{ entity }}(record.id),
             can: (record) => record.can.update,
-            title: (record) => `Edit ${record.name}`,
-            description: 'Update the {{ entityVariable }} details.',
+            title: (record) => t('Edit :name', { name: String(record.name) }),
+            description: t('Update the :name details.', { name: '{{ entityVariable }}' }),
         }"
         :show="{
             href: (record) => show{{ entity }}(record.id),
             can: (record) => record.can.show,
-            title: (record) => `View ${record.name}`,
+            title: (record) => t('View :name', { name: String(record.name) }),
         }"
         :destroy="{
             action: (record) => destroy{{ entity }}.form.delete(record.id),
             can: (record) => record.can.delete,
-            title: (record) => `Delete ${record.name}?`,
+            title: (record) => t('Delete :name?', { name: String(record.name) }),
         }"
     >
         <template #cell-name="{ value }">

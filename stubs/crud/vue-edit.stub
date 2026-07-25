@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CrudFormPage from '@/components/crud/CrudFormPage.vue';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudSchema } from '@/types/crud';
 import { index as {{ resourceVariable }}Index, update as update{{ entity }} } from '@/routes/{{ resource }}';
 
@@ -12,15 +13,17 @@ defineProps<{
     };
 }>();
 
+const { t } = useTranslation();
+
 defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: '{{ title }}',
+                title: t('{{ title }}'),
                 href: {{ resourceVariable }}Index(),
             },
             {
-                title: 'Edit {{ entityVariable }}',
+                title: t('Edit :name', { name: '{{ entityVariable }}' }),
             },
         ],
     },
@@ -28,15 +31,15 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="'Edit ' + {{ entityVariable }}.name" />
+    <Head :title="t('Edit :name', { name: String({{ entityVariable }}.name) })" />
 
     <CrudFormPage
         :schema="crud"
         :action="update{{ entity }}.form.patch({{ entityVariable }}.id)"
         :back-href="{{ resourceVariable }}Index()"
-        :title="'Edit ' + {{ entityVariable }}.name"
-        description="Update the {{ entityVariable }} details."
-        submit-label="Save changes"
+        :title="t('Edit :name', { name: String({{ entityVariable }}.name) })"
+        :description="t('Update the :name details.', { name: '{{ entityVariable }}' })"
+        :submit-label="t('Save changes')"
         :defaults="{{ entityVariable }}"
     />
 </template>

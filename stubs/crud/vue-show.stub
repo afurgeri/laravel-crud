@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CrudFormPage from '@/components/crud/CrudFormPage.vue';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudSchema } from '@/types/crud';
 import { index as {{ resourceVariable }}Index } from '@/routes/{{ resource }}';
 
@@ -12,15 +13,17 @@ defineProps<{
     };
 }>();
 
+const { t } = useTranslation();
+
 defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: '{{ title }}',
+                title: t('{{ title }}'),
                 href: {{ resourceVariable }}Index(),
             },
             {
-                title: 'View {{ entityVariable }}',
+                title: t('View :name', { name: '{{ entityVariable }}' }),
             },
         ],
     },
@@ -28,13 +31,13 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="'View ' + {{ entityVariable }}.name" />
+    <Head :title="t('View :name', { name: String({{ entityVariable }}.name) })" />
 
     <CrudFormPage
         :schema="crud"
         :back-href="{{ resourceVariable }}Index()"
-        :title="'View ' + {{ entityVariable }}.name"
-        description="Review the {{ entityVariable }} details."
+        :title="t('View :name', { name: String({{ entityVariable }}.name) })"
+        :description="t('Review the :name details.', { name: '{{ entityVariable }}' })"
         submit-label=""
         :defaults="{{ entityVariable }}"
         :read-only="true"

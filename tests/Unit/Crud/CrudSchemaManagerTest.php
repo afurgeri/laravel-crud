@@ -59,7 +59,7 @@ test('it builds frontend schema from crud definitions', function () {
         'columns' => [
             [
                 'name' => 'id',
-                'label' => 'Id',
+                'label' => 'ID',
                 'sortable' => true,
             ],
         ],

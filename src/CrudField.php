@@ -14,6 +14,7 @@ final class CrudField
         private bool $visibleOnUpdate = true,
         private string $type = 'text',
         private bool $confirmed = false,
+        private ?string $label = null,
     ) {}
 
     /**
@@ -27,6 +28,18 @@ final class CrudField
     public function name(): string
     {
         return $this->name;
+    }
+
+    public function label(string $label): self
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    public function labelKey(): ?string
+    {
+        return $this->label;
     }
 
     /**

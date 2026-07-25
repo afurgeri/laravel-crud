@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CrudFormPage from '@/components/crud/CrudFormPage.vue';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudSchema } from '@/types/crud';
 import { index as {{ resourceVariable }}Index, store as store{{ entity }} } from '@/routes/{{ resource }}';
 
@@ -8,15 +9,17 @@ defineProps<{
     crud: CrudSchema;
 }>();
 
+const { t } = useTranslation();
+
 defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: '{{ title }}',
+                title: t('{{ title }}'),
                 href: {{ resourceVariable }}Index(),
             },
             {
-                title: 'Create {{ entityVariable }}',
+                title: t('Create :name', { name: '{{ entityVariable }}' }),
             },
         ],
     },
@@ -24,15 +27,15 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="`Create ${crud.title}`" />
+    <Head :title="t('Create :name', { name: '{{ entityVariable }}' })" />
 
     <CrudFormPage
         :schema="crud"
         :action="store{{ entity }}.form()"
         :back-href="{{ resourceVariable }}Index()"
-        title="Create {{ entityVariable }}"
-        description="Add a new {{ entityVariable }}."
-        submit-label="Create {{ entityVariable }}"
+        :title="t('Create :name', { name: '{{ entityVariable }}' })"
+        :description="t('Add a new :name.', { name: '{{ entityVariable }}' })"
+        :submit-label="t('Create :name', { name: '{{ entityVariable }}' })"
     >
         <template #fields="slotProps">
             <slot name="fields" v-bind="slotProps" />

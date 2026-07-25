@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/composables/useTranslation';
 import {
     Select,
     SelectContent,
@@ -27,6 +28,8 @@ const emit = defineEmits<{
     filter: [name: string, value: string, immediate: boolean];
     clear: [];
 }>();
+
+const { t } = useTranslation();
 
 type FilterEntry =
     | { kind: 'single'; filter: CrudFilter }
@@ -96,12 +99,12 @@ function clearFilter(name: string): void {
                 v-if="search.enabled"
                 class="flex w-full flex-col gap-2 sm:w-auto"
             >
-                <Label for="crud-search">Search</Label>
+                <Label for="crud-search">{{ t('Search') }}</Label>
                 <Input
                     id="crud-search"
                     :model-value="searchValue"
                     type="search"
-                    placeholder="Search..."
+                    :placeholder="t('Search records...')"
                     class="w-full sm:w-56"
                     @update:model-value="
                         (value) => emit('search', String(value))
@@ -199,7 +202,7 @@ function clearFilter(name: string): void {
                             variant="ghost"
                             size="icon-sm"
                             class="shrink-0"
-                            :aria-label="`Clear ${entry.filter.label}`"
+                            :aria-label="t('Clear :label', { label: entry.filter.label })"
                             @click="clearFilter(entry.filter.name)"
                         >
                             <X class="size-4" />
@@ -243,7 +246,7 @@ function clearFilter(name: string): void {
                                 variant="ghost"
                                 size="icon-sm"
                                 class="shrink-0"
-                                :aria-label="`Clear ${entry.from.label}`"
+                            :aria-label="t('Clear :label', { label: entry.from.label })"
                                 @click="clearFilter(entry.from.name)"
                             >
                                 <X class="size-4" />
@@ -281,7 +284,7 @@ function clearFilter(name: string): void {
                                 variant="ghost"
                                 size="icon-sm"
                                 class="shrink-0"
-                                :aria-label="`Clear ${entry.to.label}`"
+                            :aria-label="t('Clear :label', { label: entry.to.label })"
                                 @click="clearFilter(entry.to.name)"
                             >
                                 <X class="size-4" />
@@ -306,7 +309,7 @@ function clearFilter(name: string): void {
                 class="w-full sm:w-auto"
                 @click="emit('clear')"
             >
-                {{ clearLabel ?? 'Clear filters' }}
+                {{ clearLabel ?? t('Clear filters') }}
             </Button>
         </div>
     </div>

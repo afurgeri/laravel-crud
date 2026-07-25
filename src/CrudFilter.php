@@ -28,6 +28,8 @@ final class CrudFilter
 
     private bool $clearable = false;
 
+    private ?string $label = null;
+
     private function __construct(private readonly string $name, private readonly string $column) {}
 
     public static function make(string $name, ?string $column = null): self
@@ -43,6 +45,18 @@ final class CrudFilter
     public function column(): string
     {
         return $this->column;
+    }
+
+    public function label(string $label): self
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    public function labelKey(): ?string
+    {
+        return $this->label;
     }
 
     public function text(): self

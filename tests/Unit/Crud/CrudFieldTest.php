@@ -27,3 +27,9 @@ test('crud fields can be visible only when creating', function () {
 
     expect($field->isVisibleOnUpdate())->toBeFalse();
 });
+
+test('crud fields can define a translation label key', function () {
+    $field = CrudField::make('email')->label('Email address');
+
+    expect($field->labelKey())->toBe('Email address');
+});

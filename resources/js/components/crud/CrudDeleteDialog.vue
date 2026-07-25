@@ -18,6 +18,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useTranslation } from '@/composables/useTranslation';
 import type { FormAction } from '@/types/crud';
 
 withDefaults(
@@ -32,11 +33,12 @@ withDefaults(
     {
         description: undefined,
         confirmLabel: undefined,
-        cancelLabel: 'Cancel',
+        cancelLabel: undefined,
     },
 );
 
 const open = ref(false);
+const { t } = useTranslation();
 </script>
 
 <template>
@@ -73,7 +75,7 @@ const open = ref(false);
                 <DialogFooter class="mt-6 gap-2">
                     <DialogClose as-child>
                         <Button type="button" variant="secondary">
-                            {{ cancelLabel }}
+                            {{ cancelLabel ?? t('Cancel') }}
                         </Button>
                     </DialogClose>
 

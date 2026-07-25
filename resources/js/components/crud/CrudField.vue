@@ -2,6 +2,7 @@
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField } from '@/types/crud';
 
 defineProps<{
@@ -11,6 +12,8 @@ defineProps<{
     labelClass?: string;
     idPrefix?: string;
 }>();
+
+const { t } = useTranslation();
 
 function inputValue(value: unknown): string | number | undefined {
     return typeof value === 'string' || typeof value === 'number'
@@ -49,7 +52,7 @@ function inputValue(value: unknown): string | number | undefined {
                         : `${field.name}_confirmation`
                 "
                 :class="labelClass"
-                >Confirm {{ field.label }}</Label
+                >{{ t('Confirm :label', { label: field.label }) }}</Label
             >
             <Input
                 :id="

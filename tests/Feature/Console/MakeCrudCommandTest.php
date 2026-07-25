@@ -4,6 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 
 afterEach(function () {
+    File::put(base_path('lang/en.json'), "{}\n");
     File::delete(base_path('app/Models/RootSqlWidget.php'));
     File::delete(base_path('app/Crud/RootSqlWidgetCrudDefinition.php'));
     File::delete(base_path('app/Http/Controllers/RootSqlWidgetController.php'));
@@ -118,6 +119,9 @@ PHP);
             ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Index.vue')))->toBeTrue()
             ->and(File::get(base_path('resources/js/pages/root-sql-widgets/Index.vue')))
             ->toContain('rootSqlWidgetsIndex')
+            ->toContain('useTranslation')
+            ->and(File::get(base_path('lang/en.json')))
+            ->toContain('RootSqlWidgets')
             ->not->toContain('root-sql-widgetsIndex')
             ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Create.vue')))->toBeTrue()
             ->and(File::exists(base_path('resources/js/pages/root-sql-widgets/Edit.vue')))->toBeTrue()

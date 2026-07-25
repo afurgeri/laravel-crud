@@ -29,3 +29,9 @@ test('crud columns can be marked as computed', function () {
 
     expect($column->isComputed())->toBeTrue();
 });
+
+test('crud columns can define a translation label key', function () {
+    $column = CrudColumn::make('email')->label('Email address');
+
+    expect($column->labelKey())->toBe('Email address');
+});

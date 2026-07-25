@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { ChevronDown, ChevronUp } from '@lucide/vue';
 import { computed } from 'vue';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudColumn, CrudRecord, CrudSort } from '@/types/crud';
 
 const props = withDefaults(
@@ -18,6 +19,7 @@ const props = withDefaults(
 );
 
 const loadingRows = computed(() => Math.max(props.records.length, 1));
+const { t } = useTranslation();
 
 defineEmits<{
     sort: [column: string];
@@ -64,7 +66,7 @@ defineEmits<{
                             </template>
                         </th>
                         <th class="px-4 py-3 text-right font-medium">
-                            {{ actionsLabel ?? 'Actions' }}
+                            {{ actionsLabel ?? t('Actions') }}
                         </th>
                     </tr>
                 </thead>
@@ -103,7 +105,7 @@ defineEmits<{
                             :colspan="columns.length + 1"
                             class="px-4 py-6 text-muted-foreground"
                         >
-                            {{ emptyLabel ?? 'No records found.' }}
+                            {{ emptyLabel ?? t('No records found.') }}
                         </td>
                     </tr>
                 </tbody>
@@ -161,7 +163,7 @@ defineEmits<{
                 v-if="!loading && records.length === 0"
                 class="rounded-xl border border-sidebar-border/70 bg-card p-6 text-center text-muted-foreground dark:border-sidebar-border"
             >
-                {{ emptyLabel ?? 'No records found.' }}
+                {{ emptyLabel ?? t('No records found.') }}
             </div>
         </div>
     </div>

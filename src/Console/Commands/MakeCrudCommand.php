@@ -92,6 +92,18 @@ class MakeCrudCommand extends Command
         }
 
         $createdFiles = $this->generateEntityFiles($names, $module, $migrationPath, $database, $usesRbac, $generatesTest);
+        $translationPath = $this->ensureTranslationKeys($names);
+
+        if ($translationPath !== null) {
+            $createdFiles[] = $translationPath;
+        }
+
+        if ($this->getApplication()?->has('crud:install')) {
+            $this->components->task(
+                'Installing missing CRUD frontend resources',
+                fn (): bool => $this->call('crud:install', ['--skip-existing' => true]) === self::SUCCESS,
+            );
+        }
 
         $composerChanged = false;
         $providersChanged = false;
@@ -298,6 +310,39 @@ class MakeCrudCommand extends Command
         $contents = str_replace($search, array_values($replacements), $stub);
 
         return $contents;
+    }
+
+    /**
+     * @param  array<string, string>  $names
+     */
+    private function ensureTranslationKeys(array $names): ?string
+    {
+        $path = base_path('lang/en.json');
+        $existing = File::exists($path)
+            ? json_decode(File::get($path), true, 512, JSON_THROW_ON_ERROR)
+            : [];
+
+        $keys = [
+            $names['title'] => $names['title'],
+            $names['description'] => $names['description'],
+            $names['emptyLabel'] => $names['emptyLabel'],
+        ];
+        $updated = [...$keys, ...$existing];
+
+        if ($updated === $existing) {
+            return null;
+        }
+
+        File::ensureDirectoryExists(dirname($path));
+        File::put(
+            $path,
+            json_encode(
+                $updated,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+            ).PHP_EOL,
+        );
+
+        return $path;
     }
 
     private function updateComposerAutoload(string $module): bool

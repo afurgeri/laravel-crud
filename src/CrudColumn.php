@@ -12,6 +12,8 @@ final class CrudColumn
 
     private bool $computed = false;
 
+    private ?string $label = null;
+
     private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
@@ -22,6 +24,18 @@ final class CrudColumn
     public function name(): string
     {
         return $this->name;
+    }
+
+    public function label(string $label): self
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    public function labelKey(): ?string
+    {
+        return $this->label;
     }
 
     public function visible(bool $visible = true): self

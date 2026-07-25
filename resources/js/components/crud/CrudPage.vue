@@ -8,6 +8,7 @@ import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
 import CrudTable from '@/components/crud/CrudTable.vue';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useTranslation } from '@/composables/useTranslation';
 import type {
     CrudCreateConfig,
     CrudDestroyConfig,
@@ -18,8 +19,7 @@ import type {
     CrudShowConfig,
 } from '@/types/crud';
 
-const props = withDefaults(
-    defineProps<{
+const props = defineProps<{
         schema: CrudSchema;
         records: CrudPaginator<T>;
         create: CrudCreateConfig;
@@ -27,11 +27,13 @@ const props = withDefaults(
         edit: CrudEditConfig<T>;
         destroy: CrudDestroyConfig<T>;
         lockedLabel?: string;
-    }>(),
-    {
-        lockedLabel: 'Locked',
-    },
-);
+    }>();
+
+const { t } = useTranslation();
+
+function translated(value: string | undefined, fallback: string): string {
+    return value ?? t(fallback);
+}
 
 function canEditRecord(record: T): boolean {
     return (
@@ -63,7 +65,7 @@ function editRecordTitle(record: T): string {
         return props.edit.title(record);
     }
 
-    return `Edit ${String(record.id)}`;
+    return t('Edit :name', { name: String(record.id) });
 }
 
 function destroyRecordTitle(record: T): string {
@@ -71,7 +73,7 @@ function destroyRecordTitle(record: T): string {
         return props.destroy.title(record);
     }
 
-    return 'Delete this record?';
+    return t('Delete this record?');
 }
 
 function recordFieldPrefix(record: T): string {
@@ -234,18 +236,18 @@ function handleClearFilters(): void {
                         class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium whitespace-nowrap text-primary-foreground shadow-lg shadow-indigo-500/20 transition-all hover:bg-primary/90"
                     >
                         <Plus class="size-4" />
-                        {{ create.label ?? 'Create' }}
+                        {{ translated(create.label, 'Create') }}
                     </Link>
 
                     <CrudFormDialog
                         v-else-if="schema.operations.create && create.can"
                         :action="create.action"
                         :fields="schema.fields"
-                        :trigger-label="create.label ?? 'Create'"
-                        :title="create.title ?? create.label ?? 'Create'"
+                        :trigger-label="translated(create.label, 'Create')"
+                        :title="translated(create.title ?? create.label, 'Create')"
                         :description="create.description"
                         :submit-label="
-                            create.submitLabel ?? create.label ?? 'Create'
+                            translated(create.submitLabel ?? create.label, 'Create')
                         "
                         reset-on-success
                         :field-id-prefix="`${schema.resource}-create`"
@@ -256,7 +258,7 @@ function handleClearFilters(): void {
                                 class="gap-2 shadow-lg shadow-indigo-500/20"
                             >
                                 <Plus class="size-4" />
-                                {{ create.label ?? 'Create' }}
+                                {{ translated(create.label, 'Create') }}
                             </Button>
                         </template>
                         <template #fields="slotProps">
@@ -285,7 +287,7 @@ function handleClearFilters(): void {
                 :records="records.data"
                 :sort="schema.sort"
                 :loading="isLoading"
-                :empty-label="schema.empty_label ?? 'No records found.'"
+                :empty-label="schema.empty_label ?? t('No records found.')"
                 @sort="handleSort"
             >
                 <template
@@ -306,8 +308,8 @@ function handleClearFilters(): void {
                             v-if="show && canShowRecord(record)"
                             :href="show.href(record)"
                             class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                            :aria-label="show.label ?? 'Show'"
-                            :title="show.title?.(record) ?? 'Show'"
+                            :aria-label="translated(show.label, 'Show')"
+                            :title="show.title?.(record) ?? t('Show')"
                         >
                             <Eye class="size-4" />
                         </Link>
@@ -320,7 +322,7 @@ function handleClearFilters(): void {
                             "
                             :href="edit.href(record)"
                             class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                            :aria-label="edit.label ?? 'Edit'"
+                            :aria-label="translated(edit.label, 'Edit')"
                         >
                             <Pencil class="size-4" />
                         </Link>
@@ -334,11 +336,11 @@ function handleClearFilters(): void {
                                 )
                             "
                             :defaults="record"
-                            :trigger-label="edit.label ?? 'Edit'"
-                            :trigger-tooltip="edit.label ?? 'Edit'"
+                            :trigger-label="translated(edit.label, 'Edit')"
+                            :trigger-tooltip="translated(edit.label, 'Edit')"
                             :title="editRecordTitle(record)"
                             :description="edit.description"
-                            :submit-label="edit.submitLabel ?? 'Save changes'"
+                            :submit-label="translated(edit.submitLabel, 'Save changes')"
                             :field-id-prefix="recordFieldPrefix(record)"
                         >
                             <template #trigger>
@@ -346,7 +348,7 @@ function handleClearFilters(): void {
                                     type="button"
                                     variant="secondary"
                                     size="icon-sm"
-                                    :aria-label="edit.label ?? 'Edit'"
+                                    :aria-label="translated(edit.label, 'Edit')"
                                 >
                                     <Pencil class="size-4" />
                                 </Button>
@@ -364,18 +366,17 @@ function handleClearFilters(): void {
                         <CrudDeleteDialog
                             v-if="canDestroyRecord(record)"
                             :action="destroy.action(record)"
-                            :trigger-label="destroy.label ?? 'Delete'"
+                            :trigger-label="translated(destroy.label, 'Delete')"
                             :title="destroyRecordTitle(record)"
                             :description="
                                 destroy.description ??
-                                'This action cannot be undone.'
+                                t('This action cannot be undone.')
                             "
                             :confirm-label="
                                 destroy.confirmLabel ??
-                                destroy.label ??
-                                'Delete'
+                                translated(destroy.label, 'Delete')
                             "
-                            :cancel-label="destroy.cancelLabel ?? 'Cancel'"
+                            :cancel-label="translated(destroy.cancelLabel, 'Cancel')"
                         />
 
                         <span
@@ -386,7 +387,7 @@ function handleClearFilters(): void {
                             "
                             class="text-sm text-muted-foreground"
                         >
-                            {{ lockedLabel }}
+                            {{ lockedLabel ?? t('Locked') }}
                         </span>
 
                         <slot name="actions-after" :record="record" />
@@ -399,8 +400,13 @@ function handleClearFilters(): void {
                 class="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
             >
                 <span>
-                    Showing {{ records.from ?? 0 }} to {{ records.to ?? 0 }} of
-                    {{ records.total }}
+                    {{
+                        t('Showing :from to :to of :total', {
+                            from: records.from ?? 0,
+                            to: records.to ?? 0,
+                            total: records.total,
+                        })
+                    }}
                 </span>
 
                 <div
@@ -414,12 +420,16 @@ function handleClearFilters(): void {
                         @click="goToPage(records.current_page - 1)"
                     >
                         <ChevronLeft class="size-4" />
-                        Previous
+                        {{ t('Previous') }}
                     </Button>
 
                     <span class="whitespace-nowrap">
-                        Page {{ records.current_page }} of
-                        {{ records.last_page }}
+                        {{
+                            t('Page :current of :last', {
+                                current: records.current_page,
+                                last: records.last_page,
+                            })
+                        }}
                     </span>
 
                     <Button
@@ -429,7 +439,7 @@ function handleClearFilters(): void {
                         :disabled="records.current_page === records.last_page"
                         @click="goToPage(records.current_page + 1)"
                     >
-                        Next
+                        {{ t('Next') }}
                         <ChevronRight class="size-4" />
                     </Button>
                 </div>
