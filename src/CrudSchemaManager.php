@@ -24,7 +24,7 @@ class CrudSchemaManager
      *     description: string|null,
      *     empty_label: string|null,
      *     columns: list<array{name: string, label: string, sortable: bool}>,
-     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, default?: mixed}>,
+     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, defaultValue?: mixed, default?: mixed}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, max_date?: ?string}>
@@ -92,7 +92,7 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, default?: mixed}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, defaultValue?: mixed, default?: mixed}
      */
     private function fieldSchema(CrudField $field): array
     {
@@ -109,6 +109,7 @@ class CrudSchemaManager
         ];
 
         if ($field->hasDefault()) {
+            $schema['defaultValue'] = $field->defaultValue();
             $schema['default'] = $field->defaultValue();
         }
 

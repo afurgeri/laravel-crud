@@ -74,6 +74,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => true,
                 'rules' => ['required', 'string', 'max:255'],
                 'visible_on_update' => true,
+                'defaultValue' => 'Ada',
                 'default' => 'Ada',
             ],
             [
