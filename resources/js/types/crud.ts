@@ -9,6 +9,10 @@ export type CrudColumn = {
     name: string;
     label: string;
     sortable: boolean;
+    width?: string;
+    min_width?: string;
+    max_width?: string;
+    fixed?: boolean;
 };
 
 export type CrudField = {

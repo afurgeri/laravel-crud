@@ -14,6 +14,14 @@ final class CrudColumn
 
     private ?string $label = null;
 
+    private ?string $width = null;
+
+    private ?string $minWidth = null;
+
+    private ?string $maxWidth = null;
+
+    private bool $fixedWidth = false;
+
     private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
@@ -36,6 +44,57 @@ final class CrudColumn
     public function labelKey(): ?string
     {
         return $this->label;
+    }
+
+    public function width(string $width): self
+    {
+        $this->width = $width;
+
+        return $this;
+    }
+
+    public function minWidth(string $width): self
+    {
+        $this->minWidth = $width;
+
+        return $this;
+    }
+
+    public function maxWidth(string $width): self
+    {
+        $this->maxWidth = $width;
+
+        return $this;
+    }
+
+    public function fixedWidth(string $width): self
+    {
+        $this->width = $width;
+        $this->minWidth = $width;
+        $this->maxWidth = $width;
+        $this->fixedWidth = true;
+
+        return $this;
+    }
+
+    public function widthValue(): ?string
+    {
+        return $this->width;
+    }
+
+    public function minWidthValue(): ?string
+    {
+        return $this->minWidth;
+    }
+
+    public function maxWidthValue(): ?string
+    {
+        return $this->maxWidth;
+    }
+
+    public function hasFixedWidth(): bool
+    {
+        return $this->fixedWidth;
     }
 
     public function visible(bool $visible = true): self

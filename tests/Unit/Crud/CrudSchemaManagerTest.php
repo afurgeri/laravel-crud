@@ -35,7 +35,7 @@ test('it builds frontend schema from crud definitions', function () {
         public function columns(): array
         {
             return [
-                CrudColumn::make('id')->sortable(),
+                CrudColumn::make('id')->sortable()->fixedWidth('5rem'),
                 CrudColumn::make('email_address')->hidden(),
             ];
         }
@@ -63,6 +63,10 @@ test('it builds frontend schema from crud definitions', function () {
                 'name' => 'id',
                 'label' => 'ID',
                 'sortable' => true,
+                'width' => '5rem',
+                'min_width' => '5rem',
+                'max_width' => '5rem',
+                'fixed' => true,
             ],
         ],
         'fields' => [

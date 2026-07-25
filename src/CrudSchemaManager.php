@@ -23,7 +23,7 @@ class CrudSchemaManager
      *     title: string,
      *     description: string|null,
      *     empty_label: string|null,
-     *     columns: list<array{name: string, label: string, sortable: bool}>,
+     *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
      *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, defaultValue?: mixed}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
@@ -80,15 +80,33 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, sortable: bool}
+     * @return array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}
      */
     private function columnSchema(CrudColumn $column): array
     {
-        return [
+        $schema = [
             'name' => $column->name(),
             'label' => $this->label($column->labelKey(), $column->name()),
             'sortable' => $column->isSortable(),
         ];
+
+        if ($column->widthValue() !== null) {
+            $schema['width'] = $column->widthValue();
+        }
+
+        if ($column->minWidthValue() !== null) {
+            $schema['min_width'] = $column->minWidthValue();
+        }
+
+        if ($column->maxWidthValue() !== null) {
+            $schema['max_width'] = $column->maxWidthValue();
+        }
+
+        if ($column->hasFixedWidth()) {
+            $schema['fixed'] = true;
+        }
+
+        return $schema;
     }
 
     /**

@@ -7,7 +7,12 @@ import CrudFilters from '@/components/crud/CrudFilters.vue';
 import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
 import CrudTable from '@/components/crud/CrudTable.vue';
 import { Button } from '@/components/ui/button';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useTranslation } from '@/composables/useTranslation';
 import type {
     CrudCreateConfig,
@@ -19,7 +24,8 @@ import type {
     CrudShowConfig,
 } from '@/types/crud';
 
-const props = defineProps<{
+const props = withDefaults(
+    defineProps<{
         schema: CrudSchema;
         records: CrudPaginator<T>;
         create: CrudCreateConfig;
@@ -27,7 +33,13 @@ const props = defineProps<{
         edit: CrudEditConfig<T>;
         destroy: CrudDestroyConfig<T>;
         lockedLabel?: string;
-    }>();
+        workspace?: string;
+    }>(),
+    {
+        lockedLabel: undefined,
+        workspace: undefined,
+    },
+);
 
 const { t } = useTranslation();
 
@@ -211,6 +223,12 @@ function handleClearFilters(): void {
                 class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
             >
                 <div class="space-y-1">
+                    <p
+                        v-if="workspace"
+                        class="text-[11px] font-semibold tracking-[0.18em] text-primary uppercase"
+                    >
+                        {{ t(workspace) }}
+                    </p>
                     <h1 class="text-2xl font-semibold tracking-tight">
                         {{ schema.title }}
                     </h1>
@@ -304,28 +322,47 @@ function handleClearFilters(): void {
                     <div class="flex items-center justify-end gap-2">
                         <slot name="actions-before" :record="record" />
 
-                        <Link
+                        <Tooltip
                             v-if="show && canShowRecord(record)"
-                            :href="show.href(record)"
-                            class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                            :aria-label="translated(show.label, 'Show')"
-                            :title="show.title?.(record) ?? t('Show')"
+                            :ignore-non-keyboard-focus="true"
                         >
-                            <Eye class="size-4" />
-                        </Link>
+                            <TooltipTrigger as-child>
+                                <Link
+                                    :href="show.href(record)"
+                                    class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                                    :aria-label="translated(show.label, 'Show')"
+                                    :title="show.title?.(record) ?? t('Show')"
+                                >
+                                    <Eye class="size-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {{ translated(show.label, 'Show') }}
+                            </TooltipContent>
+                        </Tooltip>
 
-                        <Link
+                        <Tooltip
                             v-if="
                                 canEditRecord(record) &&
                                 usesFullPageForms() &&
                                 edit.href
                             "
-                            :href="edit.href(record)"
-                            class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                            :aria-label="translated(edit.label, 'Edit')"
+                            :ignore-non-keyboard-focus="true"
                         >
-                            <Pencil class="size-4" />
-                        </Link>
+                            <TooltipTrigger as-child>
+                                <Link
+                                    :href="edit.href(record)"
+                                    class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                                    :aria-label="translated(edit.label, 'Edit')"
+                                    :title="editRecordTitle(record)"
+                                >
+                                    <Pencil class="size-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {{ translated(edit.label, 'Edit') }}
+                            </TooltipContent>
+                        </Tooltip>
 
                         <CrudFormDialog
                             v-else-if="canEditRecord(record)"

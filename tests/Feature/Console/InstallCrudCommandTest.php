@@ -56,6 +56,8 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('schema.operations.create')
         ->toContain('schema.operations.update')
         ->toContain('schema.operations.delete')
+        ->toContain('workspace?: string;')
+        ->toContain('v-if="workspace"')
         ->toContain('canShowRecord')
         ->toContain('show.href(record)')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()

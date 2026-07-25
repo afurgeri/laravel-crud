@@ -20,6 +20,27 @@ const props = withDefaults(
 
 const loadingRows = computed(() => Math.max(props.records.length, 1));
 const { t } = useTranslation();
+const hasFixedWidth = computed(() =>
+    props.columns.some((column) => column.fixed === true),
+);
+
+function columnStyle(column: CrudColumn): Record<string, string> {
+    const style: Record<string, string> = {};
+
+    if (column.width !== undefined) {
+        style.width = column.width;
+    }
+
+    if (column.min_width !== undefined) {
+        style.minWidth = column.min_width;
+    }
+
+    if (column.max_width !== undefined) {
+        style.maxWidth = column.max_width;
+    }
+
+    return style;
+}
 
 defineEmits<{
     sort: [column: string];
@@ -29,15 +50,19 @@ defineEmits<{
 <template>
     <div>
         <div
-            class="hidden overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm md:block dark:border-sidebar-border"
+            class="hidden overflow-x-auto rounded-xl border border-sidebar-border/70 bg-card shadow-sm md:block dark:border-sidebar-border"
         >
-            <table class="w-full text-left text-sm">
+            <table
+                class="w-full text-left text-sm"
+                :class="{ 'table-fixed': hasFixedWidth }"
+            >
                 <thead class="border-b bg-muted/40 text-muted-foreground">
                     <tr>
                         <th
                             v-for="column in columns"
                             :key="column.name"
                             class="px-4 py-3 font-medium"
+                            :style="columnStyle(column)"
                         >
                             <button
                                 v-if="column.sortable"
@@ -86,6 +111,7 @@ defineEmits<{
                             v-for="column in columns"
                             :key="column.name"
                             class="px-4 py-3"
+                            :style="columnStyle(column)"
                         >
                             <slot
                                 :name="`cell-${column.name}`"

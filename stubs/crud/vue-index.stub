@@ -51,6 +51,7 @@ defineOptions({
     <CrudPage
         :schema="crud"
         :records="{{ pluralVariable }}"
+        workspace="Workspace"
         :create="{
             can: can.create,
             href: create{{ entity }}(),
