@@ -77,15 +77,38 @@ class CrudMutationManager
         $caster = new $modelClass;
 
         foreach (array_keys($validated) as $attribute) {
-            if (! $caster->hasCast($attribute)) {
+            $castType = $caster->getCasts()[$attribute] ?? null;
+
+            if ($castType === null) {
                 continue;
             }
 
-            $caster->setAttribute($attribute, $validated[$attribute]);
-            $validated[$attribute] = $caster->getAttribute($attribute);
+            $castType = strtolower((string) str($castType)->before(':'));
+
+            $validated[$attribute] = match ($castType) {
+                'boolean' => $this->booleanValue($validated[$attribute]),
+                default => $this->castValue($caster, $attribute, $validated[$attribute]),
+            };
         }
 
         return $validated;
+    }
+
+    private function castValue(Model $caster, string $attribute, mixed $value): mixed
+    {
+        $caster->setAttribute($attribute, $value);
+
+        return $caster->getAttribute($attribute);
+    }
+
+    private function booleanValue(mixed $value): ?bool
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ?? (bool) $value;
     }
 
     /**

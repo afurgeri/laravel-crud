@@ -44,6 +44,21 @@ test('it normalizes casted values before persisting records', function () {
         ->and($record->getRawOriginal('duration_minutes'))->toBe(15);
 });
 
+test('it normalizes unchecked boolean values before persisting records', function () {
+    $record = app(CrudMutationManager::class)->create(
+        definition: new CrudTestRecordDefinition,
+        data: [
+            'name' => 'Grace',
+            'email' => 'grace@example.com',
+            'is_active' => '0',
+            'duration_minutes' => '0',
+        ],
+    );
+
+    expect($record->getRawOriginal('is_active'))->toBeFalse()
+        ->and($record->getRawOriginal('duration_minutes'))->toBe(0);
+});
+
 test('it validates data before creating records', function () {
     app(CrudMutationManager::class)->create(
         definition: new CrudTestRecordDefinition,
