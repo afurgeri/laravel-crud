@@ -24,7 +24,7 @@ class CrudSchemaManager
      *     description: string|null,
      *     empty_label: string|null,
      *     columns: list<array{name: string, label: string, sortable: bool}>,
-     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool}>,
+     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, default?: mixed}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, max_date?: ?string}>
@@ -92,13 +92,13 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, visible_on_update: bool, default?: mixed}
      */
     private function fieldSchema(CrudField $field): array
     {
         $rules = $field->validationRules();
 
-        return [
+        $schema = [
             'name' => $field->name(),
             'label' => $this->label($field->labelKey(), $field->name()),
             'type' => $field->type(),
@@ -107,6 +107,12 @@ class CrudSchemaManager
             'rules' => $rules,
             'visible_on_update' => $field->isVisibleOnUpdate(),
         ];
+
+        if ($field->hasDefault()) {
+            $schema['default'] = $field->defaultValue();
+        }
+
+        return $schema;
     }
 
     /**

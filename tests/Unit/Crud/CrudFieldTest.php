@@ -34,6 +34,13 @@ test('crud fields can define a translation label key', function () {
     expect($field->labelKey())->toBe('Email address');
 });
 
+test('crud fields can define default values', function () {
+    $field = CrudField::make('is_active')->default(false);
+
+    expect($field->hasDefault())->toBeTrue()
+        ->and($field->defaultValue())->toBeFalse();
+});
+
 test('crud fields configure visual input types explicitly', function () {
     expect(CrudField::make('is_active', ['required', 'boolean'])->checkbox()->type())->toBe('checkbox')
         ->and(CrudField::make('duration_minutes', ['required', 'integer'])->number()->type())->toBe('number')

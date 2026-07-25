@@ -17,6 +17,10 @@ final class CrudField
         private ?string $label = null,
     ) {}
 
+    private mixed $defaultValue = null;
+
+    private bool $hasDefaultValue = false;
+
     /**
      * @param  list<string>  $rules
      */
@@ -40,6 +44,24 @@ final class CrudField
     public function labelKey(): ?string
     {
         return $this->label;
+    }
+
+    public function default(mixed $value): self
+    {
+        $this->defaultValue = $value;
+        $this->hasDefaultValue = true;
+
+        return $this;
+    }
+
+    public function hasDefault(): bool
+    {
+        return $this->hasDefaultValue;
+    }
+
+    public function defaultValue(): mixed
+    {
+        return $this->defaultValue;
     }
 
     /**
