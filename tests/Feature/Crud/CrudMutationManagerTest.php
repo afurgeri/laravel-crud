@@ -4,7 +4,9 @@ use Illuminate\Validation\ValidationException;
 use Modules\Crud\CrudMutationManager;
 use Tests\Feature\Crud\Fixtures\CreatesCrudTestRecordsTable;
 use Tests\Feature\Crud\Fixtures\CrudTestRecord;
+use Tests\Feature\Crud\Fixtures\CrudTestRecordAuthorizedDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordDefinition;
+use Tests\Feature\Crud\Fixtures\CrudTestRecordLifecycleDefinition;
 
 uses(CreatesCrudTestRecordsTable::class);
 
@@ -138,3 +140,42 @@ test('it deletes records', function () {
     expect($deleted)->toBeTrue()
         ->and(CrudTestRecord::query()->exists())->toBeFalse();
 });
+
+test('it runs mutation hooks around each persisted operation', function () {
+    CrudTestRecordLifecycleDefinition::$events = [];
+    CrudTestRecordLifecycleDefinition::$lastData = [];
+    $manager = app(CrudMutationManager::class);
+    $definition = new CrudTestRecordLifecycleDefinition;
+
+    $record = $manager->create($definition, [
+        'name' => 'Ada',
+        'email' => 'ada@example.com',
+        'specialties' => ['specialty-id'],
+    ]);
+    $manager->update($record, $definition, [
+        'name' => 'Grace',
+        'email' => 'grace@example.com',
+    ]);
+    $manager->delete($record, $definition);
+
+    expect(CrudTestRecordLifecycleDefinition::$events)->toBe([
+        'beforeCreate',
+        'afterCreate',
+        'beforeUpdate',
+        'afterUpdate',
+        'beforeDelete',
+        'afterDelete',
+    ])
+        ->and(CrudTestRecordLifecycleDefinition::$lastData)->toBe([
+            'name' => 'Grace',
+            'email' => 'grace@example.com',
+        ]);
+});
+
+test('it does not run a delete hook when authorization fails', function () {
+    CrudTestRecordLifecycleDefinition::$events = [];
+    CrudTestRecordAuthorizedDefinition::$authorized = false;
+    $record = CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+
+    app(CrudMutationManager::class)->delete($record, new CrudTestRecordLifecycleDefinition);
+})->throws(RuntimeException::class, 'Unauthorized crud mutation.');

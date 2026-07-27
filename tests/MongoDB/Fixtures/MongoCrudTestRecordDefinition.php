@@ -34,7 +34,7 @@ class MongoCrudTestRecordDefinition implements CrudDefinition, EagerLoadsCrudRel
     public function columns(): array
     {
         return [
-            CrudColumn::make('id')->sortable(),
+            CrudColumn::make('id')->sortable()->searchable(),
             CrudColumn::make('name')->sortable()->searchable(),
             CrudColumn::make('email')->searchable(),
             CrudColumn::make('created_at'),

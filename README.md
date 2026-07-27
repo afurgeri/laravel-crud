@@ -415,6 +415,7 @@ CrudColumn::make('permission_ids')->computed();
 
 - `sortable()` allows the column in the requested `sort` parameter.
 - `searchable()` includes the column in the text search.
+- A searchable model key is matched exactly. MongoDB keys are converted to `ObjectId` values when possible; invalid ObjectId input produces no key match.
 - `hidden()` keeps the column out of the generated schema.
 - `computed()` marks a value that is added by the controller and must not be selected, sorted, or searched as a database column.
 
@@ -619,6 +620,40 @@ public function index(
 
 `CrudSchemaManager::for()` returns the metadata needed by a generic frontend: columns, fields, sort state, search state, filters, labels, and resolved select options.
 
+### Pagination hooks
+
+Implement `HasCrudPaginationHooks` and use `HandlesCrudPaginationHooks` when a definition needs to adjust the query before pagination or transform the returned items:
+
+```php
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Modules\Crud\Concerns\HandlesCrudPaginationHooks;
+use Modules\Crud\Contracts\HasCrudPaginationHooks;
+
+class ProductCrudDefinition implements CrudDefinition, HasCrudPaginationHooks
+{
+    use HandlesCrudPaginationHooks;
+
+    /** @param Builder<Model> $query */
+    public function beforePaginate(Builder $query): void
+    {
+        // Add resource-specific query constraints here.
+    }
+
+    /** @param LengthAwarePaginator<int, Model> $paginator */
+    public function afterPaginate(LengthAwarePaginator $paginator): void
+    {
+        $paginator->through(fn (Model $product): array => [
+            'id' => $product->id,
+            'name' => $product->name,
+        ]);
+    }
+}
+```
+
+The manager runs `beforePaginate()` after authorization, search, filters, and sorting, but before executing the query. It runs `afterPaginate()` after the paginator has been created. The paginator metadata is preserved when items are transformed with `through()`.
+
 ### Create, update, and delete
 
 Inject `CrudMutationManager` and pass the definition to the corresponding operation:
@@ -653,7 +688,38 @@ public function destroy(Product $product, CrudMutationManager $mutations): Redir
 }
 ```
 
-The mutation manager validates only the fields declared by the definition, applies policy authorization when configured, fills the model, and persists it. Relationship synchronization and resource-specific validation belong in the resource controller, as shown by the `Role` controller.
+The mutation manager validates only the fields declared by the definition, applies policy authorization when configured, fills the model, and persists it. Relationship synchronization and resource-specific validation can remain in the resource controller, or use the optional mutation hook contract when the work must happen after CRUD authorization.
+
+### Mutation hooks
+
+Implement `HasCrudMutationHooks` and use `HandlesCrudMutationHooks` when a definition needs lifecycle callbacks:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use Modules\Crud\Concerns\HandlesCrudMutationHooks;
+use Modules\Crud\Contracts\HasCrudMutationHooks;
+
+class ProductCrudDefinition implements CrudDefinition, HasCrudMutationHooks
+{
+    use HandlesCrudMutationHooks;
+
+    /** @param array<string, mixed> $data */
+    public function afterUpdate(Model $model, array $data): void
+    {
+        $model->tags()->sync($data['tag_ids'] ?? []);
+    }
+}
+```
+
+The manager runs hooks in this order:
+
+1. Operation and authorization checks.
+2. Validation and delete guards.
+3. The `beforeCreate`, `beforeUpdate`, or `beforeDelete` hook.
+4. Persistence.
+5. The corresponding `afterCreate`, `afterUpdate`, or `afterDelete` hook.
+
+The create and update hooks receive the original input array in addition to the model. Delete hooks receive only the model because `delete()` does not accept input data. An `after` hook runs only after the mutation succeeds. The optional trait supplies no-op implementations for hooks that are not needed.
 
 ## Routes and frontend
 

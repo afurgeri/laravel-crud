@@ -17,6 +17,7 @@ use Tests\Feature\Crud\Fixtures\CrudTestRecordDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordFilterableDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordIndexAuthorizedDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordNote;
+use Tests\Feature\Crud\Fixtures\CrudTestRecordPaginationDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordSearchableDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordWithNotesDefinition;
 
@@ -224,6 +225,22 @@ test('search matches any searchable column, not just the first one', function ()
         ->and($paginator->items()[0]->name)->toBe('Grace');
 });
 
+test('search matches a searchable record id exactly', function () {
+    $record = CrudTestRecord::query()->create([
+        'name' => 'Ada',
+        'email' => 'ada@example.com',
+    ]);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordSearchableDefinition,
+        search: (string) $record->getKey(),
+    );
+
+    expect($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->getKey())->toBe($record->getKey());
+});
+
 test('search is a no-op when the definition has no searchable columns', function () {
     CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
     CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
@@ -234,6 +251,21 @@ test('search is a no-op when the definition has no searchable columns', function
     );
 
     expect($paginator->total())->toBe(2);
+});
+
+test('it runs pagination hooks before and after paginating', function () {
+    CrudTestRecordPaginationDefinition::$events = [];
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(new CrudTestRecordPaginationDefinition);
+
+    expect(CrudTestRecordPaginationDefinition::$events)->toBe([
+        'beforePaginate',
+        'afterPaginate',
+    ])
+        ->and($paginator->total())->toBe(1)
+        ->and($paginator->items())->toBe([['label' => 'Ada']]);
 });
 
 test('it filters by a declared text filter', function () {

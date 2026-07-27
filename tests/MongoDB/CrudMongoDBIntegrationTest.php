@@ -85,6 +85,26 @@ test('it supports MongoDB pagination projection sorting search and filters', fun
         ->and($old->fresh()->internal_notes)->toBe('hidden');
 });
 
+test('it searches MongoDB ObjectId keys exactly and ignores invalid keys', function () {
+    $record = MongoCrudTestRecord::query()->create([
+        'name' => 'Ada',
+        'email' => 'ada@example.com',
+    ]);
+
+    $matching = app(CrudIndexManager::class)->paginate(
+        definition: new MongoCrudTestRecordDefinition,
+        search: (string) $record->getKey(),
+    );
+    $invalid = app(CrudIndexManager::class)->paginate(
+        definition: new MongoCrudTestRecordDefinition,
+        search: 'not-an-object-id',
+    );
+
+    expect($matching->total())->toBe(1)
+        ->and((string) $matching->items()[0]->getKey())->toBe((string) $record->getKey())
+        ->and($invalid->total())->toBe(0);
+});
+
 test('it eager loads and filters through MongoDB relationships', function () {
     $record = MongoCrudTestRecord::query()->create([
         'name' => 'Ada',

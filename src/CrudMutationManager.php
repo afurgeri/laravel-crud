@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Modules\Crud\Contracts\AuthorizesCrudMutations;
 use Modules\Crud\Contracts\GuardsCrudDeletes;
+use Modules\Crud\Contracts\HasCrudMutationHooks;
 use Modules\Crud\Exceptions\CrudDeleteNotAllowed;
 
 class CrudMutationManager
@@ -27,7 +28,16 @@ class CrudMutationManager
         /** @var Model $instance */
         $instance = new $model;
         $instance->fill($this->validatedData($definition, $data, null));
+
+        if ($definition instanceof HasCrudMutationHooks) {
+            $definition->beforeCreate($instance, $data);
+        }
+
         $instance->save();
+
+        if ($definition instanceof HasCrudMutationHooks) {
+            $definition->afterCreate($instance, $data);
+        }
 
         return $instance;
     }
@@ -44,9 +54,19 @@ class CrudMutationManager
         }
 
         $model->fill($this->validatedData($definition, $data, $model));
-        $model->save();
 
-        return $model->refresh();
+        if ($definition instanceof HasCrudMutationHooks) {
+            $definition->beforeUpdate($model, $data);
+        }
+
+        $model->save();
+        $model = $model->refresh();
+
+        if ($definition instanceof HasCrudMutationHooks) {
+            $definition->afterUpdate($model, $data);
+        }
+
+        return $model;
     }
 
     public function delete(Model $model, CrudDefinition $definition): bool
@@ -61,7 +81,17 @@ class CrudMutationManager
             throw CrudDeleteNotAllowed::forModel($model);
         }
 
-        return (bool) $model->delete();
+        if ($definition instanceof HasCrudMutationHooks) {
+            $definition->beforeDelete($model);
+        }
+
+        $deleted = (bool) $model->delete();
+
+        if ($deleted && $definition instanceof HasCrudMutationHooks) {
+            $definition->afterDelete($model);
+        }
+
+        return $deleted;
     }
 
     /**

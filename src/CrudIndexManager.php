@@ -2,16 +2,18 @@
 
 namespace Modules\Crud;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
 use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\Contracts\HasCrudPaginationHooks;
 use Modules\Crud\Contracts\HasDefaultCrudPageSize;
 use Modules\Crud\Exceptions\InvalidCrudFilterRange;
 use Modules\Crud\Exceptions\InvalidCrudFilterValue;
 use Modules\Crud\Exceptions\InvalidCrudSortColumn;
+use MongoDB\BSON\ObjectId;
 
 class CrudIndexManager
 {
@@ -49,7 +51,7 @@ class CrudIndexManager
             $query->with($definition->eagerLoads());
         }
 
-        $this->applySearch($query, $definition, $search);
+        $this->applySearch($query, $definition, $search, $instance);
 
         if ($definition instanceof HasCrudFilters) {
             $this->applyFilters($query, $definition, $filters);
@@ -63,7 +65,17 @@ class CrudIndexManager
             $query->orderBy($sort, $direction);
         }
 
-        return $query->paginate(perPage: $this->resolvePerPage($definition, $perPage), page: $page);
+        if ($definition instanceof HasCrudPaginationHooks) {
+            $definition->beforePaginate($query);
+        }
+
+        $paginator = $query->paginate(perPage: $this->resolvePerPage($definition, $perPage), page: $page);
+
+        if ($definition instanceof HasCrudPaginationHooks) {
+            $definition->afterPaginate($paginator);
+        }
+
+        return $paginator;
     }
 
     private function resolvePerPage(CrudDefinition $definition, ?int $perPage): int
@@ -80,7 +92,7 @@ class CrudIndexManager
     /**
      * @param  Builder<Model>  $query
      */
-    private function applySearch(Builder $query, CrudDefinition $definition, ?string $search): void
+    private function applySearch(Builder $query, CrudDefinition $definition, ?string $search, Model $model): void
     {
         if ($search === null || $search === '') {
             return;
@@ -93,11 +105,45 @@ class CrudIndexManager
         }
 
         /** @param  Builder<Model>  $query */
-        $query->where(function (Builder $query) use ($columns, $search): void {
+        $query->where(function (Builder $query) use ($columns, $search, $model): void {
             foreach ($columns as $column) {
+                if ($column === $model->getKeyName()) {
+                    $this->applyKeySearch($query, $model, $search);
+
+                    continue;
+                }
+
                 $query->orWhere($column, 'like', "%{$search}%");
             }
         });
+    }
+
+    /**
+     * @param  Builder<Model>  $query
+     */
+    private function applyKeySearch(Builder $query, Model $model, string $search): void
+    {
+        if ($model->getConnection()->getDriverName() !== 'mongodb') {
+            $query->orWhere($model->getKeyName(), '=', $search);
+
+            return;
+        }
+
+        if (! class_exists(ObjectId::class)) {
+            $query->orWhere($model->getKeyName(), '=', $search);
+
+            return;
+        }
+
+        try {
+            $key = new ObjectId($search);
+        } catch (\InvalidArgumentException) {
+            $query->orWhereRaw(['_id' => ['$in' => []]]);
+
+            return;
+        }
+
+        $query->orWhere($model->getKeyName(), '=', $key);
     }
 
     /**
