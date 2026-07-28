@@ -64,13 +64,13 @@ defineOptions({
             action: (record) => update{{ entity }}.form.patch(record.id),
             href: (record) => edit{{ entity }}(record.id),
             can: (record) => record.can.update,
-            title: (record) => t('Edit :name', { name: String(record.name) }),
+            title: () => t('Edit {{ entityVariable }}'),
             description: t('Update the :name details.', { name: t('{{ entityVariable }}') }),
         }"
         :show="{
             href: (record) => show{{ entity }}(record.id),
             can: (record) => record.can.show,
-            title: (record) => t('View :name', { name: String(record.name) }),
+            title: () => t('View {{ entityVariable }}'),
         }"
         :destroy="{
             action: (record) => destroy{{ entity }}.form.delete(record.id),

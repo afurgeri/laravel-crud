@@ -354,7 +354,7 @@ class MakeCrudCommand extends Command
 
     private function updateComposerAutoload(string $module, bool $includeModuleSource): bool
     {
-        $path = base_path('composer.json');
+        $path = $this->composerAutoloadPath($module, $includeModuleSource);
         $contents = File::get($path);
 
         try {
@@ -400,6 +400,17 @@ class MakeCrudCommand extends Command
         File::put($path, $updated);
 
         return true;
+    }
+
+    private function composerAutoloadPath(string $module, bool $includeModuleSource): string
+    {
+        $moduleComposerPath = base_path("modules/{$module}/composer.json");
+
+        if (! $includeModuleSource && File::exists($moduleComposerPath)) {
+            return $moduleComposerPath;
+        }
+
+        return base_path('composer.json');
     }
 
     /**

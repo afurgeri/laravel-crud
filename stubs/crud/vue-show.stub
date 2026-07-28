@@ -9,7 +9,6 @@ defineProps<{
     crud: CrudSchema;
     {{ entityVariable }}: {
         id: string | number;
-        name: string;
     };
 }>();
 
@@ -31,12 +30,12 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="t('View :name', { name: String({{ entityVariable }}.name) })" />
+    <Head :title="t('View {{ entityVariable }}')" />
 
     <CrudFormPage
         :schema="crud"
         :back-href="{{ resourceVariable }}Index()"
-        :title="t('View :name', { name: String({{ entityVariable }}.name) })"
+        :title="t('View {{ entityVariable }}')"
         :description="t('Review the :name details.', { name: t('{{ entityVariable }}') })"
         submit-label=""
         :initial-values="{{ entityVariable }}"

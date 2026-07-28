@@ -9,7 +9,6 @@ defineProps<{
     crud: CrudSchema;
     {{ entityVariable }}: {
         id: string | number;
-        name: string;
     };
 }>();
 
@@ -31,13 +30,13 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="t('Edit :name', { name: String({{ entityVariable }}.name) })" />
+    <Head :title="t('Edit {{ entityVariable }}')" />
 
     <CrudFormPage
         :schema="crud"
         :action="update{{ entity }}.form.patch({{ entityVariable }}.id)"
         :back-href="{{ resourceVariable }}Index()"
-        :title="t('Edit :name', { name: String({{ entityVariable }}.name) })"
+        :title="t('Edit {{ entityVariable }}')"
         :description="t('Update the :name details.', { name: t('{{ entityVariable }}') })"
         :submit-label="t('Save changes')"
         :initial-values="{{ entityVariable }}"
