@@ -27,6 +27,7 @@ afterEach(function () {
     File::delete(base_path('app/Permissions/RbacWidgetPermissions.php'));
     File::delete(base_path('database/factories/RbacWidgetFactory.php'));
     File::delete(base_path('database/factories/ModuleWidgetFactory.php'));
+    File::delete(base_path('modules/ModuleWidgets/database/factories/ModuleWidgetFactory.php'));
     File::delete(base_path('database/seeders/RbacWidgetPermissionSeeder.php'));
     File::deleteDirectory(base_path('modules/ModuleWidgets'));
     File::deleteDirectory(base_path('tests/Feature/ModuleWidgets'));
@@ -163,9 +164,17 @@ PHP);
             '--module' => 'ModuleWidgets',
         ])->assertExitCode(0);
 
+        $generatedComposer = json_decode(File::get(base_path('composer.json')), true, 512, JSON_THROW_ON_ERROR);
+
         expect(File::get(base_path('modules/ModuleWidgets/routes/web.php')))
             ->toContain('use Modules\\ModuleWidgets\\Http\\Controllers\\ModuleWidgetController;')
             ->not->toContain('{{ module }}')
+            ->and(File::get(base_path('modules/ModuleWidgets/database/factories/ModuleWidgetFactory.php')))
+            ->toContain('namespace Modules\\ModuleWidgets\\Database\\Factories;')
+            ->and($generatedComposer['autoload']['psr-4']['Modules\\ModuleWidgets\\Database\\Factories\\'])
+            ->toBe('modules/ModuleWidgets/database/factories/')
+            ->and($generatedComposer['autoload']['psr-4']['Modules\\ModuleWidgets\\Database\\Seeders\\'])
+            ->toBe('modules/ModuleWidgets/database/seeders/')
             ->and(File::get(base_path('modules/ModuleWidgets/src/ModuleWidgetsServiceProvider.php')))
             ->toContain('namespace Modules\\ModuleWidgets;')
             ->toContain('class ModuleWidgetsServiceProvider')

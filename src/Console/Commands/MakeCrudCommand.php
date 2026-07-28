@@ -112,17 +112,19 @@ class MakeCrudCommand extends Command
             $createdFiles[] = $this->writeStub('service-provider', "modules/{$module}/src/{$module}ServiceProvider.php", $names);
             $createdFiles[] = $this->writeStub('routes', "modules/{$module}/routes/web.php", $names);
 
-            $composerChanged = $this->updateComposerAutoload($module);
-
-            if ($composerChanged) {
-                $this->components->task('Running composer dump-autoload', fn (): bool => $this->runProcess(['composer', 'dump-autoload']));
-            }
-
             $providersChanged = $this->updateBootstrapProviders($module);
         } elseif ($module !== null) {
             $this->appendRouteToExistingModule($names, $module);
         } else {
             $this->appendRouteToApplication($names);
+        }
+
+        if ($module !== null) {
+            $composerChanged = $this->updateComposerAutoload($module, $moduleIsNew);
+
+            if ($composerChanged) {
+                $this->components->task('Running composer dump-autoload', fn (): bool => $this->runProcess(['composer', 'dump-autoload']));
+            }
         }
 
         if ($this->getApplication()?->has('wayfinder:generate')) {
@@ -168,6 +170,7 @@ class MakeCrudCommand extends Command
             'crudNamespace' => $module === null ? 'App\\Crud' : "Modules\\{$module}\\Crud",
             'controllerNamespace' => $module === null ? 'App\\Http\\Controllers' : "Modules\\{$module}\\Http\\Controllers",
             'policyNamespace' => $module === null ? 'App\\Policies' : "Modules\\{$module}\\Policies",
+            'factoryNamespace' => $module === null ? 'Database\\Factories' : "Modules\\{$module}\\Database\\Factories",
             'permissionsNamespace' => $module === null ? 'App\\Permissions' : "Modules\\{$module}\\Permissions",
             'permissionSeederNamespace' => $module === null ? 'Database\\Seeders' : "Modules\\{$module}\\Database\\Seeders",
             'module' => $module ?? '',
@@ -200,7 +203,7 @@ class MakeCrudCommand extends Command
             base_path($applicationPath ? "app/Crud/{$entity}CrudDefinition.php" : "modules/{$module}/src/Crud/{$entity}CrudDefinition.php"),
             base_path($applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php"),
             base_path($applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php"),
-            base_path("database/factories/{$entity}Factory.php"),
+            base_path($this->factoryPath($names, $module)),
             base_path("resources/js/pages/{$resource}/Index.vue"),
             base_path("resources/js/pages/{$resource}/Create.vue"),
             base_path("resources/js/pages/{$resource}/Edit.vue"),
@@ -217,7 +220,7 @@ class MakeCrudCommand extends Command
 
         if ($usesRbac) {
             $targets[] = base_path($applicationPath ? "app/Permissions/{$entity}Permissions.php" : "modules/{$module}/src/Permissions/{$entity}Permissions.php");
-            $targets[] = base_path($applicationPath ? "database/seeders/{$entity}PermissionSeeder.php" : "modules/{$module}/src/Database/Seeders/{$entity}PermissionSeeder.php");
+            $targets[] = base_path($this->permissionSeederPath($names, $module));
         }
 
         if ($moduleIsNew && $module !== null) {
@@ -254,7 +257,7 @@ class MakeCrudCommand extends Command
             $this->writeStub('crud-definition', $applicationPath ? "app/Crud/{$entity}CrudDefinition.php" : "modules/{$module}/src/Crud/{$entity}CrudDefinition.php", $names),
             $this->writeStub('controller', $applicationPath ? "app/Http/Controllers/{$entity}Controller.php" : "modules/{$module}/src/Http/Controllers/{$entity}Controller.php", $names),
             $this->writeStub($usesRbac ? 'policy-rbac' : 'policy', $applicationPath ? "app/Policies/{$entity}Policy.php" : "modules/{$module}/src/Policies/{$entity}Policy.php", $names),
-            $this->writeStub('factory', "database/factories/{$entity}Factory.php", $names),
+            $this->writeStub('factory', $this->factoryPath($names, $module), $names),
             $this->writeStub('vue-index', "resources/js/pages/{$resource}/Index.vue", $names),
             $this->writeStub('vue-create', "resources/js/pages/{$resource}/Create.vue", $names),
             $this->writeStub('vue-edit', "resources/js/pages/{$resource}/Edit.vue", $names),
@@ -271,7 +274,7 @@ class MakeCrudCommand extends Command
 
         if ($usesRbac) {
             $files[] = $this->writeStub('permissions', $applicationPath ? "app/Permissions/{$entity}Permissions.php" : "modules/{$module}/src/Permissions/{$entity}Permissions.php", $names);
-            $files[] = $this->writeStub('permission-seeder', $applicationPath ? "database/seeders/{$entity}PermissionSeeder.php" : "modules/{$module}/src/Database/Seeders/{$entity}PermissionSeeder.php", $names);
+            $files[] = $this->writeStub('permission-seeder', $this->permissionSeederPath($names, $module), $names);
         }
 
         return $files;
@@ -349,7 +352,7 @@ class MakeCrudCommand extends Command
         return $path;
     }
 
-    private function updateComposerAutoload(string $module): bool
+    private function updateComposerAutoload(string $module, bool $includeModuleSource): bool
     {
         $path = base_path('composer.json');
         $contents = File::get($path);
@@ -361,23 +364,62 @@ class MakeCrudCommand extends Command
             throw new RuntimeException('Could not parse composer.json: '.$exception->getMessage(), previous: $exception);
         }
 
-        $namespace = "Modules\\{$module}\\";
-
-        if (isset($composer['autoload']['psr-4'][$namespace])) {
-            return false;
-        }
-
         if (! isset($composer['autoload']['psr-4'])) {
             throw new RuntimeException('Could not find the psr-4 autoload section in composer.json.');
         }
 
-        $composer['autoload']['psr-4'][$namespace] = "modules/{$module}/src/";
+        $namespaces = [
+            "Modules\\{$module}\\Database\\Factories\\" => "modules/{$module}/database/factories/",
+            "Modules\\{$module}\\Database\\Seeders\\" => "modules/{$module}/database/seeders/",
+        ];
+
+        if ($includeModuleSource) {
+            $namespaces = [
+                "Modules\\{$module}\\" => "modules/{$module}/src/",
+                ...$namespaces,
+            ];
+        }
+
+        $changed = false;
+
+        foreach ($namespaces as $namespace => $directory) {
+            if (isset($composer['autoload']['psr-4'][$namespace])) {
+                continue;
+            }
+
+            $composer['autoload']['psr-4'][$namespace] = $directory;
+            $changed = true;
+        }
+
+        if (! $changed) {
+            return false;
+        }
 
         $updated = json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL;
 
         File::put($path, $updated);
 
         return true;
+    }
+
+    /**
+     * @param  array<string, string>  $names
+     */
+    private function factoryPath(array $names, ?string $module): string
+    {
+        $directory = $module === null ? 'database/factories' : "modules/{$module}/database/factories";
+
+        return "{$directory}/{$names['entity']}Factory.php";
+    }
+
+    /**
+     * @param  array<string, string>  $names
+     */
+    private function permissionSeederPath(array $names, ?string $module): string
+    {
+        $directory = $module === null ? 'database/seeders' : "modules/{$module}/database/seeders";
+
+        return "{$directory}/{$names['entity']}PermissionSeeder.php";
     }
 
     private function updateBootstrapProviders(string $module): bool
