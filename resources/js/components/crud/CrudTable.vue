@@ -20,9 +20,6 @@ const props = withDefaults(
 
 const loadingRows = computed(() => Math.max(props.records.length, 1));
 const { t } = useTranslation();
-const hasFixedWidth = computed(() =>
-    props.columns.some((column) => column.fixed === true),
-);
 
 function columnStyle(column: CrudColumn): Record<string, string> {
     const style: Record<string, string> = {};
@@ -52,10 +49,7 @@ defineEmits<{
         <div
             class="hidden overflow-x-auto rounded-xl border border-sidebar-border/70 bg-card shadow-sm md:block dark:border-sidebar-border"
         >
-            <table
-                class="w-full text-left text-sm"
-                :class="{ 'table-fixed': hasFixedWidth }"
-            >
+            <table class="w-full text-left text-sm">
                 <thead class="border-b bg-muted/40 text-muted-foreground">
                     <tr>
                         <th
