@@ -34,7 +34,9 @@ test('make crud generates a MongoDB model without an SQL migration', function ()
     $model = base_path('modules/MongoWidgets/src/Models/MongoWidget.php');
 
     expect(File::exists($model))->toBeTrue()
-        ->and(File::get($model))->toContain('use MongoDB\\Laravel\\Eloquent\\Model;')
+        ->and(File::get($model))
+        ->toContain('use MongoDB\\Laravel\\Eloquent\\Model;')
+        ->toContain('use Modules\\MongoWidgets\\Database\\Factories\\MongoWidgetFactory;')
         ->toContain("protected \$collection = 'mongo_widgets';")
         ->and(File::glob(base_path('modules/MongoWidgets/database/migrations/*.php')))->toBeEmpty();
 });

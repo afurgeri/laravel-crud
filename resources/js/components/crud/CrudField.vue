@@ -4,6 +4,7 @@ import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField } from '@/types/crud';
 
 const props = defineProps<{
@@ -19,6 +20,7 @@ const checkboxValue = ref(booleanValue(props.defaultValue));
 const arrayValues = ref(arrayValue(props.defaultValue));
 const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
+const { t } = useTranslation();
 
 watch(
     () => props.defaultValue,
@@ -134,7 +136,7 @@ function removeArrayValue(index: number): void {
                             "
                             @click="addArrayValue"
                         >
-                            Add
+                            {{ t('Add') }}
                         </button>
                     </div>
 

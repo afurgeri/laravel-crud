@@ -18,8 +18,10 @@ use Tests\Feature\Crud\Fixtures\CrudTestRecordFilterableDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordIndexAuthorizedDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordNote;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordPaginationDefinition;
+use Tests\Feature\Crud\Fixtures\CrudTestRecordProfessional;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordSearchableDefinition;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordWithNotesDefinition;
+use Tests\Feature\Crud\Fixtures\CrudTestRecordWithProfessionalDefinition;
 
 uses(CreatesCrudTestRecordsTable::class);
 
@@ -99,7 +101,7 @@ test('it returns the requested page with the resolved page size', function () {
         ->and($paginator->items()[0]->name)->toBe('Record 11');
 });
 
-test('it selects only visible columns', function () {
+test('it keeps all model attributes available to the index mapping layer', function () {
     CrudTestRecord::query()->create([
         'name' => 'Ada',
         'email' => 'ada@example.com',
@@ -109,7 +111,26 @@ test('it selects only visible columns', function () {
     $paginator = app(CrudIndexManager::class)->paginate(new CrudTestRecordDefinition);
     $record = $paginator->items()[0];
 
-    expect(array_keys($record->getAttributes()))->toEqualCanonicalizing(['id', 'name', 'email']);
+    expect(array_keys($record->getAttributes()))
+        ->toEqualCanonicalizing(['id', 'name', 'email', 'professional_id', 'is_active', 'duration_minutes', 'internal_notes', 'created_at', 'updated_at']);
+});
+
+test('it keeps foreign keys available for eager loaded belongs to relations', function () {
+    $professional = CrudTestRecordProfessional::query()->create(['name' => 'Dr. Ada']);
+    $record = CrudTestRecord::query()->create([
+        'name' => 'Patient record',
+        'email' => 'patient@example.com',
+        'professional_id' => $professional->id,
+    ]);
+
+    $result = app(CrudIndexManager::class)
+        ->paginate(new CrudTestRecordWithProfessionalDefinition)
+        ->items()[0];
+
+    expect($result->getKey())->toBe($record->getKey())
+        ->and($result->getAttribute('professional_id'))->toBe($professional->id)
+        ->and($result->relationLoaded('professional'))->toBeTrue()
+        ->and($result->professional->name)->toBe('Dr. Ada');
 });
 
 test('it sorts by allowed sortable columns', function () {

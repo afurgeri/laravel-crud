@@ -44,6 +44,7 @@ test('crud install copies the translation composable when it is missing', functi
 
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
+    $field = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudField.vue');
     $table = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudTable.vue');
     $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
@@ -70,6 +71,9 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($filters)
         ->toContain('SlidersHorizontal')
         ->toContain('bg-muted/40')
+        ->and($field)
+        ->toContain("import { useTranslation } from '@/composables/useTranslation';")
+        ->toContain("{{ t('Add') }}")
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($types)
         ->and($form)
@@ -89,6 +93,8 @@ test('crud frontend resources expose the translation helper and catalog', functi
     expect($composable)
         ->toContain('export function useTranslation()')
         ->toContain('page.props.translations')
+        ->and($translations)
+        ->toContain('"Add": "Add"')
         ->and($translations)
         ->toContain('"No records found."')
         ->toContain('"Create :name"')

@@ -9,12 +9,21 @@ trait CreatesCrudTestRecordsTable
 {
     protected function createCrudTestRecordsTable(): void
     {
+        Schema::dropIfExists('crud_test_record_professionals');
+
+        Schema::create('crud_test_record_professionals', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
         Schema::dropIfExists('crud_test_records');
 
         Schema::create('crud_test_records', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email');
+            $table->foreignId('professional_id')->nullable();
             $table->boolean('is_active')->nullable();
             $table->unsignedInteger('duration_minutes')->nullable();
             $table->text('internal_notes')->nullable();

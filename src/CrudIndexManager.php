@@ -45,7 +45,7 @@ class CrudIndexManager
         /** @var Model $instance */
         $instance = new $model;
 
-        $query = $instance->newQuery()->select($this->visibleColumnNames($definition));
+        $query = $instance->newQuery();
 
         if ($definition instanceof EagerLoadsCrudRelations) {
             $query->with($definition->eagerLoads());
