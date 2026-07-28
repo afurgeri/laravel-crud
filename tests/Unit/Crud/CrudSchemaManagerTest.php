@@ -47,6 +47,7 @@ test('it builds frontend schema from crud definitions', function () {
                 CrudField::make('email', ['required', 'email'])->email(),
                 CrudField::make('is_active', ['required', 'boolean'])->checkbox(),
                 CrudField::make('duration_minutes', ['required', 'integer'])->number(),
+                CrudField::make('notes', ['nullable', 'string', 'max:1000'])->textarea(),
             ];
         }
     };
@@ -105,6 +106,15 @@ test('it builds frontend schema from crud definitions', function () {
                 'confirmed' => false,
                 'required' => true,
                 'rules' => ['required', 'integer'],
+                'visible_on_update' => true,
+            ],
+            [
+                'name' => 'notes',
+                'label' => 'Notes',
+                'type' => 'textarea',
+                'confirmed' => false,
+                'required' => false,
+                'rules' => ['nullable', 'string', 'max:1000'],
                 'visible_on_update' => true,
             ],
         ],

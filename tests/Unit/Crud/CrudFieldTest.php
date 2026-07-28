@@ -45,6 +45,7 @@ test('crud fields configure visual input types explicitly', function () {
     expect(CrudField::make('is_active', ['required', 'boolean'])->checkbox()->type())->toBe('checkbox')
         ->and(CrudField::make('duration_minutes', ['required', 'integer'])->number()->type())->toBe('number')
         ->and(CrudField::make('starts_on', ['nullable', 'date'])->date()->type())->toBe('date')
+        ->and(CrudField::make('notes', ['nullable', 'string'])->textarea()->type())->toBe('textarea')
         ->and(CrudField::make('name', ['required', 'string'])->type())->toBe('text');
 });
 

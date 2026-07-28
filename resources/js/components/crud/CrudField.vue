@@ -4,6 +4,7 @@ import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField } from '@/types/crud';
 
@@ -179,6 +180,15 @@ function removeArrayValue(index: number): void {
                 v-model="checkboxValue"
                 :disabled="readOnly"
                 :aria-invalid="error ? 'true' : undefined"
+            />
+            <Textarea
+                v-else-if="field.type === 'textarea'"
+                :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                :name="field.name"
+                :required="field.required"
+                :disabled="readOnly"
+                :aria-invalid="error ? 'true' : undefined"
+                :default-value="inputValue(defaultValue)"
             />
             <Input
                 v-else-if="field.type !== 'array'"

@@ -153,6 +153,13 @@ final class CrudField
         return $this;
     }
 
+    public function textarea(): self
+    {
+        $this->type = 'textarea';
+
+        return $this;
+    }
+
     public function array(bool $unique = false): self
     {
         $this->type = 'array';

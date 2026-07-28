@@ -18,7 +18,15 @@ export type CrudColumn = {
 export type CrudField = {
     name: string;
     label: string;
-    type: 'text' | 'email' | 'password' | 'checkbox' | 'number' | 'date' | 'array';
+    type:
+        | 'text'
+        | 'email'
+        | 'password'
+        | 'checkbox'
+        | 'number'
+        | 'date'
+        | 'textarea'
+        | 'array';
     confirmed: boolean;
     required: boolean;
     rules: string[];
