@@ -15,6 +15,7 @@ final class CrudField
         private string $type = 'text',
         private bool $confirmed = false,
         private ?string $label = null,
+        private bool $uniqueItems = false,
     ) {}
 
     private mixed $defaultValue = null;
@@ -79,7 +80,13 @@ final class CrudField
      */
     public function validationRules(): array
     {
-        return $this->rules;
+        if (! $this->isArray()) {
+            return $this->rules;
+        }
+
+        return in_array('array', $this->rules, true)
+            ? $this->rules
+            : [...$this->rules, 'array'];
     }
 
     public function unique(?string $column = null): self
@@ -144,6 +151,31 @@ final class CrudField
         $this->type = 'date';
 
         return $this;
+    }
+
+    public function array(bool $unique = false): self
+    {
+        $this->type = 'array';
+        $this->uniqueItems = $unique;
+
+        return $this;
+    }
+
+    public function isArray(): bool
+    {
+        return $this->type === 'array';
+    }
+
+    public function uniqueItems(): self
+    {
+        $this->uniqueItems = true;
+
+        return $this;
+    }
+
+    public function hasUniqueItems(): bool
+    {
+        return $this->uniqueItems;
     }
 
     public function type(): string

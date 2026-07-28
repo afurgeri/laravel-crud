@@ -18,6 +18,7 @@ const props = withDefaults(
     },
 );
 
+// Keep the list height stable while a new page of results is loading.
 const loadingRows = computed(() => Math.max(props.records.length, 1));
 const { t } = useTranslation();
 
@@ -47,15 +48,15 @@ defineEmits<{
 <template>
     <div>
         <div
-            class="hidden overflow-x-auto rounded-xl border border-sidebar-border/70 bg-card shadow-sm md:block dark:border-sidebar-border"
+            class="hidden overflow-x-auto rounded-2xl border border-border/70 bg-card shadow-[0_12px_32px_-24px_rgba(15,23,42,0.45)] md:block"
         >
             <table class="w-full text-left text-sm">
-                <thead class="border-b bg-muted/40 text-muted-foreground">
+                <thead class="border-b bg-muted/60 text-muted-foreground">
                     <tr>
                         <th
                             v-for="column in columns"
                             :key="column.name"
-                            class="px-4 py-3 font-medium"
+                            class="px-5 py-3.5 text-xs font-semibold tracking-wide"
                             :style="columnStyle(column)"
                         >
                             <button
@@ -64,7 +65,7 @@ defineEmits<{
                                 class="inline-flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                 @click="$emit('sort', column.name)"
                             >
-                                {{ column.label }}
+                                {{ t(column.label) }}
                                 <ChevronUp
                                     v-if="
                                         sort?.column === column.name &&
@@ -81,30 +82,39 @@ defineEmits<{
                                 />
                             </button>
                             <template v-else>
-                                {{ column.label }}
+                                {{ t(column.label) }}
                             </template>
                         </th>
-                        <th class="px-4 py-3 text-right font-medium">
+                        <th class="px-5 py-3.5 text-right text-xs font-semibold tracking-wide uppercase">
                             {{ actionsLabel ?? t('Actions') }}
                         </th>
                     </tr>
                 </thead>
                 <tbody
-                    class="divide-y divide-sidebar-border/70 dark:divide-sidebar-border"
+                    class="divide-y divide-border/70"
                 >
                     <template v-if="loading">
                         <tr v-for="row in loadingRows" :key="row" aria-hidden="true">
-                            <td v-for="column in columns" :key="column.name">
+                            <td
+                                v-for="column in columns"
+                                :key="column.name"
+                                class="px-5 py-3"
+                            >
                                 <div class="h-4 w-3/4 animate-pulse rounded bg-muted" />
                             </td>
-                            <td><div class="ml-auto h-8 w-16 animate-pulse rounded-lg bg-muted" /></td>
+                            <td class="px-5 py-3"><div class="ml-auto h-8 w-16 animate-pulse rounded-lg bg-muted" /></td>
                         </tr>
                     </template>
-                    <tr v-else v-for="record in records" :key="record.id">
+                    <tr
+                        v-else
+                        v-for="record in records"
+                        :key="record.id"
+                        class="transition-colors hover:bg-indigo-50/40 dark:hover:bg-indigo-400/5"
+                    >
                         <td
                             v-for="column in columns"
                             :key="column.name"
-                            class="px-4 py-3"
+                            class="px-5 py-3"
                             :style="columnStyle(column)"
                         >
                             <slot
@@ -116,14 +126,14 @@ defineEmits<{
                                 {{ record[column.name] }}
                             </slot>
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-5 py-3 text-right">
                             <slot name="actions" :record="record" />
                         </td>
                     </tr>
                     <tr v-if="!loading && records.length === 0">
                         <td
                             :colspan="columns.length + 1"
-                            class="px-4 py-6 text-muted-foreground"
+                            class="px-5 py-12 text-center text-muted-foreground"
                         >
                             {{ emptyLabel ?? t('No records found.') }}
                         </td>
@@ -134,7 +144,7 @@ defineEmits<{
 
         <div class="flex flex-col gap-3 md:hidden">
             <template v-if="loading">
-                <div v-for="row in loadingRows" :key="row" class="rounded-xl border bg-card p-4 shadow-sm" aria-hidden="true">
+                <div v-for="row in loadingRows" :key="row" class="rounded-2xl border border-border/70 bg-card p-4 shadow-sm" aria-hidden="true">
                     <div class="flex flex-col gap-3">
                         <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
                         <div class="h-4 w-1/2 animate-pulse rounded bg-muted" />
@@ -146,7 +156,7 @@ defineEmits<{
                 v-else
                 v-for="record in records"
                 :key="record.id"
-                class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm dark:border-sidebar-border"
+                class="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
             >
                 <dl class="flex flex-col gap-2">
                     <div
@@ -157,7 +167,7 @@ defineEmits<{
                         <dt
                             class="shrink-0 text-xs font-medium text-muted-foreground"
                         >
-                            {{ column.label }}
+                            {{ t(column.label) }}
                         </dt>
                         <dd class="text-right text-sm break-words">
                             <slot
@@ -173,7 +183,7 @@ defineEmits<{
                 </dl>
 
                 <div
-                    class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-sidebar-border/70 pt-3 dark:border-sidebar-border"
+                    class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3"
                 >
                     <slot name="actions" :record="record" />
                 </div>
@@ -181,7 +191,7 @@ defineEmits<{
 
             <div
                 v-if="!loading && records.length === 0"
-                class="rounded-xl border border-sidebar-border/70 bg-card p-6 text-center text-muted-foreground dark:border-sidebar-border"
+                class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground"
             >
                 {{ emptyLabel ?? t('No records found.') }}
             </div>

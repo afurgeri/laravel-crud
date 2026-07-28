@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import CrudField from '@/components/crud/CrudField.vue';
 import { Button } from '@/components/ui/button';
 import type { CrudField as CrudFieldConfig, FormAction } from '@/types/crud';
@@ -11,6 +12,7 @@ const props = withDefaults(
         initialValues?: Record<string, unknown>;
         submitLabel: string;
         resetOnSuccess?: boolean;
+        readOnly?: boolean;
         formClass?: string;
         fieldLabelClass?: string;
         fieldIdPrefix?: string;
@@ -18,11 +20,14 @@ const props = withDefaults(
     {
         initialValues: () => ({}),
         resetOnSuccess: false,
+        readOnly: false,
         formClass: 'flex flex-col gap-4',
         fieldLabelClass: undefined,
         fieldIdPrefix: undefined,
     },
 );
+
+const fieldRenderKey = ref(0);
 
 const emit = defineEmits<{
     success: [];
@@ -35,6 +40,14 @@ function fieldDefault(field: CrudFieldConfig): unknown {
 
     return field.defaultValue;
 }
+
+function handleSuccess(): void {
+    if (props.resetOnSuccess) {
+        fieldRenderKey.value += 1;
+    }
+
+    emit('success');
+}
 </script>
 
 <template>
@@ -43,12 +56,13 @@ function fieldDefault(field: CrudFieldConfig): unknown {
         :reset-on-success="resetOnSuccess"
         :class="formClass"
         v-slot="{ errors, processing }"
-        @success="emit('success')"
+        @success="handleSuccess"
     >
         <CrudField
             v-for="field in fields"
-            :key="field.name"
+            :key="`${field.name}-${fieldRenderKey}`"
             :field="field"
+            :read-only="readOnly"
             :error="errors[field.name]"
             :default-value="fieldDefault(field)"
             :label-class="fieldLabelClass"
@@ -57,7 +71,12 @@ function fieldDefault(field: CrudFieldConfig): unknown {
 
         <slot name="fields" :errors="errors" />
 
-        <Button type="submit" :disabled="processing">
+        <Button
+            v-if="!readOnly"
+            type="submit"
+            class="w-full"
+            :disabled="processing"
+        >
             {{ submitLabel }}
         </Button>
     </Form>

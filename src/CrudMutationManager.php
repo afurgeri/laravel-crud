@@ -159,6 +159,14 @@ class CrudMutationManager
 
             $rules[$field->name()] = $field->validationRules();
 
+            if ($field->isArray()) {
+                $rules[$field->name().'.*'] = ['string'];
+
+                if ($field->hasUniqueItems()) {
+                    $rules[$field->name().'.*'][] = 'distinct:strict';
+                }
+            }
+
             if ($field->isUnique()) {
                 $table = $instance->getTable();
 

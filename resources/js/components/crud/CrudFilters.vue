@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from '@lucide/vue';
+import { Search, SlidersHorizontal, X } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -92,20 +92,24 @@ function clearFilter(name: string): void {
 <template>
     <div
         v-if="search.enabled || filters.length > 0"
-        class="flex flex-col gap-4 rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm dark:border-sidebar-border"
+        class="flex flex-col gap-4 rounded-xl bg-card p-4"
     >
         <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div
                 v-if="search.enabled"
                 class="flex w-full flex-col gap-2 sm:w-auto"
             >
-                <Label for="crud-search">{{ t('Search') }}</Label>
+                <Label
+                    for="crud-search"
+                    class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                    ><Search class="size-3.5" /> {{ t('Search') }}</Label
+                >
                 <Input
                     id="crud-search"
                     :model-value="searchValue"
                     type="search"
                     :placeholder="t('Search records...')"
-                    class="w-full sm:w-56"
+                    class="w-full bg-muted/40 sm:w-64"
                     @update:model-value="
                         (value) => emit('search', String(value))
                     "
@@ -120,9 +124,13 @@ function clearFilter(name: string): void {
                     v-if="entry.kind === 'single'"
                     class="flex w-full flex-col gap-2 sm:w-auto"
                 >
-                    <Label :for="`filter-${entry.filter.name}`">{{
-                        entry.filter.label
-                    }}</Label>
+                    <Label
+                        :for="`filter-${entry.filter.name}`"
+                        class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                        ><SlidersHorizontal class="size-3.5" />{{
+                            t(entry.filter.label)
+                        }}</Label
+                    >
 
                     <div class="flex w-full items-center gap-1 sm:w-48">
                         <Select
@@ -145,7 +153,7 @@ function clearFilter(name: string): void {
                                 class="w-full"
                             >
                                 <SelectValue
-                                    :placeholder="entry.filter.label"
+                                    :placeholder="t(entry.filter.label)"
                                 />
                             </SelectTrigger>
                             <SelectContent>
@@ -154,7 +162,7 @@ function clearFilter(name: string): void {
                                     :key="option.value"
                                     :value="option.value"
                                 >
-                                    {{ option.label }}
+                                    {{ t(option.label) }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -216,7 +224,7 @@ function clearFilter(name: string): void {
                 >
                     <div class="flex w-full flex-col gap-2 sm:w-auto">
                         <Label :for="`filter-${entry.from.name}`">{{
-                            entry.from.label
+                            t(entry.from.label)
                         }}</Label>
                         <div class="flex w-full items-center gap-1 sm:w-40">
                             <DatePicker
@@ -256,7 +264,7 @@ function clearFilter(name: string): void {
 
                     <div class="flex w-full flex-col gap-2 sm:w-auto">
                         <Label :for="`filter-${entry.to.name}`">{{
-                            entry.to.label
+                            t(entry.to.label)
                         }}</Label>
                         <div class="flex w-full items-center gap-1 sm:w-40">
                             <DatePicker
@@ -296,7 +304,9 @@ function clearFilter(name: string): void {
                         v-if="rangeInvalid(entry)"
                         class="text-sm text-destructive sm:pb-2"
                     >
-                        The start of the range cannot be after the end.
+                        {{
+                            t('The start of the range cannot be after the end.')
+                        }}
                     </p>
                 </div>
             </template>

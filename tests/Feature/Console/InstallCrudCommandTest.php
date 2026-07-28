@@ -44,6 +44,8 @@ test('crud install copies the translation composable when it is missing', functi
 
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
+    $table = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudTable.vue');
+    $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
     $types = File::get(dirname(__DIR__, 3).'/resources/js/types/crud.ts');
 
@@ -60,6 +62,14 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('v-if="workspace"')
         ->toContain('canShowRecord')
         ->toContain('show.href(record)')
+        ->toContain('bg-linear-to-br')
+        ->toContain('rounded-2xl')
+        ->and($table)
+        ->toContain('md:hidden')
+        ->toContain('animate-pulse')
+        ->and($filters)
+        ->toContain('SlidersHorizontal')
+        ->toContain('bg-muted/40')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($types)
         ->and($form)

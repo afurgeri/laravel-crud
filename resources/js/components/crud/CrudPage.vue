@@ -43,10 +43,6 @@ const props = withDefaults(
 
 const { t } = useTranslation();
 
-function translated(value: string | undefined, fallback: string): string {
-    return value ?? t(fallback);
-}
-
 function canEditRecord(record: T): boolean {
     return (
         props.schema.operations.update &&
@@ -77,7 +73,7 @@ function editRecordTitle(record: T): string {
         return props.edit.title(record);
     }
 
-    return t('Edit :name', { name: String(record.id) });
+    return t('Edit :id', { id: String(record.id) });
 }
 
 function destroyRecordTitle(record: T): string {
@@ -218,18 +214,23 @@ function handleClearFilters(): void {
 
 <template>
     <TooltipProvider :delay-duration="0">
-        <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        <div class="mx-auto flex w-full flex-col gap-6 p-4 sm:p-4 lg:p-4">
             <div
-                class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                class="relative overflow-hidden rounded-2xl border border-indigo-100/80 bg-linear-to-br from-indigo-50 via-card to-card px-5 py-6 shadow-[0_12px_32px_-24px_rgba(49,46,129,0.45)] md:flex md:items-center md:justify-between md:px-7 dark:border-indigo-400/15 dark:from-indigo-950/30"
             >
-                <div class="space-y-1">
+                <div
+                    class="absolute -top-16 -right-12 size-44 rounded-full bg-indigo-400/10 blur-2xl"
+                />
+                <div class="relative space-y-2">
                     <p
                         v-if="workspace"
                         class="text-[11px] font-semibold tracking-[0.18em] text-primary uppercase"
                     >
-                        {{ t(workspace) }}
+                        {{ t(workspace ?? '') }}
                     </p>
-                    <h1 class="text-2xl font-semibold tracking-tight">
+                    <h1
+                        class="text-3xl font-semibold tracking-tight text-foreground"
+                    >
                         {{ schema.title }}
                     </h1>
                     <p
@@ -254,18 +255,18 @@ function handleClearFilters(): void {
                         class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium whitespace-nowrap text-primary-foreground shadow-lg shadow-indigo-500/20 transition-all hover:bg-primary/90"
                     >
                         <Plus class="size-4" />
-                        {{ translated(create.label, 'Create') }}
+                        {{ create.label ?? t('Create') }}
                     </Link>
 
                     <CrudFormDialog
                         v-else-if="schema.operations.create && create.can"
                         :action="create.action"
                         :fields="schema.fields"
-                        :trigger-label="translated(create.label, 'Create')"
-                        :title="translated(create.title ?? create.label, 'Create')"
+                        :trigger-label="create.label ?? t('Create')"
+                        :title="create.title ?? create.label ?? t('Create')"
                         :description="create.description"
                         :submit-label="
-                            translated(create.submitLabel ?? create.label, 'Create')
+                            create.submitLabel ?? create.label ?? t('Create')
                         "
                         reset-on-success
                         :field-id-prefix="`${schema.resource}-create`"
@@ -276,7 +277,7 @@ function handleClearFilters(): void {
                                 class="gap-2 shadow-lg shadow-indigo-500/20"
                             >
                                 <Plus class="size-4" />
-                                {{ translated(create.label, 'Create') }}
+                                {{ create.label ?? t('Create') }}
                             </Button>
                         </template>
                         <template #fields="slotProps">
@@ -330,15 +331,15 @@ function handleClearFilters(): void {
                                 <Link
                                     :href="show.href(record)"
                                     class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                                    :aria-label="translated(show.label, 'Show')"
+                                    :aria-label="show.label ?? t('Show')"
                                     :title="show.title?.(record) ?? t('Show')"
                                 >
                                     <Eye class="size-4" />
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent>
-                                {{ translated(show.label, 'Show') }}
-                            </TooltipContent>
+                            <TooltipContent>{{
+                                show.label ?? t('Show')
+                            }}</TooltipContent>
                         </Tooltip>
 
                         <Tooltip
@@ -353,15 +354,15 @@ function handleClearFilters(): void {
                                 <Link
                                     :href="edit.href(record)"
                                     class="inline-flex size-8 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                                    :aria-label="translated(edit.label, 'Edit')"
+                                    :aria-label="edit.label ?? t('Edit')"
                                     :title="editRecordTitle(record)"
                                 >
                                     <Pencil class="size-4" />
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent>
-                                {{ translated(edit.label, 'Edit') }}
-                            </TooltipContent>
+                            <TooltipContent>{{
+                                edit.label ?? t('Edit')
+                            }}</TooltipContent>
                         </Tooltip>
 
                         <CrudFormDialog
@@ -373,11 +374,13 @@ function handleClearFilters(): void {
                                 )
                             "
                             :initial-values="record"
-                            :trigger-label="translated(edit.label, 'Edit')"
-                            :trigger-tooltip="translated(edit.label, 'Edit')"
+                            :trigger-label="edit.label ?? t('Edit')"
+                            :trigger-tooltip="edit.label ?? t('Edit')"
                             :title="editRecordTitle(record)"
                             :description="edit.description"
-                            :submit-label="translated(edit.submitLabel, 'Save changes')"
+                            :submit-label="
+                                edit.submitLabel ?? t('Save changes')
+                            "
                             :field-id-prefix="recordFieldPrefix(record)"
                         >
                             <template #trigger>
@@ -385,7 +388,7 @@ function handleClearFilters(): void {
                                     type="button"
                                     variant="secondary"
                                     size="icon-sm"
-                                    :aria-label="translated(edit.label, 'Edit')"
+                                    :aria-label="edit.label ?? t('Edit')"
                                 >
                                     <Pencil class="size-4" />
                                 </Button>
@@ -403,7 +406,7 @@ function handleClearFilters(): void {
                         <CrudDeleteDialog
                             v-if="canDestroyRecord(record)"
                             :action="destroy.action(record)"
-                            :trigger-label="translated(destroy.label, 'Delete')"
+                            :trigger-label="destroy.label ?? t('Delete')"
                             :title="destroyRecordTitle(record)"
                             :description="
                                 destroy.description ??
@@ -411,9 +414,9 @@ function handleClearFilters(): void {
                             "
                             :confirm-label="
                                 destroy.confirmLabel ??
-                                translated(destroy.label, 'Delete')
+                                destroy.label ?? t('Delete')
                             "
-                            :cancel-label="translated(destroy.cancelLabel, 'Cancel')"
+                            :cancel-label="destroy.cancelLabel ?? t('Cancel')"
                         />
 
                         <span
@@ -434,14 +437,14 @@ function handleClearFilters(): void {
 
             <div
                 v-if="records.last_page > 1"
-                class="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+                class="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm sm:flex-row sm:items-center sm:justify-between"
             >
                 <span>
                     {{
-                        t('Showing :from to :to of :total', {
+                        t('Showing :from to :to of :count', {
                             from: records.from ?? 0,
                             to: records.to ?? 0,
-                            total: records.total,
+                            count: records.total,
                         })
                     }}
                 </span>
