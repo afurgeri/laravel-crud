@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, ChevronDown, LoaderCircle } from '@lucide/vue';
+import { ComboboxContent, ComboboxPortal } from 'reka-ui';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
     Combobox,
@@ -9,7 +10,6 @@ import {
     ComboboxInput,
     ComboboxItem,
     ComboboxItemIndicator,
-    ComboboxList,
     ComboboxTrigger,
     ComboboxViewport,
 } from '@/components/ui/combobox';
@@ -204,9 +204,13 @@ onBeforeUnmount(() => {
                 </button>
             </ComboboxTrigger>
         </ComboboxAnchor>
-        <ComboboxList
-            class="w-[var(--reka-combobox-trigger-width)] min-w-64 max-w-[calc(100vw-2rem)] p-0"
-        >
+        <ComboboxPortal>
+            <ComboboxContent
+                position="popper"
+                align="center"
+                :side-offset="4"
+                class="z-50 max-h-(--reka-combobox-content-available-height) w-[var(--reka-combobox-trigger-width)] min-w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+            >
             <ComboboxInput v-model="searchTerm" :placeholder="placeholder" />
             <ComboboxViewport>
                 <div
@@ -253,6 +257,7 @@ onBeforeUnmount(() => {
                     </ComboboxItem>
                 </ComboboxGroup>
             </ComboboxViewport>
-        </ComboboxList>
+            </ComboboxContent>
+        </ComboboxPortal>
     </Combobox>
 </template>
