@@ -45,6 +45,7 @@ final class CrudOptionsController
         $search = trim($request->string('search')->toString());
         $selected = trim($request->string('selected')->toString());
         $searchColumns = $crudFilter->remoteSearchColumns();
+        $searchTerms = preg_split('/[\s-]+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         if ($selected === '' && mb_strlen($search) < $crudFilter->remoteConfig()['min_chars']) {
             return response()->json(['data' => []]);
@@ -54,12 +55,16 @@ final class CrudOptionsController
             ? null
             : $relatedModel->newQuery()->where($crudFilter->relationColumn(), $selected)->first();
 
-        $matches = $search === '' || $searchColumns === []
+        $matches = $searchTerms === [] || $searchColumns === []
             ? collect()
             : $relatedModel->newQuery()
-                ->where(function (Builder $query) use ($searchColumns, $search): void {
-                    foreach ($searchColumns as $column) {
-                        $query->orWhere($column, 'like', "%{$search}%");
+                ->where(function (Builder $query) use ($searchColumns, $searchTerms): void {
+                    foreach ($searchTerms as $term) {
+                        $query->where(function (Builder $termQuery) use ($searchColumns, $term): void {
+                            foreach ($searchColumns as $column) {
+                                $termQuery->orWhere($column, 'like', "%{$term}%");
+                            }
+                        });
                     }
                 })
                 ->limit(20)
