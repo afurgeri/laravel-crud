@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronsUpDown, LoaderCircle } from '@lucide/vue';
+import { Check, ChevronDown, LoaderCircle } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
     Combobox,
@@ -54,16 +54,21 @@ function normalizeOptions(payload: unknown): CrudFilterOption[] {
         return [];
     }
 
-    return source.filter((option): option is CrudFilterOption =>
-        Boolean(
-            option &&
-            typeof option === 'object' &&
-            'value' in option &&
-            'label' in option &&
-            typeof option.value === 'string' &&
-            typeof option.label === 'string',
-        ),
-    );
+    return source.flatMap((option): CrudFilterOption[] => {
+        if (
+            !option ||
+            typeof option !== 'object' ||
+            !('value' in option) ||
+            !('label' in option) ||
+            (typeof option.value !== 'string' &&
+                typeof option.value !== 'number') ||
+            typeof option.label !== 'string'
+        ) {
+            return [];
+        }
+
+        return [{ value: String(option.value), label: option.label }];
+    });
 }
 
 async function loadOptions(search: string, selected?: string): Promise<void> {
@@ -189,16 +194,19 @@ onBeforeUnmount(() => {
                     :id="id"
                     role="combobox"
                     :aria-expanded="open"
-                    class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm ring-offset-background outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    :data-placeholder="selectedOption ? undefined : ''"
+                    class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-left text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <span class="truncate">
                         {{ selectedOption?.label ?? placeholder }}
                     </span>
-                    <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+                    <ChevronDown class="size-4 shrink-0 opacity-50" />
                 </button>
             </ComboboxTrigger>
         </ComboboxAnchor>
-        <ComboboxList class="w-(--reka-combobox-trigger-width) p-0">
+        <ComboboxList
+            class="w-[var(--reka-combobox-trigger-width)] min-w-64 max-w-[calc(100vw-2rem)] p-0"
+        >
             <ComboboxInput v-model="searchTerm" :placeholder="placeholder" />
             <ComboboxViewport>
                 <div

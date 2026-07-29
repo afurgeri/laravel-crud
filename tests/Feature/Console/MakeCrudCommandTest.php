@@ -64,6 +64,10 @@ test('make crud command is registered by the package', function () {
         ->expectsOutputToContain('--test');
 });
 
+test('upgrade crud routes requires a resource argument', function () {
+    $this->artisan('crud:upgrade-routes');
+})->throws(RuntimeException::class, 'Not enough arguments (missing: "resource").');
+
 test('upgrade crud routes adds an idempotent options route', function () {
     $routesPath = base_path('routes/web.php');
     File::ensureDirectoryExists(dirname($routesPath));

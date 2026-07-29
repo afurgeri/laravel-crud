@@ -10,7 +10,7 @@ use RuntimeException;
 class UpgradeCrudRoutesCommand extends Command
 {
     protected $signature = 'crud:upgrade-routes
-        {resource? : Limit the upgrade to one CRUD resource}
+        {resource : The CRUD resource to upgrade}
         {--model= : The model class when it cannot be inferred from the controller}
         {--controller= : The controller class when it cannot be inferred from the route}
         {--dry-run : Show the routes that would be added without writing files}';
@@ -110,7 +110,7 @@ class UpgradeCrudRoutesCommand extends Command
     /**
      * @return list<array{resource: string, controller: string, line: int}>
      */
-    private function resourceRoutes(string $path, ?string $resource): array
+    private function resourceRoutes(string $path, string $resource): array
     {
         $lines = preg_split('/\R/', File::get($path));
 
@@ -129,7 +129,7 @@ class UpgradeCrudRoutesCommand extends Command
                 continue;
             }
 
-            if ($resource !== null && $matches[1] !== $resource) {
+            if ($matches[1] !== $resource) {
                 continue;
             }
 
