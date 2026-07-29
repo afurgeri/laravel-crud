@@ -2,6 +2,7 @@
 
 namespace Modules\Crud;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasCrudFormMode;
@@ -72,7 +73,7 @@ class CrudSchemaManager
             ],
             'filters' => $definition instanceof HasCrudFilters
                 ? array_map(
-                    fn (CrudFilter $filter): array => $this->filterSchema($filter, $effectiveFilterValues),
+                    fn (CrudFilter $filter): array => $this->filterSchema($filter, $effectiveFilterValues, $resource),
                     $filters,
                 )
                 : [],
@@ -141,7 +142,7 @@ class CrudSchemaManager
      * @param  array<string, mixed>  $filterValues  Current values of every filter, forwarded so cascading select filters can narrow their options.
      * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
      */
-    private function filterSchema(CrudFilter $filter, array $filterValues): array
+    private function filterSchema(CrudFilter $filter, array $filterValues, string $resource): array
     {
         $schema = [
             'name' => $filter->name(),
@@ -170,7 +171,12 @@ class CrudSchemaManager
         }
 
         if ($filter->isRemote()) {
-            $schema['remote'] = $filter->remoteConfig();
+            $routeName = "{$resource}.options";
+            $generatedUrl = Route::has($routeName)
+                ? route($routeName, ['filter' => $filter->name()])
+                : url("{$resource}/options/{$filter->name()}");
+
+            $schema['remote'] = $filter->remoteConfig($generatedUrl);
         }
 
         if ($filter->type() === 'date') {

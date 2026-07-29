@@ -502,13 +502,14 @@ class MakeCrudCommand extends Command
         $contents = File::get($path);
 
         $useLine = "use Modules\\{$module}\\Http\\Controllers\\{$entity}Controller;";
-        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);";
+        $modelUseLine = "use Modules\\{$module}\\Models\\{$entity};";
+        $resourceLine = "    Route::crudResource('{$resource}', {$entity}Controller::class, {$entity}::class);";
 
         if (str_contains($contents, $resourceLine)) {
             return;
         }
 
-        if (! str_contains($contents, $useLine)) {
+        if (! str_contains($contents, $useLine) || ! str_contains($contents, $modelUseLine)) {
             $lines = preg_split('/\R/', $contents);
 
             if ($lines === false) {
@@ -527,7 +528,17 @@ class MakeCrudCommand extends Command
                 throw new RuntimeException("Could not locate a use statement to anchor the new import in modules/{$module}/routes/web.php.");
             }
 
-            array_splice($lines, $lastUseIndex + 1, 0, [$useLine]);
+            $imports = [];
+
+            if (! str_contains($contents, $useLine)) {
+                $imports[] = $useLine;
+            }
+
+            if (! str_contains($contents, $modelUseLine)) {
+                $imports[] = $modelUseLine;
+            }
+
+            array_splice($lines, $lastUseIndex + 1, 0, $imports);
             $contents = implode("\n", $lines);
         }
 
@@ -552,13 +563,14 @@ class MakeCrudCommand extends Command
         $path = base_path('routes/web.php');
         $contents = File::get($path);
         $useLine = "use App\\Http\\Controllers\\{$entity}Controller;";
-        $resourceLine = "    Route::resource('{$resource}', {$entity}Controller::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);";
+        $modelUseLine = "use App\\Models\\{$entity};";
+        $resourceLine = "    Route::crudResource('{$resource}', {$entity}Controller::class, {$entity}::class);";
 
         if (str_contains($contents, $resourceLine)) {
             return;
         }
 
-        if (! str_contains($contents, $useLine)) {
+        if (! str_contains($contents, $useLine) || ! str_contains($contents, $modelUseLine)) {
             $lines = preg_split('/\R/', $contents);
 
             if ($lines === false) {
@@ -577,7 +589,17 @@ class MakeCrudCommand extends Command
                 throw new RuntimeException('Could not locate a use statement to anchor the new import in routes/web.php.');
             }
 
-            array_splice($lines, $lastUseIndex + 1, 0, [$useLine]);
+            $imports = [];
+
+            if (! str_contains($contents, $useLine)) {
+                $imports[] = $useLine;
+            }
+
+            if (! str_contains($contents, $modelUseLine)) {
+                $imports[] = $modelUseLine;
+            }
+
+            array_splice($lines, $lastUseIndex + 1, 0, $imports);
             $contents = implode("\n", $lines);
         }
 

@@ -64,6 +64,48 @@ test('make crud command is registered by the package', function () {
         ->expectsOutputToContain('--test');
 });
 
+test('upgrade crud routes adds an idempotent options route', function () {
+    $routesPath = base_path('routes/web.php');
+    File::ensureDirectoryExists(dirname($routesPath));
+    $routes = <<<'PHP'
+<?php
+
+use App\Http\Controllers\LegacyController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::resource('legacy', LegacyController::class)->only(['index']);
+});
+PHP;
+    File::put($routesPath, $routes);
+
+    try {
+        $this->artisan('crud:upgrade-routes', [
+            'resource' => 'legacy',
+            '--model' => Model::class,
+            '--controller' => 'App\\Http\\Controllers\\LegacyController',
+        ])->assertExitCode(0);
+
+        expect(File::get($routesPath))
+            ->toContain('use Modules\\Crud\\Http\\Controllers\\CrudOptionsController;')
+            ->toContain("Route::get('legacy/options/{filter}', CrudOptionsController::class)")
+            ->toContain("->name('legacy.options')")
+            ->toContain("->defaults('model', \\Illuminate\\Database\\Eloquent\\Model::class);");
+
+        $this->artisan('crud:upgrade-routes', [
+            'resource' => 'legacy',
+            '--model' => Model::class,
+            '--controller' => 'App\\Http\\Controllers\\LegacyController',
+        ])->assertExitCode(0)
+            ->expectsOutputToContain('No CRUD routes require upgrading.');
+
+        expect(substr_count(File::get($routesPath), "->name('legacy.options')"))->toBe(1);
+    } finally {
+        File::put($routesPath, "<?php\n");
+        File::delete($routesPath);
+    }
+});
+
 test('make crud rejects an unknown database connector', function () {
     $this->artisan('make:crud', [
         'name' => 'Person',
@@ -134,8 +176,8 @@ PHP);
             ->and(File::get(base_path('composer.json')))->toBe($composer)
             ->and(File::get(base_path('bootstrap/providers.php')))->toBe($providers)
             ->and(File::get($routesPath))->toContain('use App\\Http\\Controllers\\RootSqlWidgetController;')
-            ->toContain("Route::resource('root-sql-widgets', RootSqlWidgetController::class)")
-            ->toContain("['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']");
+            ->toContain("Route::crudResource('root-sql-widgets', RootSqlWidgetController::class, RootSqlWidget::class)")
+            ->toContain('use App\\Models\\RootSqlWidget;');
     } finally {
         File::put($routesPath, $routes);
         File::delete($routesPath);
@@ -227,7 +269,8 @@ PHP);
             ->and(File::get(base_path('composer.json')))->toBe($composer)
             ->and(File::get(base_path('bootstrap/providers.php')))->toBe($providers)
             ->and(File::get($routesPath))->toContain('use App\\Http\\Controllers\\RootMongoWidgetController;')
-            ->toContain("Route::resource('root-mongo-widgets', RootMongoWidgetController::class)");
+            ->toContain("Route::crudResource('root-mongo-widgets', RootMongoWidgetController::class, RootMongoWidget::class)")
+            ->toContain('use App\\Models\\RootMongoWidget;');
     } finally {
         File::put($routesPath, $routes);
         File::delete($routesPath);

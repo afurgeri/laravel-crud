@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
 use Modules\Crud\CrudFilter;
 
 test('crud filters default to a plain text filter with no relation', function () {
@@ -64,6 +65,20 @@ test('crud filters can be configured as remote selects', function () {
             'min_chars' => 3,
             'debounce' => 500,
         ]);
+});
+
+test('crud filters can define remote search columns and labels without a URL', function () {
+    $filter = CrudFilter::make('patient')
+        ->relation('patient')
+        ->remoteSelect(
+            searchColumns: ['first_name', 'last_name', 'identification_number'],
+            label: fn (Model $patient): string => (string) $patient->getAttribute('name'),
+        );
+
+    expect($filter->remoteConfig('/patients/options/patient')['url'])
+        ->toBe('/patients/options/patient')
+        ->and($filter->remoteSearchColumns())
+        ->toBe(['first_name', 'last_name', 'identification_number']);
 });
 
 test('crud filters resolve select options from a closure lazily', function () {

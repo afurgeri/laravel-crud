@@ -3,6 +3,7 @@
 namespace Modules\Crud;
 
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use ReflectionFunction;
 
 final class CrudFilter
@@ -35,6 +36,11 @@ final class CrudFilter
     private int $remoteMinChars = 2;
 
     private int $remoteDebounce = 300;
+
+    /** @var list<string> */
+    private array $remoteSearchColumns = [];
+
+    private ?Closure $remoteLabelResolver = null;
 
     private function __construct(private readonly string $name, private readonly string $column) {}
 
@@ -97,12 +103,22 @@ final class CrudFilter
         return $this;
     }
 
-    public function remoteSelect(string $url, int $minChars = 2, int $debounce = 300): self
-    {
+    /**
+     * @param  list<string>  $searchColumns
+     */
+    public function remoteSelect(
+        ?string $url = null,
+        int $minChars = 2,
+        int $debounce = 300,
+        array $searchColumns = [],
+        ?Closure $label = null,
+    ): self {
         $this->type = 'remote-select';
         $this->remoteUrl = $url;
         $this->remoteMinChars = max(0, $minChars);
         $this->remoteDebounce = max(0, $debounce);
+        $this->remoteSearchColumns = $searchColumns;
+        $this->remoteLabelResolver = $label;
 
         return $this;
     }
@@ -171,15 +187,35 @@ final class CrudFilter
     }
 
     /**
+     * @param  ?string  $url  The generated endpoint URL, when the filter does not define one explicitly.
      * @return array{url: string, min_chars: int, debounce: int}
      */
-    public function remoteConfig(): array
+    public function remoteConfig(?string $url = null): array
     {
         return [
-            'url' => $this->remoteUrl ?? '',
+            'url' => $this->remoteUrl ?? $url ?? '',
             'min_chars' => $this->remoteMinChars,
             'debounce' => $this->remoteDebounce,
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function remoteSearchColumns(): array
+    {
+        return $this->remoteSearchColumns;
+    }
+
+    public function remoteOptionLabel(Model $model): string
+    {
+        if ($this->remoteLabelResolver !== null) {
+            return ($this->remoteLabelResolver)($model);
+        }
+
+        $name = $model->getAttribute('name');
+
+        return is_scalar($name) ? (string) $name : (string) $model;
     }
 
     public function comparisonOperator(): string

@@ -3,10 +3,12 @@
 namespace Modules\Crud;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Modules\Crud\Console\Commands\InstallCrudCommand;
 use Modules\Crud\Console\Commands\MakeCrudCommand;
+use Modules\Crud\Console\Commands\UpgradeCrudRoutesCommand;
 
 class CrudServiceProvider extends ServiceProvider
 {
@@ -22,8 +24,13 @@ class CrudServiceProvider extends ServiceProvider
             $this->commands([
                 InstallCrudCommand::class,
                 MakeCrudCommand::class,
+                UpgradeCrudRoutesCommand::class,
             ]);
         }
+
+        Route::macro('crudResource', function (string $resource, string $controller, string $model): void {
+            app(CrudRouteRegistrar::class)->register($resource, $controller, $model);
+        });
     }
 
     /**

@@ -514,7 +514,7 @@ test('it exposes remote filter configuration without resolving options', functio
         {
             return [
                 CrudFilter::make('patient')
-                    ->remoteSelect('/patients/options', 3, 500),
+                    ->remoteSelect(minChars: 3, debounce: 500),
             ];
         }
     };
@@ -531,7 +531,7 @@ test('it exposes remote filter configuration without resolving options', functio
                 'range' => null,
                 'value' => null,
                 'remote' => [
-                    'url' => '/patients/options',
+                    'url' => 'http://localhost/appointments/options/patient',
                     'min_chars' => 3,
                     'debounce' => 500,
                 ],
