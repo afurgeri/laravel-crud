@@ -30,6 +30,12 @@ final class CrudFilter
 
     private ?string $label = null;
 
+    private ?string $remoteUrl = null;
+
+    private int $remoteMinChars = 2;
+
+    private int $remoteDebounce = 300;
+
     private function __construct(private readonly string $name, private readonly string $column) {}
 
     public static function make(string $name, ?string $column = null): self
@@ -91,6 +97,16 @@ final class CrudFilter
         return $this;
     }
 
+    public function remoteSelect(string $url, int $minChars = 2, int $debounce = 300): self
+    {
+        $this->type = 'remote-select';
+        $this->remoteUrl = $url;
+        $this->remoteMinChars = max(0, $minChars);
+        $this->remoteDebounce = max(0, $debounce);
+
+        return $this;
+    }
+
     public function operator(string $operator): self
     {
         $this->operator = in_array($operator, self::OPERATORS, true) ? $operator : '=';
@@ -147,6 +163,23 @@ final class CrudFilter
     public function type(): string
     {
         return $this->type;
+    }
+
+    public function isRemote(): bool
+    {
+        return $this->type === 'remote-select';
+    }
+
+    /**
+     * @return array{url: string, min_chars: int, debounce: int}
+     */
+    public function remoteConfig(): array
+    {
+        return [
+            'url' => $this->remoteUrl ?? '',
+            'min_chars' => $this->remoteMinChars,
+            'debounce' => $this->remoteDebounce,
+        ];
     }
 
     public function comparisonOperator(): string

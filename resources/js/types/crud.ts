@@ -50,16 +50,23 @@ export type CrudFilterOption = {
     label: string;
 };
 
+export type CrudRemoteFilter = {
+    url: string;
+    min_chars: number;
+    debounce: number;
+};
+
 export type CrudFilter = {
     name: string;
     label: string;
-    type: 'text' | 'date' | 'number' | 'select';
+    type: 'text' | 'date' | 'number' | 'select' | 'remote-select';
     operator: string;
     relation: boolean;
     clearable: boolean;
     range: string | null;
     value: unknown;
     options?: CrudFilterOption[];
+    remote?: CrudRemoteFilter;
     max_date?: string | null;
 };
 

@@ -27,7 +27,7 @@ class CrudSchemaManager
      *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible_on_update: bool, defaultValue?: mixed}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
-     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, max_date?: ?string}>
+     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
      * }
      */
     public function for(CrudDefinition $definition, string $resource, ?string $sort = null, string $direction = 'asc', ?string $search = null, array $filterValues = []): array
@@ -139,7 +139,7 @@ class CrudSchemaManager
 
     /**
      * @param  array<string, mixed>  $filterValues  Current values of every filter, forwarded so cascading select filters can narrow their options.
-     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, max_date?: ?string}
+     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
      */
     private function filterSchema(CrudFilter $filter, array $filterValues): array
     {
@@ -167,6 +167,10 @@ class CrudSchemaManager
                 array_keys($options),
                 array_values($options),
             );
+        }
+
+        if ($filter->isRemote()) {
+            $schema['remote'] = $filter->remoteConfig();
         }
 
         if ($filter->type() === 'date') {

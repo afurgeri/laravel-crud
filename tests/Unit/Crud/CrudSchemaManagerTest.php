@@ -477,6 +477,68 @@ test('it exposes declared filters with their resolved values and options', funct
     ]);
 });
 
+test('it exposes remote filter configuration without resolving options', function () {
+    $definition = new class implements CrudDefinition, HasCrudFilters
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Patients';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [];
+        }
+
+        public function fields(): array
+        {
+            return [];
+        }
+
+        public function filters(): array
+        {
+            return [
+                CrudFilter::make('patient')
+                    ->remoteSelect('/patients/options', 3, 500),
+            ];
+        }
+    };
+
+    expect(app(CrudSchemaManager::class)->for($definition, 'appointments')['filters'])
+        ->toBe([
+            [
+                'name' => 'patient',
+                'label' => 'Patient',
+                'type' => 'remote-select',
+                'operator' => '=',
+                'relation' => false,
+                'clearable' => false,
+                'range' => null,
+                'value' => null,
+                'remote' => [
+                    'url' => '/patients/options',
+                    'min_chars' => 3,
+                    'debounce' => 500,
+                ],
+            ],
+        ]);
+});
+
 test('it passes all filter values to select option closures for cascading filters', function () {
     $definition = new class implements CrudDefinition, HasCrudFilters
     {

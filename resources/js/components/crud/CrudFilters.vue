@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Search, SlidersHorizontal, X } from '@lucide/vue';
 import { computed } from 'vue';
+import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
@@ -133,8 +134,24 @@ function clearFilter(name: string): void {
                     >
 
                     <div class="flex w-full items-center gap-1 sm:w-48">
+                        <RemoteCombobox
+                            v-if="entry.filter.type === 'remote-select'"
+                            :id="`filter-${entry.filter.name}`"
+                            :model-value="filterValues[entry.filter.name] || ''"
+                            :remote="entry.filter.remote!"
+                            :placeholder="entry.filter.label"
+                            @update:model-value="
+                                (value) =>
+                                    emit(
+                                        'filter',
+                                        entry.filter.name,
+                                        value,
+                                        true,
+                                    )
+                            "
+                        />
                         <Select
-                            v-if="entry.filter.type === 'select'"
+                            v-else-if="entry.filter.type === 'select'"
                             :model-value="
                                 filterValues[entry.filter.name] || undefined
                             "
@@ -254,7 +271,7 @@ function clearFilter(name: string): void {
                                 variant="ghost"
                                 size="icon-sm"
                                 class="shrink-0"
-                            :aria-label="t('Clear :label', { label: entry.from.label })"
+                                :aria-label="t('Clear :label', { label: entry.from.label })"
                                 @click="clearFilter(entry.from.name)"
                             >
                                 <X class="size-4" />
@@ -292,7 +309,7 @@ function clearFilter(name: string): void {
                                 variant="ghost"
                                 size="icon-sm"
                                 class="shrink-0"
-                            :aria-label="t('Clear :label', { label: entry.to.label })"
+                                :aria-label="t('Clear :label', { label: entry.to.label })"
                                 @click="clearFilter(entry.to.name)"
                             >
                                 <X class="size-4" />

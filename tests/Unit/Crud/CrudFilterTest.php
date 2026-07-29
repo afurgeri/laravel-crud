@@ -53,6 +53,19 @@ test('crud filters can be configured as a select filter with an options array', 
         ->and($filter->resolvedOptions())->toBe(['active' => 'Active', 'inactive' => 'Inactive']);
 });
 
+test('crud filters can be configured as remote selects', function () {
+    $filter = CrudFilter::make('patient')
+        ->remoteSelect('/patients/options', 3, 500);
+
+    expect($filter->type())->toBe('remote-select')
+        ->and($filter->isRemote())->toBeTrue()
+        ->and($filter->remoteConfig())->toBe([
+            'url' => '/patients/options',
+            'min_chars' => 3,
+            'debounce' => 500,
+        ]);
+});
+
 test('crud filters resolve select options from a closure lazily', function () {
     $calls = 0;
 
