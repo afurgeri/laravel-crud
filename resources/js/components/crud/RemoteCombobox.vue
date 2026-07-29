@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Check, ChevronsUpDown, LoaderCircle } from '@lucide/vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
+    Combobox,
     ComboboxAnchor,
     ComboboxContent,
     ComboboxEmpty,
@@ -10,9 +12,7 @@ import {
     ComboboxItemIndicator,
     ComboboxTrigger,
     ComboboxViewport,
-    ComboboxRoot as Combobox,
-} from 'reka-ui';
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+} from '@/components/ui/combobox';
 import { cn } from '@/lib/utils';
 import type { CrudFilterOption, CrudRemoteFilter } from '@/types/crud';
 
@@ -201,12 +201,8 @@ onBeforeUnmount(() => {
         <ComboboxContent
             class="z-50 w-(--reka-combobox-trigger-width) rounded-md border bg-popover text-popover-foreground shadow-md"
         >
-            <ComboboxInput
-                v-model="searchTerm"
-                :placeholder="placeholder"
-                class="h-9 w-full border-b border-input bg-transparent px-3 text-sm outline-none"
-            />
-            <ComboboxViewport class="max-h-60 overflow-y-auto p-1">
+            <ComboboxInput v-model="searchTerm" :placeholder="placeholder" />
+            <ComboboxViewport>
                 <div
                     v-if="loading"
                     class="flex items-center justify-center gap-2 px-2 py-6 text-sm text-muted-foreground"
@@ -231,7 +227,6 @@ onBeforeUnmount(() => {
                         v-for="option in options"
                         :key="option.value"
                         :value="option.value"
-                        class="relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
                         @select="selectOption(option)"
                     >
                         <ComboboxItemIndicator
