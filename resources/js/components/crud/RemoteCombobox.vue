@@ -4,12 +4,12 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
     Combobox,
     ComboboxAnchor,
-    ComboboxContent,
     ComboboxEmpty,
     ComboboxGroup,
     ComboboxInput,
     ComboboxItem,
     ComboboxItemIndicator,
+    ComboboxList,
     ComboboxTrigger,
     ComboboxViewport,
 } from '@/components/ui/combobox';
@@ -198,9 +198,7 @@ onBeforeUnmount(() => {
                 </button>
             </ComboboxTrigger>
         </ComboboxAnchor>
-        <ComboboxContent
-            class="z-50 w-(--reka-combobox-trigger-width) rounded-md border bg-popover text-popover-foreground shadow-md"
-        >
+        <ComboboxList class="w-(--reka-combobox-trigger-width) p-0">
             <ComboboxInput v-model="searchTerm" :placeholder="placeholder" />
             <ComboboxViewport>
                 <div
@@ -247,6 +245,6 @@ onBeforeUnmount(() => {
                     </ComboboxItem>
                 </ComboboxGroup>
             </ComboboxViewport>
-        </ComboboxContent>
+        </ComboboxList>
     </Combobox>
 </template>
