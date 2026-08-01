@@ -34,6 +34,26 @@ test('crud fields can be hidden from automatic form rendering', function () {
     expect($field->isVisible())->toBeFalse();
 });
 
+test('crud fields configure responsive column spans', function () {
+    $field = CrudField::make('email')
+        ->span(6, 'md')
+        ->span(4, 'xl');
+
+    expect($field->spans())->toBe([
+        'base' => 12,
+        'md' => 6,
+        'xl' => 4,
+    ]);
+});
+
+test('crud fields reject invalid responsive column spans', function (int $columns) {
+    CrudField::make('email')->span($columns);
+})->with([0, 13])->throws(InvalidArgumentException::class);
+
+test('crud fields reject unsupported responsive span breakpoints', function () {
+    CrudField::make('email')->span(6, 'tablet');
+})->throws(InvalidArgumentException::class);
+
 test('crud fields can define a translation label key', function () {
     $field = CrudField::make('email')->label('Email address');
 

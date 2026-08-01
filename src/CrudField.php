@@ -2,6 +2,8 @@
 
 namespace Modules\Crud;
 
+use InvalidArgumentException;
+
 final class CrudField
 {
     /**
@@ -22,6 +24,11 @@ final class CrudField
     private mixed $defaultValue = null;
 
     private bool $hasDefaultValue = false;
+
+    /**
+     * @var array<string, int>
+     */
+    private array $spans = ['base' => 12];
 
     /**
      * @param  list<string>  $rules
@@ -134,6 +141,31 @@ final class CrudField
     public function isVisible(): bool
     {
         return $this->visible;
+    }
+
+    public function span(int $columns, ?string $breakpoint = null): self
+    {
+        if ($columns < 1 || $columns > 12) {
+            throw new InvalidArgumentException('Field spans must be between 1 and 12 columns.');
+        }
+
+        $breakpoint ??= 'base';
+
+        if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+            throw new InvalidArgumentException("Unsupported field span breakpoint [{$breakpoint}].");
+        }
+
+        $this->spans[$breakpoint] = $columns;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function spans(): array
+    {
+        return $this->spans;
     }
 
     public function email(): self

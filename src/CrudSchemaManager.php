@@ -25,7 +25,7 @@ class CrudSchemaManager
      *     description: string|null,
      *     empty_label: string|null,
      *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
-     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, defaultValue?: mixed}>,
+     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
@@ -111,7 +111,7 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, defaultValue?: mixed}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed}
      */
     private function fieldSchema(CrudField $field): array
     {
@@ -126,6 +126,7 @@ class CrudSchemaManager
             'rules' => $rules,
             'visible' => $field->isVisible(),
             'visible_on_update' => $field->isVisibleOnUpdate(),
+            'span' => $field->spans(),
         ];
 
         if ($field->isArray()) {

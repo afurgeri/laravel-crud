@@ -44,7 +44,7 @@ test('it builds frontend schema from crud definitions', function () {
         {
             return [
                 CrudField::make('name', ['required', 'string', 'max:255'])->default('Ada'),
-                CrudField::make('email', ['required', 'email'])->email(),
+                CrudField::make('email', ['required', 'email'])->email()->span(6, 'md')->span(4, 'xl'),
                 CrudField::make('is_active', ['required', 'boolean'])->checkbox(),
                 CrudField::make('duration_minutes', ['required', 'integer'])->number(),
                 CrudField::make('notes', ['nullable', 'string', 'max:1000'])->textarea(),
@@ -79,6 +79,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => true,
                 'rules' => ['required', 'string', 'max:255'],
                 'visible' => true,
+                'span' => ['base' => 12],
                 'visible_on_update' => true,
                 'defaultValue' => 'Ada',
             ],
@@ -90,6 +91,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => true,
                 'rules' => ['required', 'email'],
                 'visible' => true,
+                'span' => ['base' => 12, 'md' => 6, 'xl' => 4],
                 'visible_on_update' => true,
             ],
             [
@@ -100,6 +102,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => true,
                 'rules' => ['required', 'boolean'],
                 'visible' => true,
+                'span' => ['base' => 12],
                 'visible_on_update' => true,
             ],
             [
@@ -110,6 +113,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => true,
                 'rules' => ['required', 'integer'],
                 'visible' => true,
+                'span' => ['base' => 12],
                 'visible_on_update' => true,
             ],
             [
@@ -120,6 +124,7 @@ test('it builds frontend schema from crud definitions', function () {
                 'required' => false,
                 'rules' => ['nullable', 'string', 'max:1000'],
                 'visible' => true,
+                'span' => ['base' => 12],
                 'visible_on_update' => true,
             ],
         ],
@@ -175,6 +180,7 @@ test('it marks password fields and create only visibility', function () {
                     'required' => true,
                     'rules' => ['required', 'string', 'min:8'],
                     'visible' => true,
+                    'span' => ['base' => 12],
                     'visible_on_update' => false,
                 ],
             ],
@@ -228,6 +234,7 @@ test('it marks fields that require confirmation', function () {
                     'required' => true,
                     'rules' => ['required', 'string', 'min:8', 'confirmed'],
                     'visible' => true,
+                    'span' => ['base' => 12],
                     'visible_on_update' => true,
                 ],
             ],
