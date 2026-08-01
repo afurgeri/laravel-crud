@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, useSlots } from 'vue';
 import CrudField from '@/components/crud/CrudField.vue';
 import { Button } from '@/components/ui/button';
 import type { CrudField as CrudFieldConfig, FormAction } from '@/types/crud';
@@ -28,6 +28,11 @@ const props = withDefaults(
 );
 
 const fieldRenderKey = ref(0);
+const slots = useSlots();
+
+function hasFieldSlot(fieldName: string): boolean {
+    return Boolean(slots[`field-${fieldName}`]);
+}
 
 const emit = defineEmits<{
     success: [];
@@ -67,7 +72,14 @@ function handleSuccess(): void {
             :default-value="fieldDefault(field)"
             :label-class="fieldLabelClass"
             :id-prefix="fieldIdPrefix"
-        />
+        >
+            <template v-if="hasFieldSlot(field.name)" #default="slotProps">
+                <slot
+                    :name="`field-${field.name}`"
+                    v-bind="slotProps"
+                />
+            </template>
+        </CrudField>
 
         <div class="col-span-12">
             <slot name="fields" :errors="errors" />

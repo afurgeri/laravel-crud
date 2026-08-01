@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
+import { useSlots } from 'vue';
 import CrudField from '@/components/crud/CrudField.vue';
 import CrudForm from '@/components/crud/CrudForm.vue';
 import { Button } from '@/components/ui/button';
@@ -12,11 +13,15 @@ import type {
     FormAction,
 } from '@/types/crud';
 
+type CrudFormPageSlotProps = {
+    errors?: Record<string, string | undefined>;
+    readOnly?: boolean;
+    [key: string]: unknown;
+};
+
 defineSlots<{
-    fields(props: {
-        errors: Record<string, string | undefined>;
-        readOnly?: boolean;
-    }): unknown;
+    [name: string]: (props: CrudFormPageSlotProps) => unknown;
+    fields(props: CrudFormPageSlotProps): unknown;
 }>();
 
 withDefaults(
@@ -48,6 +53,12 @@ const layoutWidthClasses = {
     wide: 'max-w-screen-2xl',
     full: 'max-w-none',
 } as const;
+
+const slots = useSlots();
+
+function hasFieldSlot(fieldName: string): boolean {
+    return Boolean(slots[`field-${fieldName}`]);
+}
 
 function fieldDefault(
     field: CrudFieldConfig,
@@ -102,6 +113,18 @@ function fieldDefault(
                 :field-id-prefix="fieldIdPrefix"
                 form-class="grid w-full grid-cols-12 gap-6"
             >
+                <template
+                    v-for="field in (fields ?? schema.fields).filter((field) =>
+                        hasFieldSlot(field.name),
+                    )"
+                    :key="field.name"
+                    #[`field-${field.name}`]="slotProps"
+                >
+                    <slot
+                        :name="`field-${field.name}`"
+                        v-bind="slotProps"
+                    />
+                </template>
                 <template #fields="slotProps">
                     <slot name="fields" v-bind="slotProps" />
                 </template>
@@ -115,7 +138,17 @@ function fieldDefault(
                     :default-value="fieldDefault(field, initialValues)"
                     :id-prefix="fieldIdPrefix"
                     read-only
-                />
+                >
+                    <template
+                        v-if="hasFieldSlot(field.name)"
+                        #default="slotProps"
+                    >
+                        <slot
+                            :name="`field-${field.name}`"
+                            v-bind="slotProps"
+                        />
+                    </template>
+                </CrudField>
 
                 <div class="col-span-12">
                     <slot name="fields" :errors="{}" :read-only="true" />

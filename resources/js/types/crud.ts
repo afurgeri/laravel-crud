@@ -48,6 +48,16 @@ export type CrudField = {
     options?: CrudFilterOption[];
 };
 
+export type CrudFieldSlotProps = {
+    field: CrudField;
+    id: string;
+    name: string;
+    defaultValue: unknown;
+    error?: string;
+    required: boolean;
+    readOnly: boolean;
+};
+
 export type CrudSort = {
     column: string | null;
     direction: 'asc' | 'desc';

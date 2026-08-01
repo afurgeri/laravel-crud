@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, useSlots } from 'vue';
 import CrudForm from '@/components/crud/CrudForm.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +40,11 @@ withDefaults(
 );
 
 const open = ref(false);
+const slots = useSlots();
+
+function hasFieldSlot(fieldName: string): boolean {
+    return Boolean(slots[`field-${fieldName}`]);
+}
 </script>
 
 <template>
@@ -81,6 +86,18 @@ const open = ref(false);
                 form-class="grid grid-cols-12 gap-4 px-1 pb-6"
                 @success="open = false"
             >
+                <template
+                    v-for="field in fields.filter((field) =>
+                        hasFieldSlot(field.name),
+                    )"
+                    :key="field.name"
+                    #[`field-${field.name}`]="slotProps"
+                >
+                    <slot
+                        :name="`field-${field.name}`"
+                        v-bind="slotProps"
+                    />
+                </template>
                 <template #fields="slotProps">
                     <slot name="fields" v-bind="slotProps" />
                 </template>

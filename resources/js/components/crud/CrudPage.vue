@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { Link, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, Eye, Pencil, Plus } from '@lucide/vue';
-import { reactive, ref } from 'vue';
+import { reactive, ref, useSlots } from 'vue';
 import CrudDeleteDialog from '@/components/crud/CrudDeleteDialog.vue';
 import CrudFilters from '@/components/crud/CrudFilters.vue';
 import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
@@ -42,6 +42,11 @@ const props = withDefaults(
 );
 
 const { t } = useTranslation();
+const slots = useSlots();
+
+function hasSlot(name: string): boolean {
+    return Boolean(slots[name]);
+}
 
 const layoutWidthClasses = {
     standard: 'max-w-7xl',
@@ -291,6 +296,18 @@ function handleClearFilters(): void {
                                 {{ create.label ?? t('Create') }}
                             </Button>
                         </template>
+                        <template
+                            v-for="field in schema.fields.filter((field) =>
+                                hasSlot(`create-field-${field.name}`),
+                            )"
+                            :key="field.name"
+                            #[`field-${field.name}`]="slotProps"
+                        >
+                            <slot
+                                :name="`create-field-${field.name}`"
+                                v-bind="slotProps"
+                            />
+                        </template>
                         <template #fields="slotProps">
                             <slot name="create-fields" v-bind="slotProps" />
                         </template>
@@ -403,6 +420,21 @@ function handleClearFilters(): void {
                                 >
                                     <Pencil class="size-4" />
                                 </Button>
+                            </template>
+                            <template
+                                v-for="field in schema.fields.filter(
+                                    (field) =>
+                                        field.visible_on_update &&
+                                        hasSlot(`edit-field-${field.name}`),
+                                )"
+                                :key="field.name"
+                                #[`field-${field.name}`]="slotProps"
+                            >
+                                <slot
+                                    :name="`edit-field-${field.name}`"
+                                    :record="record"
+                                    v-bind="slotProps"
+                                />
                             </template>
 
                             <template #fields="slotProps">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/composables/useTranslation';
-import type { CrudField } from '@/types/crud';
+import type { CrudField, CrudFieldSlotProps } from '@/types/crud';
 
 const props = defineProps<{
     field: CrudField;
@@ -22,6 +22,10 @@ const props = defineProps<{
     readOnly?: boolean;
     labelClass?: string;
     idPrefix?: string;
+}>();
+
+defineSlots<{
+    default(props: CrudFieldSlotProps): unknown;
 }>();
 
 type CrudFieldBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -120,6 +124,10 @@ const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
 const { t } = useTranslation();
 
+const fieldId = computed(() =>
+    props.idPrefix ? `${props.idPrefix}-${props.field.name}` : props.field.name,
+);
+
 watch(
     () => props.defaultValue,
     (value) => {
@@ -215,11 +223,23 @@ function removeArrayValue(index: number): void {
     <div v-if="field.visible" :class="['space-y-4', spanClasses(field.span)]">
         <div class="space-y-2">
             <Label
-                :for="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                :for="fieldId"
                 :class="labelClass"
                 >{{ field.label }}</Label
             >
-            <template v-if="field.type === 'array'">
+            <slot
+                v-if="$slots.default"
+                v-bind="{
+                    field,
+                    id: fieldId,
+                    name: field.name,
+                    defaultValue,
+                    error,
+                    required: field.required,
+                    readOnly: readOnly ?? false,
+                }"
+            />
+            <template v-if="!$slots.default && field.type === 'array'">
                 <div v-if="readOnly" class="flex flex-wrap gap-2">
                     <span
                         v-for="value in arrayValues"
@@ -290,30 +310,30 @@ function removeArrayValue(index: number): void {
                                 :value="value"
                             />
                         </span>
+                        </div>
                     </div>
-                </div>
-            </template>
+                </template>
             <input
-                v-else-if="field.type === 'checkbox'"
+                v-if="!$slots.default && field.type === 'checkbox'"
                 type="hidden"
                 :name="field.name"
                 :value="checkboxValue ? '1' : '0'"
             />
             <Checkbox
-                v-if="field.type === 'checkbox'"
+                v-if="!$slots.default && field.type === 'checkbox'"
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                 v-model="checkboxValue"
                 :disabled="readOnly"
                 :aria-invalid="error ? 'true' : undefined"
             />
             <input
-                v-if="field.type === 'select'"
+                v-if="!$slots.default && field.type === 'select'"
                 type="hidden"
                 :name="field.name"
                 :value="selectValue ?? ''"
             />
             <Select
-                v-if="field.type === 'select'"
+                v-if="!$slots.default && field.type === 'select'"
                 v-model="selectValue"
                 :disabled="readOnly"
             >
@@ -335,7 +355,7 @@ function removeArrayValue(index: number): void {
                 </SelectContent>
             </Select>
             <Textarea
-                v-else-if="field.type === 'textarea'"
+                v-if="!$slots.default && field.type === 'textarea'"
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                 :name="field.name"
                 :required="field.required"
@@ -344,7 +364,12 @@ function removeArrayValue(index: number): void {
                 :default-value="inputValue(defaultValue)"
             />
             <Input
-                v-else-if="field.type !== 'array'"
+                v-if="
+                    !$slots.default &&
+                    !['array', 'checkbox', 'select', 'textarea'].includes(
+                        field.type,
+                    )
+                "
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                 :name="field.name"
                 :type="field.type"
@@ -359,7 +384,7 @@ function removeArrayValue(index: number): void {
             <InputError :message="arrayInputError ?? error" />
         </div>
 
-        <div v-if="field.confirmed" class="space-y-2">
+        <div v-if="field.confirmed && !$slots.default" class="space-y-2">
             <Label
                 :for="
                     idPrefix
