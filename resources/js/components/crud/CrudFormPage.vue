@@ -19,7 +19,7 @@ defineSlots<{
     }): unknown;
 }>();
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         schema: CrudSchema;
         action?: FormAction;
