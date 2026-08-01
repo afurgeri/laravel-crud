@@ -48,6 +48,7 @@ test('crud frontend resources expose the paginator contract', function () {
     $table = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudTable.vue');
     $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
+    $formPage = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue');
     $types = File::get(dirname(__DIR__, 3).'/resources/js/types/crud.ts');
 
     expect($component)
@@ -71,15 +72,24 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($filters)
         ->toContain('SlidersHorizontal')
         ->toContain('bg-muted/40')
+        ->toContain('sm:ml-auto')
         ->and($field)
         ->toContain("import { useTranslation } from '@/composables/useTranslation';")
         ->toContain("{{ t('Add') }}")
+        ->toContain('v-if="field.visible"')
+        ->toContain('spanClasses(field.span)')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($types)
         ->and($form)
         ->toContain('initialValues')
         ->toContain('defaultValue')
+        ->toContain('fields.filter((field) => field.visible)')
+        ->toContain('grid-cols-12')
+        ->and($formPage)
+        ->toContain('grid-cols-12')
         ->and($types)
+        ->toContain('visible: boolean;')
+        ->toContain("'2xl'?: number;")
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
         ->toContain('export type CrudShowConfig<T extends CrudRecord>')

@@ -78,7 +78,7 @@ const open = ref(false);
                 :submit-label="submitLabel"
                 :reset-on-success="resetOnSuccess"
                 :field-id-prefix="fieldIdPrefix"
-                form-class="flex flex-col gap-4 px-1 pb-6"
+                form-class="grid grid-cols-12 gap-4 px-1 pb-6"
                 @success="open = false"
             >
                 <template #fields="slotProps">

@@ -21,7 +21,7 @@ const props = withDefaults(
         initialValues: () => ({}),
         resetOnSuccess: false,
         readOnly: false,
-        formClass: 'flex flex-col gap-4',
+        formClass: 'grid grid-cols-12 gap-4',
         fieldLabelClass: undefined,
         fieldIdPrefix: undefined,
     },
@@ -59,7 +59,7 @@ function handleSuccess(): void {
         @success="handleSuccess"
     >
         <CrudField
-            v-for="field in fields"
+            v-for="field in fields.filter((field) => field.visible)"
             :key="`${field.name}-${fieldRenderKey}`"
             :field="field"
             :read-only="readOnly"
@@ -69,12 +69,14 @@ function handleSuccess(): void {
             :id-prefix="fieldIdPrefix"
         />
 
-        <slot name="fields" :errors="errors" />
+        <div class="col-span-12">
+            <slot name="fields" :errors="errors" />
+        </div>
 
         <Button
             v-if="!readOnly"
             type="submit"
-            class="w-full"
+            class="col-span-12 w-full"
             :disabled="processing"
         >
             {{ submitLabel }}

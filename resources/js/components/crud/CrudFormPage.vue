@@ -15,6 +15,7 @@ import type {
 defineSlots<{
     fields(props: {
         errors: Record<string, string | undefined>;
+        readOnly?: boolean;
     }): unknown;
 }>();
 
@@ -88,23 +89,26 @@ function fieldDefault(
                 :initial-values="initialValues"
                 :submit-label="submitLabel"
                 :field-id-prefix="fieldIdPrefix"
-                form-class="flex w-full flex-col gap-6"
+                form-class="grid w-full grid-cols-12 gap-6"
             >
                 <template #fields="slotProps">
                     <slot name="fields" v-bind="slotProps" />
                 </template>
             </CrudForm>
 
-            <div v-else class="flex w-full flex-col gap-6">
+            <div v-else class="grid w-full grid-cols-12 gap-6">
                 <CrudField
                     v-for="field in fields ?? schema.fields"
                     :key="field.name"
                     :field="field"
                     :default-value="fieldDefault(field, initialValues)"
                     :id-prefix="fieldIdPrefix"
+                    read-only
                 />
 
-                <slot name="fields" :errors="{}" />
+                <div class="col-span-12">
+                    <slot name="fields" :errors="{}" :read-only="true" />
+                </div>
             </div>
         </section>
     </div>

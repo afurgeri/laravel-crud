@@ -31,7 +31,16 @@ export type CrudField = {
     required: boolean;
     rules: string[];
     unique_items?: boolean;
+    visible: boolean;
     visible_on_update: boolean;
+    span: {
+        base: number;
+        sm?: number;
+        md?: number;
+        lg?: number;
+        xl?: number;
+        '2xl'?: number;
+    };
     defaultValue?: unknown;
 };
 

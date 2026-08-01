@@ -333,7 +333,7 @@ function clearFilter(name: string): void {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="w-full sm:w-auto"
+                class="w-full shrink-0 sm:ml-auto sm:w-auto"
                 @click="emit('clear')"
             >
                 {{ clearLabel ?? t('Clear filters') }}
