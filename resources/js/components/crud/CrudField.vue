@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
+import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -120,6 +121,12 @@ const spanClassesByBreakpoint: Record<CrudFieldBreakpoint, string[]> = {
 
 const checkboxValue = ref(booleanValue(props.defaultValue));
 const selectValue = ref(optionValue(props.defaultValue));
+const remoteSelectValue = computed({
+    get: () => selectValue.value ?? '',
+    set: (value: string) => {
+        selectValue.value = value;
+    },
+});
 const arrayValues = ref(arrayValue(props.defaultValue));
 const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
@@ -326,7 +333,7 @@ function removeArrayValue(index: number): void {
             <input
                 v-if="
                     !$slots.default &&
-                    ['select', 'combobox'].includes(field.type)
+                    ['select', 'combobox', 'remote-select'].includes(field.type)
                 "
                 type="hidden"
                 :name="field.name"
@@ -363,6 +370,13 @@ function removeArrayValue(index: number): void {
                 :invalid="Boolean(error)"
                 :placeholder="field.label"
             />
+            <RemoteCombobox
+                v-if="!$slots.default && field.type === 'remote-select'"
+                v-model="remoteSelectValue"
+                :id="fieldId"
+                :remote="field.remote!"
+                :placeholder="field.label"
+            />
             <Textarea
                 v-if="!$slots.default && field.type === 'textarea'"
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
@@ -380,6 +394,7 @@ function removeArrayValue(index: number): void {
                         'checkbox',
                         'select',
                         'combobox',
+                        'remote-select',
                         'textarea',
                     ].includes(field.type)
                 "

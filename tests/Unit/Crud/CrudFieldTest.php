@@ -104,3 +104,21 @@ test('crud fields can configure static combobox options', function () {
             ['value' => 2, 'label' => 'Grace Hopper'],
         ]);
 });
+
+test('crud fields can configure remote selects', function () {
+    $field = CrudField::make('user_id', ['nullable', 'string'])
+        ->relation('user', 'uuid')
+        ->remoteSelect('/users/options/user_id', 3, 500, ['name', 'email']);
+
+    expect($field->type())->toBe('remote-select')
+        ->and($field->isRemote())->toBeTrue()
+        ->and($field->isRelation())->toBeTrue()
+        ->and($field->relationName())->toBe('user')
+        ->and($field->relationColumn())->toBe('uuid')
+        ->and($field->remoteConfig())->toBe([
+            'url' => '/users/options/user_id',
+            'min_chars' => 3,
+            'debounce' => 500,
+        ])
+        ->and($field->remoteSearchColumns())->toBe(['name', 'email']);
+});

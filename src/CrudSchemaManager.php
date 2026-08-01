@@ -66,7 +66,7 @@ class CrudSchemaManager
                 )),
             ),
             'fields' => array_map(
-                fn (CrudField $field): array => $this->fieldSchema($field),
+                fn (CrudField $field): array => $this->fieldSchema($field, $resource),
                 $definition->fields(),
             ),
             'sort' => $this->sortValues->for($definition, $sort, $direction),
@@ -139,9 +139,9 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int, source: 'field'}}
      */
-    private function fieldSchema(CrudField $field): array
+    private function fieldSchema(CrudField $field, string $resource): array
     {
         $rules = $field->validationRules();
 
@@ -169,6 +169,19 @@ class CrudSchemaManager
                 ],
                 $field->options(),
             );
+            $schema['options'] = array_values($schema['options']);
+        }
+
+        if ($field->isRemote()) {
+            $routeName = "{$resource}.options";
+            $generatedUrl = Route::has($routeName)
+                ? route($routeName, ['filter' => $field->name()])
+                : url("{$resource}/options/{$field->name()}");
+
+            $schema['remote'] = [
+                ...$field->remoteConfig($generatedUrl),
+                'source' => 'field',
+            ];
         }
 
         if ($field->hasDefault()) {

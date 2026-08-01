@@ -199,6 +199,59 @@ test('it serializes static combobox options in the field schema', function () {
         ]);
 });
 
+test('it exposes remote field configuration with a field source', function () {
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Users';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [];
+        }
+
+        public function fields(): array
+        {
+            return [
+                CrudField::make('user_id')
+                    ->relation('user')
+                    ->remoteSelect(minChars: 3, debounce: 500, searchColumns: ['name']),
+            ];
+        }
+    };
+
+    $schema = app(CrudSchemaManager::class)->for($definition, 'users');
+
+    expect($schema['fields'][0])
+        ->toMatchArray([
+            'name' => 'user_id',
+            'type' => 'remote-select',
+            'remote' => [
+                'url' => url('users/options/user_id'),
+                'min_chars' => 3,
+                'debounce' => 500,
+                'source' => 'field',
+            ],
+        ]);
+});
+
 test('it exposes unified crud presentation settings', function () {
     $definition = new class implements CrudDefinition, HasCrudPresentation
     {

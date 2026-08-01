@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
 use Modules\Crud\Contracts\HasCrudDefinition;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\CrudField;
 use Modules\Crud\CrudFilter;
 
 final class CrudOptionsController
@@ -26,15 +27,35 @@ final class CrudOptionsController
             Gate::authorize('viewAny', $model);
         }
 
-        abort_unless($definition instanceof HasCrudFilters, 404);
+        $source = $request->string('source', 'filter')->toString();
 
-        $crudFilter = collect($definition->filters())
-            ->first(fn (CrudFilter $candidate): bool => $candidate->name() === $filter);
+        abort_unless(in_array($source, ['field', 'filter'], true), 422);
 
-        abort_unless($crudFilter instanceof CrudFilter && $crudFilter->isRemote(), 404);
-        abort_unless($crudFilter->isRelation(), 422);
+        $remoteSource = null;
 
-        $relationName = $crudFilter->relationName();
+        if ($source === 'field') {
+            foreach ($definition->fields() as $candidate) {
+                if ($candidate->name() === $filter) {
+                    $remoteSource = $candidate;
+
+                    break;
+                }
+            }
+        } elseif ($definition instanceof HasCrudFilters) {
+            foreach ($definition->filters() as $candidate) {
+                if ($candidate->name() === $filter) {
+                    $remoteSource = $candidate;
+
+                    break;
+                }
+            }
+        }
+
+        abort_unless($remoteSource instanceof CrudField || $remoteSource instanceof CrudFilter, 404);
+        abort_unless($remoteSource->isRemote(), 404);
+        abort_unless($remoteSource->isRelation(), 422);
+
+        $relationName = $remoteSource->relationName();
         abort_unless($relationName !== null, 422);
 
         $relation = (new $model)->{$relationName}();
@@ -44,16 +65,16 @@ final class CrudOptionsController
 
         $search = trim($request->string('search')->toString());
         $selected = trim($request->string('selected')->toString());
-        $searchColumns = $crudFilter->remoteSearchColumns();
+        $searchColumns = $remoteSource->remoteSearchColumns();
         $searchTerms = preg_split('/[\s-]+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
-        if ($selected === '' && mb_strlen($search) < $crudFilter->remoteConfig()['min_chars']) {
+        if ($selected === '' && mb_strlen($search) < $remoteSource->remoteConfig()['min_chars']) {
             return response()->json(['data' => []]);
         }
 
         $selectedOption = $selected === ''
             ? null
-            : $relatedModel->newQuery()->where($crudFilter->relationColumn(), $selected)->first();
+            : $relatedModel->newQuery()->where($remoteSource->relationColumn(), $selected)->first();
 
         $matches = $searchTerms === [] || $searchColumns === []
             ? collect()
@@ -72,11 +93,11 @@ final class CrudOptionsController
 
         $options = collect($selectedOption === null ? [] : [$selectedOption])
             ->merge($matches)
-            ->unique(fn (Model $option): string => (string) $option->getAttribute($crudFilter->relationColumn()))
+            ->unique(fn (Model $option): string => (string) $option->getAttribute($remoteSource->relationColumn()))
             ->values()
             ->map(fn (Model $option): array => [
-                'value' => (string) $option->getAttribute($crudFilter->relationColumn()),
-                'label' => $crudFilter->remoteOptionLabel($option),
+                'value' => (string) $option->getAttribute($remoteSource->relationColumn()),
+                'label' => $remoteSource->remoteOptionLabel($option),
             ])
             ->all();
 

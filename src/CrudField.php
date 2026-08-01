@@ -2,6 +2,8 @@
 
 namespace Modules\Crud;
 
+use Closure;
+use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 final class CrudField
@@ -10,6 +12,21 @@ final class CrudField
      * @var array<int, array{value: bool|float|int|string|null, label: string}>|null
      */
     private ?array $options = null;
+
+    private ?string $relation = null;
+
+    private string $relationColumn = 'id';
+
+    private ?string $remoteUrl = null;
+
+    private int $remoteMinChars = 2;
+
+    private int $remoteDebounce = 300;
+
+    /** @var list<string> */
+    private array $remoteSearchColumns = [];
+
+    private ?Closure $remoteLabelResolver = null;
 
     /**
      * @param  list<string>  $rules
@@ -265,6 +282,85 @@ final class CrudField
         $this->options = $options;
 
         return $this;
+    }
+
+    public function relation(string $relation, string $column = 'id'): self
+    {
+        $this->relation = $relation;
+        $this->relationColumn = $column;
+
+        return $this;
+    }
+
+    /**
+     * @param  list<string>  $searchColumns
+     */
+    public function remoteSelect(
+        ?string $url = null,
+        int $minChars = 2,
+        int $debounce = 300,
+        array $searchColumns = [],
+        ?Closure $label = null,
+    ): self {
+        $this->type = 'remote-select';
+        $this->remoteUrl = $url;
+        $this->remoteMinChars = max(0, $minChars);
+        $this->remoteDebounce = max(0, $debounce);
+        $this->remoteSearchColumns = $searchColumns;
+        $this->remoteLabelResolver = $label;
+
+        return $this;
+    }
+
+    public function isRemote(): bool
+    {
+        return $this->type === 'remote-select';
+    }
+
+    /**
+     * @return array{url: string, min_chars: int, debounce: int}
+     */
+    public function remoteConfig(?string $url = null): array
+    {
+        return [
+            'url' => $this->remoteUrl ?? $url ?? '',
+            'min_chars' => $this->remoteMinChars,
+            'debounce' => $this->remoteDebounce,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function remoteSearchColumns(): array
+    {
+        return $this->remoteSearchColumns;
+    }
+
+    public function remoteOptionLabel(Model $model): string
+    {
+        if ($this->remoteLabelResolver !== null) {
+            return ($this->remoteLabelResolver)($model);
+        }
+
+        $name = $model->getAttribute('name');
+
+        return is_scalar($name) ? (string) $name : (string) $model;
+    }
+
+    public function isRelation(): bool
+    {
+        return $this->relation !== null;
+    }
+
+    public function relationName(): ?string
+    {
+        return $this->relation;
+    }
+
+    public function relationColumn(): string
+    {
+        return $this->relationColumn;
     }
 
     /**

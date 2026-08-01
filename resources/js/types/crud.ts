@@ -27,8 +27,9 @@ export type CrudField = {
         | 'email'
         | 'password'
         | 'checkbox'
-        | 'select'
-        | 'combobox'
+         | 'select'
+         | 'combobox'
+         | 'remote-select'
         | 'number'
         | 'date'
         | 'textarea'
@@ -49,6 +50,7 @@ export type CrudField = {
     };
     defaultValue?: unknown;
     options?: CrudFilterOption[];
+    remote?: CrudRemoteFilter;
 };
 
 export type CrudFieldSlotProps = {
@@ -80,6 +82,7 @@ export type CrudRemoteFilter = {
     url: string;
     min_chars: number;
     debounce: number;
+    source?: 'filter' | 'field';
 };
 
 export type CrudFilter = {

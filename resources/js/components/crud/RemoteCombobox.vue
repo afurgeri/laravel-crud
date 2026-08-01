@@ -82,6 +82,7 @@ async function loadOptions(search: string, selected?: string): Promise<void> {
     requestController = new AbortController();
     const sequence = ++requestSequence;
     const url = new URL(props.remote.url, window.location.origin);
+    url.searchParams.set('source', props.remote.source ?? 'filter');
 
     if (search !== '') {
         url.searchParams.set('search', search);
