@@ -48,7 +48,12 @@ test('it builds frontend schema from crud definitions', function () {
             return [
                 CrudField::make('name', ['required', 'string', 'max:255'])->default('Ada'),
                 CrudField::make('email', ['required', 'email'])->email()->span(6, 'md')->span(4, 'xl'),
-                CrudField::make('is_active', ['required', 'boolean'])->checkbox(),
+                CrudField::make('is_active', ['required', 'boolean'])
+                    ->select([
+                        ['value' => false, 'label' => 'No'],
+                        ['value' => true, 'label' => 'Yes'],
+                    ])
+                    ->default(true),
                 CrudField::make('duration_minutes', ['required', 'integer'])->number(),
                 CrudField::make('notes', ['nullable', 'string', 'max:1000'])->textarea(),
             ];
@@ -103,13 +108,18 @@ test('it builds frontend schema from crud definitions', function () {
             [
                 'name' => 'is_active',
                 'label' => 'Is Active',
-                'type' => 'checkbox',
+                'type' => 'select',
                 'confirmed' => false,
                 'required' => true,
                 'rules' => ['required', 'boolean'],
                 'visible' => true,
                 'span' => ['base' => 12],
                 'visible_on_update' => true,
+                'defaultValue' => true,
+                'options' => [
+                    ['value' => '0', 'label' => 'No'],
+                    ['value' => '1', 'label' => 'Yes'],
+                ],
             ],
             [
                 'name' => 'duration_minutes',

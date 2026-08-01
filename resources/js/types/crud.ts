@@ -25,6 +25,7 @@ export type CrudField = {
         | 'email'
         | 'password'
         | 'checkbox'
+        | 'select'
         | 'number'
         | 'date'
         | 'textarea'
@@ -44,6 +45,7 @@ export type CrudField = {
         '2xl'?: number;
     };
     defaultValue?: unknown;
+    options?: CrudFilterOption[];
 };
 
 export type CrudSort = {

@@ -4,6 +4,13 @@ import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField } from '@/types/crud';
@@ -107,6 +114,7 @@ const spanClassesByBreakpoint: Record<CrudFieldBreakpoint, string[]> = {
 };
 
 const checkboxValue = ref(booleanValue(props.defaultValue));
+const selectValue = ref(optionValue(props.defaultValue));
 const arrayValues = ref(arrayValue(props.defaultValue));
 const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
@@ -116,6 +124,13 @@ watch(
     () => props.defaultValue,
     (value) => {
         checkboxValue.value = booleanValue(value);
+    },
+);
+
+watch(
+    () => props.defaultValue,
+    (value) => {
+        selectValue.value = optionValue(value);
     },
 );
 
@@ -143,6 +158,20 @@ function spanClasses(span: CrudField['span']): string[] {
 
 function booleanValue(value: unknown): boolean {
     return value === true || value === 1 || value === '1';
+}
+
+function optionValue(value: unknown): string | undefined {
+    if (value === null || value === undefined) {
+        return undefined;
+    }
+
+    if (typeof value === 'boolean') {
+        return value ? '1' : '0';
+    }
+
+    return typeof value === 'string' || typeof value === 'number'
+        ? String(value)
+        : undefined;
 }
 
 function arrayValue(value: unknown): string[] {
@@ -277,6 +306,33 @@ function removeArrayValue(index: number): void {
                 :disabled="readOnly"
                 :aria-invalid="error ? 'true' : undefined"
             />
+            <input
+                v-if="field.type === 'select'"
+                type="hidden"
+                :name="field.name"
+                :value="selectValue ?? ''"
+            />
+            <Select
+                v-if="field.type === 'select'"
+                v-model="selectValue"
+                :disabled="readOnly"
+            >
+                <SelectTrigger
+                    :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                    :aria-invalid="error ? 'true' : undefined"
+                >
+                    <SelectValue :placeholder="field.label" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="option in field.options ?? []"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
             <Textarea
                 v-else-if="field.type === 'textarea'"
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"

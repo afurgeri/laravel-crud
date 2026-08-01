@@ -7,6 +7,11 @@ use InvalidArgumentException;
 final class CrudField
 {
     /**
+     * @var array<int, array{value: bool|float|int|string|null, label: string}>|null
+     */
+    private ?array $options = null;
+
+    /**
      * @param  list<string>  $rules
      */
     private function __construct(
@@ -238,6 +243,25 @@ final class CrudField
     public function type(): string
     {
         return $this->type;
+    }
+
+    /**
+     * @param  array<int, array{value: bool|float|int|string|null, label: string}>  $options
+     */
+    public function select(array $options): self
+    {
+        $this->type = 'select';
+        $this->options = $options;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, array{value: bool|float|int|string|null, label: string}>
+     */
+    public function options(): array
+    {
+        return $this->options ?? [];
     }
 
     public function confirmed(): self

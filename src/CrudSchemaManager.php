@@ -28,7 +28,7 @@ class CrudSchemaManager
      *     description: string|null,
      *     empty_label: string|null,
      *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
-     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed}>,
+     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
@@ -139,7 +139,7 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}
      */
     private function fieldSchema(CrudField $field): array
     {
@@ -161,11 +161,30 @@ class CrudSchemaManager
             $schema['unique_items'] = $field->hasUniqueItems();
         }
 
+        if ($field->type() === 'select') {
+            $schema['options'] = array_map(
+                fn (array $option): array => [
+                    'value' => $this->optionValue($option['value']),
+                    'label' => $option['label'],
+                ],
+                $field->options(),
+            );
+        }
+
         if ($field->hasDefault()) {
             $schema['defaultValue'] = $field->defaultValue();
         }
 
         return $schema;
+    }
+
+    private function optionValue(bool|float|int|string|null $value): string
+    {
+        return match (true) {
+            is_bool($value) => $value ? '1' : '0',
+            $value === null => '',
+            default => (string) $value,
+        };
     }
 
     /**

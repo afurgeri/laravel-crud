@@ -78,3 +78,16 @@ test('crud fields configure visual input types explicitly', function () {
 test('crud fields allow explicit input type overrides', function () {
     expect(CrudField::make('is_active', ['boolean'])->number()->type())->toBe('number');
 });
+
+test('crud fields can configure static select options', function () {
+    $field = CrudField::make('is_active', ['required', 'boolean'])->select([
+        ['value' => false, 'label' => 'No'],
+        ['value' => true, 'label' => 'Yes'],
+    ]);
+
+    expect($field->type())->toBe('select')
+        ->and($field->options())->toBe([
+            ['value' => false, 'label' => 'No'],
+            ['value' => true, 'label' => 'Yes'],
+        ]);
+});
