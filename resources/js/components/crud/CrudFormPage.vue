@@ -8,20 +8,20 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/composables/useTranslation';
 import type {
     CrudField as CrudFieldConfig,
+    CrudFieldSlotProps,
     CrudHref,
     CrudSchema,
     FormAction,
 } from '@/types/crud';
 
-type CrudFormPageSlotProps = {
-    errors?: Record<string, string | undefined>;
-    readOnly?: boolean;
-    [key: string]: unknown;
+type CrudFormPageFieldsSlotProps = {
+    errors: Record<string, string | undefined>;
+    readOnly: boolean;
 };
 
 defineSlots<{
-    [name: string]: (props: CrudFormPageSlotProps) => unknown;
-    fields(props: CrudFormPageSlotProps): unknown;
+    fields(props: CrudFormPageFieldsSlotProps): unknown;
+    [name: `field-${string}`]: (props: CrudFieldSlotProps) => unknown;
 }>();
 
 withDefaults(
@@ -91,7 +91,9 @@ function fieldDefault(
 
             <div>
                 <p class="text-sm text-muted-foreground">{{ schema.title }}</p>
-                <h1 class="text-3xl font-semibold tracking-tight text-foreground">
+                <h1
+                    class="text-3xl font-semibold tracking-tight text-foreground"
+                >
                     {{ title }}
                 </h1>
             </div>
@@ -120,13 +122,14 @@ function fieldDefault(
                     :key="field.name"
                     #[`field-${field.name}`]="slotProps"
                 >
-                    <slot
-                        :name="`field-${field.name}`"
-                        v-bind="slotProps"
-                    />
+                    <slot :name="`field-${field.name}`" v-bind="slotProps" />
                 </template>
                 <template #fields="slotProps">
-                    <slot name="fields" v-bind="slotProps" />
+                    <slot
+                        name="fields"
+                        :errors="slotProps.errors"
+                        :read-only="false"
+                    />
                 </template>
             </CrudForm>
 
