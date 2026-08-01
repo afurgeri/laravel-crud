@@ -149,6 +149,56 @@ test('it builds frontend schema from crud definitions', function () {
     expect(array_column($schema['columns'], 'name'))->toBe(['id']);
 });
 
+test('it serializes static combobox options in the field schema', function () {
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Users';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [];
+        }
+
+        public function fields(): array
+        {
+            return [
+                CrudField::make('user_id', ['nullable', 'string'])->combobox([
+                    ['value' => 1, 'label' => 'Ada Lovelace'],
+                ]),
+            ];
+        }
+    };
+
+    $schema = app(CrudSchemaManager::class)->for($definition, 'users');
+
+    expect($schema['fields'][0])
+        ->toMatchArray([
+            'name' => 'user_id',
+            'type' => 'combobox',
+            'options' => [
+                ['value' => '1', 'label' => 'Ada Lovelace'],
+            ],
+        ]);
+});
+
 test('it exposes unified crud presentation settings', function () {
     $definition = new class implements CrudDefinition, HasCrudPresentation
     {

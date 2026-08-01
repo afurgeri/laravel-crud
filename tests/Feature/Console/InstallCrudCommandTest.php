@@ -63,6 +63,7 @@ test('crud install copies the translation composable when it is missing', functi
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $field = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudField.vue');
+    $combobox = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudCombobox.vue');
     $table = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudTable.vue');
     $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
@@ -101,6 +102,9 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($field)
         ->toContain('CrudFieldSlotProps')
         ->toContain('$slots.default')
+        ->and($combobox)
+        ->toContain('filteredOptions')
+        ->toContain(':ignore-filter="true"')
         ->and($form)
         ->toContain('field-${field.name}')
         ->and($formPage)
@@ -124,6 +128,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain("'2xl'?: number;")
         ->toContain('page_width: CrudLayoutWidth;')
         ->toContain('form_width: CrudLayoutWidth;')
+        ->toContain("| 'combobox'")
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
         ->toContain('export type CrudShowConfig<T extends CrudRecord>')

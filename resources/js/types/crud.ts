@@ -1,9 +1,11 @@
 import type { Method } from '@inertiajs/core';
 
-export type CrudHref = string | {
-    url: string;
-    method: 'get';
-};
+export type CrudHref =
+    | string
+    | {
+          url: string;
+          method: 'get';
+      };
 
 export type CrudLayoutWidth = 'standard' | 'wide' | 'full';
 
@@ -26,6 +28,7 @@ export type CrudField = {
         | 'password'
         | 'checkbox'
         | 'select'
+        | 'combobox'
         | 'number'
         | 'date'
         | 'textarea'

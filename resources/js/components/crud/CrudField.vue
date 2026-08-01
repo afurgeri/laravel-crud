@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -222,11 +223,7 @@ function removeArrayValue(index: number): void {
 <template>
     <div v-if="field.visible" :class="['space-y-4', spanClasses(field.span)]">
         <div class="space-y-2">
-            <Label
-                :for="fieldId"
-                :class="labelClass"
-                >{{ field.label }}</Label
-            >
+            <Label :for="fieldId" :class="labelClass">{{ field.label }}</Label>
             <slot
                 v-if="$slots.default"
                 v-bind="{
@@ -310,9 +307,9 @@ function removeArrayValue(index: number): void {
                                 :value="value"
                             />
                         </span>
-                        </div>
                     </div>
-                </template>
+                </div>
+            </template>
             <input
                 v-if="!$slots.default && field.type === 'checkbox'"
                 type="hidden"
@@ -327,7 +324,10 @@ function removeArrayValue(index: number): void {
                 :aria-invalid="error ? 'true' : undefined"
             />
             <input
-                v-if="!$slots.default && field.type === 'select'"
+                v-if="
+                    !$slots.default &&
+                    ['select', 'combobox'].includes(field.type)
+                "
                 type="hidden"
                 :name="field.name"
                 :value="selectValue ?? ''"
@@ -354,6 +354,15 @@ function removeArrayValue(index: number): void {
                     </SelectItem>
                 </SelectContent>
             </Select>
+            <CrudCombobox
+                v-if="!$slots.default && field.type === 'combobox'"
+                v-model="selectValue"
+                :id="fieldId"
+                :options="field.options ?? []"
+                :disabled="readOnly"
+                :invalid="Boolean(error)"
+                :placeholder="field.label"
+            />
             <Textarea
                 v-if="!$slots.default && field.type === 'textarea'"
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
@@ -366,9 +375,13 @@ function removeArrayValue(index: number): void {
             <Input
                 v-if="
                     !$slots.default &&
-                    !['array', 'checkbox', 'select', 'textarea'].includes(
-                        field.type,
-                    )
+                    ![
+                        'array',
+                        'checkbox',
+                        'select',
+                        'combobox',
+                        'textarea',
+                    ].includes(field.type)
                 "
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                 :name="field.name"

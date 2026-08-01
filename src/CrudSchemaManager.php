@@ -161,7 +161,7 @@ class CrudSchemaManager
             $schema['unique_items'] = $field->hasUniqueItems();
         }
 
-        if ($field->type() === 'select') {
+        if (in_array($field->type(), ['select', 'combobox'], true)) {
             $schema['options'] = array_map(
                 fn (array $option): array => [
                     'value' => $this->optionValue($option['value']),

@@ -257,6 +257,17 @@ final class CrudField
     }
 
     /**
+     * @param  array<int, array{value: bool|float|int|string|null, label: string}>  $options
+     */
+    public function combobox(array $options): self
+    {
+        $this->type = 'combobox';
+        $this->options = $options;
+
+        return $this;
+    }
+
+    /**
      * @return array<int, array{value: bool|float|int|string|null, label: string}>
      */
     public function options(): array

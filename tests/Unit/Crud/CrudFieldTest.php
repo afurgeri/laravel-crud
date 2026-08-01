@@ -91,3 +91,16 @@ test('crud fields can configure static select options', function () {
             ['value' => true, 'label' => 'Yes'],
         ]);
 });
+
+test('crud fields can configure static combobox options', function () {
+    $field = CrudField::make('user_id', ['nullable', 'string'])->combobox([
+        ['value' => 1, 'label' => 'Ada Lovelace'],
+        ['value' => 2, 'label' => 'Grace Hopper'],
+    ]);
+
+    expect($field->type())->toBe('combobox')
+        ->and($field->options())->toBe([
+            ['value' => 1, 'label' => 'Ada Lovelace'],
+            ['value' => 2, 'label' => 'Grace Hopper'],
+        ]);
+});
