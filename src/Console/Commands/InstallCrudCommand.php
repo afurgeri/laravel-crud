@@ -9,7 +9,8 @@ class InstallCrudCommand extends Command
 {
     protected $signature = 'crud:install
         {--force : Overwrite existing frontend files}
-        {--skip-existing : Install only frontend files that are missing}';
+        {--skip-existing : Install only frontend files that are missing}
+        {--upgrade : Install missing frontend files without overwriting existing files}';
 
     protected $description = 'Install the generic CRUD frontend components and types';
 
@@ -32,7 +33,7 @@ class InstallCrudCommand extends Command
             fn (array $file): bool => File::exists($file['target']),
         ));
 
-        if ($conflicts !== [] && ! $this->option('force') && ! $this->option('skip-existing')) {
+        if ($conflicts !== [] && ! $this->option('force') && ! $this->option('skip-existing') && ! $this->option('upgrade')) {
             $this->components->error('CRUD frontend files already exist. Use --force to overwrite them:');
 
             foreach ($conflicts as $file) {
@@ -42,11 +43,15 @@ class InstallCrudCommand extends Command
             return self::FAILURE;
         }
 
-        if ($this->option('skip-existing')) {
+        if ($this->option('skip-existing') || $this->option('upgrade')) {
             $targets = array_values(array_filter(
                 $targets,
                 fn (array $file): bool => ! File::exists($file['target']),
             ));
+
+            if ($this->option('upgrade') && $conflicts !== []) {
+                $this->components->warn(count($conflicts).' existing frontend files were not overwritten.');
+            }
         }
 
         foreach ($targets as $file) {

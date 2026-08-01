@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\File;
 test('crud install command is registered by the package', function () {
     $this->artisan('help', ['command_name' => 'crud:install'])
         ->assertExitCode(0)
-        ->expectsOutputToContain('Install the generic CRUD frontend components and types');
+        ->expectsOutputToContain('Install the generic CRUD frontend components and types')
+        ->expectsOutputToContain('--upgrade');
 });
 
 test('crud install can preserve existing frontend files while installing missing resources', function () {
@@ -21,6 +22,23 @@ test('crud install can preserve existing frontend files while installing missing
 
         expect(File::get($target))->toBe('custom translation helper')
             ->and(File::get(dirname($source).'/../types/crud.ts'))->toContain('CrudSchema');
+    } finally {
+        File::delete($target);
+    }
+});
+
+test('crud install upgrade reports existing files without overwriting them', function () {
+    $target = base_path('resources/js/composables/useTranslation.ts');
+
+    File::ensureDirectoryExists(dirname($target));
+    File::put($target, 'custom translation helper');
+
+    try {
+        $this->artisan('crud:install', ['--upgrade' => true])
+            ->assertExitCode(0)
+            ->expectsOutputToContain('were not overwritten');
+
+        expect(File::get($target))->toBe('custom translation helper');
     } finally {
         File::delete($target);
     }

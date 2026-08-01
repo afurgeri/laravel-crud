@@ -101,7 +101,7 @@ class MakeCrudCommand extends Command
         if ($this->getApplication()?->has('crud:install')) {
             $this->components->task(
                 'Installing missing CRUD frontend resources',
-                fn (): bool => $this->call('crud:install', ['--skip-existing' => true]) === self::SUCCESS,
+                fn (): bool => $this->call('crud:install', ['--upgrade' => true]) === self::SUCCESS,
             );
         }
 
