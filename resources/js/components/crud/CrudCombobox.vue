@@ -13,6 +13,7 @@ import {
     ComboboxTrigger,
     ComboboxViewport,
 } from '@/components/ui/combobox';
+import { useTranslation } from '@/composables/useTranslation';
 import { cn } from '@/lib/utils';
 import type { CrudFilterOption } from '@/types/crud';
 
@@ -28,7 +29,7 @@ const props = withDefaults(
     {
         modelValue: undefined,
         id: undefined,
-        placeholder: 'Select an option...',
+        placeholder: undefined,
         disabled: false,
         invalid: false,
     },
@@ -41,6 +42,7 @@ const emit = defineEmits<{
 const open = ref(false);
 const searchTerm = ref('');
 const selectedValue = ref<string | undefined>(props.modelValue);
+const { t } = useTranslation();
 
 const selectedOption = computed(() =>
     props.options.find((option) => option.value === selectedValue.value),
@@ -106,7 +108,7 @@ function selectOption(option: CrudFilterOption): void {
                     class="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='text-'])]:text-muted-foreground"
                 >
                     <span class="truncate">
-                        {{ selectedOption?.label ?? placeholder }}
+                        {{ selectedOption?.label ?? placeholder ?? t('Select an option...') }}
                     </span>
                     <ChevronDown class="size-4 shrink-0 opacity-50" />
                 </button>
@@ -129,7 +131,7 @@ function selectOption(option: CrudFilterOption): void {
                         v-if="filteredOptions.length === 0"
                         class="py-6 text-center text-sm text-muted-foreground"
                     >
-                        No results found.
+                        {{ t('No results found.') }}
                     </ComboboxEmpty>
                     <ComboboxGroup v-else>
                         <ComboboxItem

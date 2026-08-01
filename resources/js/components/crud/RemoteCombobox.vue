@@ -13,6 +13,7 @@ import {
     ComboboxTrigger,
     ComboboxViewport,
 } from '@/components/ui/combobox';
+import { useTranslation } from '@/composables/useTranslation';
 import { cn } from '@/lib/utils';
 import type { CrudFilterOption, CrudRemoteFilter } from '@/types/crud';
 
@@ -23,7 +24,7 @@ const props = withDefaults(
         id?: string;
         placeholder?: string;
     }>(),
-    { placeholder: 'Search...' },
+    { placeholder: undefined },
 );
 
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ const selectedValue = ref<string | undefined>(props.modelValue || undefined);
 const selectedOption = ref<CrudFilterOption>();
 const options = ref<CrudFilterOption[]>([]);
 const loading = ref(false);
+const { t } = useTranslation();
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let requestController: AbortController | undefined;
@@ -230,7 +232,7 @@ onBeforeUnmount(() => {
                 <ComboboxInput
                     v-model="searchTerm"
                     :display-value="displayValue"
-                    :placeholder="placeholder"
+                    :placeholder="placeholder ?? t('Search...')"
                 />
                 <ComboboxViewport>
                     <div
@@ -238,7 +240,7 @@ onBeforeUnmount(() => {
                         class="flex items-center justify-center gap-2 px-2 py-6 text-sm text-muted-foreground"
                     >
                         <LoaderCircle class="size-4 animate-spin" />
-                        Loading...
+                        {{ t('Loading...') }}
                     </div>
                     <ComboboxEmpty
                         v-else-if="
@@ -247,13 +249,17 @@ onBeforeUnmount(() => {
                         "
                         class="py-6 text-center text-sm text-muted-foreground"
                     >
-                        Type {{ remote.min_chars }} characters to search.
+                        {{
+                            t('Type :count characters to search.', {
+                                count: remote.min_chars,
+                            })
+                        }}
                     </ComboboxEmpty>
                     <ComboboxEmpty
                         v-else-if="options.length === 0"
                         class="py-6 text-center text-sm text-muted-foreground"
                     >
-                        No results found.
+                        {{ t('No results found.') }}
                     </ComboboxEmpty>
                     <ComboboxGroup v-else>
                         <ComboboxItem
