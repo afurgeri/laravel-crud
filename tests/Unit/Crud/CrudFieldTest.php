@@ -28,6 +28,12 @@ test('crud fields can be visible only when creating', function () {
     expect($field->isVisibleOnUpdate())->toBeFalse();
 });
 
+test('crud fields can be hidden from automatic form rendering', function () {
+    $field = CrudField::make('user_id')->hidden();
+
+    expect($field->isVisible())->toBeFalse();
+});
+
 test('crud fields can define a translation label key', function () {
     $field = CrudField::make('email')->label('Email address');
 

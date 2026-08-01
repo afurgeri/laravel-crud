@@ -12,6 +12,7 @@ uses(CreatesCrudTestRecordsTable::class);
 
 beforeEach(function () {
     $this->createCrudTestRecordsTable();
+    CrudTestRecordAuthorizedDefinition::$authorized = true;
 });
 
 test('it creates records using configured fields only', function () {

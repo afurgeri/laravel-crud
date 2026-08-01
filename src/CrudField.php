@@ -16,6 +16,7 @@ final class CrudField
         private bool $confirmed = false,
         private ?string $label = null,
         private bool $uniqueItems = false,
+        private bool $visible = true,
     ) {}
 
     private mixed $defaultValue = null;
@@ -116,6 +117,23 @@ final class CrudField
     public function isVisibleOnUpdate(): bool
     {
         return $this->visibleOnUpdate;
+    }
+
+    public function visible(bool $visible = true): self
+    {
+        $this->visible = $visible;
+
+        return $this;
+    }
+
+    public function hidden(): self
+    {
+        return $this->visible(false);
+    }
+
+    public function isVisible(): bool
+    {
+        return $this->visible;
     }
 
     public function email(): self
