@@ -319,6 +319,7 @@ function removeArrayValue(index: number): void {
             >
                 <SelectTrigger
                     :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                    class="w-full"
                     :aria-invalid="error ? 'true' : undefined"
                 >
                     <SelectValue :placeholder="field.label" />
