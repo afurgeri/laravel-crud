@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasCrudFormMode;
 use Modules\Crud\Contracts\HasCrudOperations;
+use Modules\Crud\Contracts\HasCrudPresentation;
 
 class CrudSchemaManager
 {
@@ -20,6 +21,8 @@ class CrudSchemaManager
      * @return array{
      *     resource: string,
      *     form_mode: 'dialog'|'page',
+     *     page_width: 'standard'|'wide'|'full',
+     *     form_width: 'standard'|'wide'|'full',
      *     operations: array{show: bool, create: bool, update: bool, delete: bool},
      *     title: string,
      *     description: string|null,
@@ -48,9 +51,9 @@ class CrudSchemaManager
 
         return [
             'resource' => $resource,
-            'form_mode' => ($definition instanceof HasCrudFormMode
-                ? $definition->formMode()
-                : CrudFormMode::Page)->value,
+            'form_mode' => $this->formMode($definition)->value,
+            'page_width' => $this->pageWidth($definition)->value,
+            'form_width' => $this->formWidth($definition)->value,
             'operations' => $operations,
             'title' => $definition->title(),
             'description' => $definition->description(),
@@ -78,6 +81,31 @@ class CrudSchemaManager
                 )
                 : [],
         ];
+    }
+
+    private function formMode(CrudDefinition $definition): CrudFormMode
+    {
+        if ($definition instanceof HasCrudPresentation) {
+            return $definition->formMode();
+        }
+
+        return $definition instanceof HasCrudFormMode
+            ? $definition->formMode()
+            : CrudFormMode::Page;
+    }
+
+    private function pageWidth(CrudDefinition $definition): CrudLayoutWidth
+    {
+        return $definition instanceof HasCrudPresentation
+            ? $definition->pageWidth()
+            : CrudLayoutWidth::Standard;
+    }
+
+    private function formWidth(CrudDefinition $definition): CrudLayoutWidth
+    {
+        return $definition instanceof HasCrudPresentation
+            ? $definition->formWidth()
+            : CrudLayoutWidth::Standard;
     }
 
     /**

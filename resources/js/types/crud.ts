@@ -5,6 +5,8 @@ export type CrudHref = string | {
     method: 'get';
 };
 
+export type CrudLayoutWidth = 'standard' | 'wide' | 'full';
+
 export type CrudColumn = {
     name: string;
     label: string;
@@ -82,6 +84,8 @@ export type CrudFilter = {
 export type CrudSchema = {
     resource: string;
     form_mode: 'dialog' | 'page';
+    page_width: CrudLayoutWidth;
+    form_width: CrudLayoutWidth;
     operations: {
         show: boolean;
         create: boolean;

@@ -43,6 +43,12 @@ withDefaults(
 
 const { t } = useTranslation();
 
+const layoutWidthClasses = {
+    standard: 'max-w-7xl',
+    wide: 'max-w-screen-2xl',
+    full: 'max-w-none',
+} as const;
+
 function fieldDefault(
     field: CrudFieldConfig,
     initialValues: Record<string, unknown>,
@@ -56,7 +62,12 @@ function fieldDefault(
 </script>
 
 <template>
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div
+        :class="[
+            'mx-auto flex w-full flex-col gap-6 p-4 sm:p-6 lg:p-8',
+            layoutWidthClasses[schema.form_width],
+        ]"
+    >
         <div class="flex items-center gap-3">
             <Button as-child variant="ghost" size="icon-sm">
                 <Link

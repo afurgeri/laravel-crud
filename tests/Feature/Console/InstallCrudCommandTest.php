@@ -49,6 +49,7 @@ test('crud frontend resources expose the paginator contract', function () {
     $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
     $formPage = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue');
+    $page = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $types = File::get(dirname(__DIR__, 3).'/resources/js/types/crud.ts');
 
     expect($component)
@@ -87,9 +88,14 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('grid-cols-12')
         ->and($formPage)
         ->toContain('grid-cols-12')
+        ->toContain('layoutWidthClasses[schema.form_width]')
+        ->and($page)
+        ->toContain('layoutWidthClasses[schema.page_width]')
         ->and($types)
         ->toContain('visible: boolean;')
         ->toContain("'2xl'?: number;")
+        ->toContain('page_width: CrudLayoutWidth;')
+        ->toContain('form_width: CrudLayoutWidth;')
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
         ->toContain('export type CrudShowConfig<T extends CrudRecord>')

@@ -43,6 +43,12 @@ const props = withDefaults(
 
 const { t } = useTranslation();
 
+const layoutWidthClasses = {
+    standard: 'max-w-7xl',
+    wide: 'max-w-screen-2xl',
+    full: 'max-w-none',
+} as const;
+
 function canEditRecord(record: T): boolean {
     return (
         props.schema.operations.update &&
@@ -214,7 +220,12 @@ function handleClearFilters(): void {
 
 <template>
     <TooltipProvider :delay-duration="0">
-        <div class="mx-auto flex w-full flex-col gap-6 p-4 sm:p-4 lg:p-4">
+        <div
+            :class="[
+                'mx-auto flex w-full flex-col gap-6 p-4 sm:p-4 lg:p-4',
+                layoutWidthClasses[schema.page_width],
+            ]"
+        >
             <div
                 class="relative overflow-hidden rounded-2xl border border-indigo-100/80 bg-linear-to-br from-indigo-50 via-card to-card px-5 py-6 shadow-[0_12px_32px_-24px_rgba(49,46,129,0.45)] md:flex md:items-center md:justify-between md:px-7 dark:border-indigo-400/15 dark:from-indigo-950/30"
             >

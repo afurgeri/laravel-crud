@@ -2,11 +2,14 @@
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Crud\Contracts\HasCrudFilters;
+use Modules\Crud\Contracts\HasCrudPresentation;
 use Modules\Crud\Contracts\HasDefaultCrudSort;
 use Modules\Crud\CrudColumn;
 use Modules\Crud\CrudDefinition;
 use Modules\Crud\CrudField;
 use Modules\Crud\CrudFilter;
+use Modules\Crud\CrudFormMode;
+use Modules\Crud\CrudLayoutWidth;
 use Modules\Crud\CrudSchemaManager;
 
 test('it builds frontend schema from crud definitions', function () {
@@ -57,6 +60,9 @@ test('it builds frontend schema from crud definitions', function () {
     expect($schema)->toMatchArray([
         'resource' => 'users',
         'title' => 'Users',
+        'form_mode' => 'page',
+        'page_width' => 'standard',
+        'form_width' => 'standard',
         'description' => null,
         'empty_label' => null,
         'columns' => [
@@ -131,6 +137,63 @@ test('it builds frontend schema from crud definitions', function () {
     ]);
 
     expect(array_column($schema['columns'], 'name'))->toBe(['id']);
+});
+
+test('it exposes unified crud presentation settings', function () {
+    $definition = new class implements CrudDefinition, HasCrudPresentation
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Users';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [];
+        }
+
+        public function fields(): array
+        {
+            return [];
+        }
+
+        public function formMode(): CrudFormMode
+        {
+            return CrudFormMode::Dialog;
+        }
+
+        public function pageWidth(): CrudLayoutWidth
+        {
+            return CrudLayoutWidth::Full;
+        }
+
+        public function formWidth(): CrudLayoutWidth
+        {
+            return CrudLayoutWidth::Wide;
+        }
+    };
+
+    expect(app(CrudSchemaManager::class)->for($definition, 'users'))
+        ->toMatchArray([
+            'form_mode' => 'dialog',
+            'page_width' => 'full',
+            'form_width' => 'wide',
+        ]);
 });
 
 test('it marks password fields and create only visibility', function () {
