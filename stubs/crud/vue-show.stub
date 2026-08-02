@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
 import CrudFormPage from '@/components/crud/CrudFormPage.vue';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudSchema } from '@/types/crud';
@@ -14,18 +14,16 @@ defineProps<{
 
 const { t } = useTranslation();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: '{{ title }}',
-                href: {{ resourceVariable }}Index(),
-            },
-            {
-                title: 'View {{ entityVariable }}',
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: t('{{ title }}'),
+            href: {{ resourceVariable }}Index(),
+        },
+        {
+            title: t('View :name', { name: t('{{ entityVariable }}') }),
+        },
+    ],
 });
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
 import CrudPage from '@/components/crud/CrudPage.vue';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudPaginator, CrudRecord, CrudSchema } from '@/types/crud';
@@ -33,15 +33,13 @@ defineProps<{
 
 const { t } = useTranslation();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: '{{ title }}',
-                href: {{ resourceVariable }}Index(),
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: t('{{ title }}'),
+            href: {{ resourceVariable }}Index(),
+        },
+    ],
 });
 </script>
 
