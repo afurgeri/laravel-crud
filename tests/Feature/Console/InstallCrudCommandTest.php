@@ -100,6 +100,8 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain("{{ t('Add') }}")
         ->toContain('v-if="field.visible"')
         ->toContain('spanClasses(field.span)')
+        ->toContain('class="contents"')
+        ->toContain('field.confirmed && !$slots.default && !readOnly')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($field)
         ->toContain('CrudFieldSlotProps')

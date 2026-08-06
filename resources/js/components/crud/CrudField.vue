@@ -277,8 +277,8 @@ function clearValue(): void {
 </script>
 
 <template>
-    <div v-if="field.visible" :class="['space-y-4', spanClasses(field.span)]">
-        <div class="space-y-2">
+    <div v-if="field.visible" class="contents">
+        <div :class="['space-y-2', spanClasses(field.span)]">
             <Label :for="fieldId" :class="labelClass">{{ field.label }}</Label>
             <slot
                 v-if="$slots.default"
@@ -479,7 +479,10 @@ function clearValue(): void {
             <InputError :message="arrayInputError ?? error" />
         </div>
 
-        <div v-if="field.confirmed && !$slots.default" class="space-y-2">
+        <div
+            v-if="field.confirmed && !$slots.default && !readOnly"
+            :class="['space-y-2', spanClasses(field.span)]"
+        >
             <Label
                 :for="
                     idPrefix
