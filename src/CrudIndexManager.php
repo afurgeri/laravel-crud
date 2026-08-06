@@ -99,23 +99,40 @@ class CrudIndexManager
         }
 
         $columns = $this->searchableColumnNames($definition);
+        $terms = $this->searchTerms($search);
 
-        if ($columns === []) {
+        if ($columns === [] || $terms === []) {
             return;
         }
 
-        /** @param  Builder<Model>  $query */
-        $query->where(function (Builder $query) use ($columns, $search, $model): void {
-            foreach ($columns as $column) {
-                if ($column === $model->getKeyName()) {
-                    $this->applyKeySearch($query, $model, $search);
+        $query->where(function (Builder $query) use ($columns, $terms, $model): void {
+            foreach ($terms as $term) {
+                $query->where(function (Builder $termQuery) use ($columns, $term, $model): void {
+                    foreach ($columns as $column) {
+                        if ($column === $model->getKeyName()) {
+                            $this->applyKeySearch($termQuery, $model, $term);
 
-                    continue;
-                }
+                            continue;
+                        }
 
-                $query->orWhere($column, 'like', "%{$search}%");
+                        $termQuery->orWhere($column, 'like', '%'.$this->escapeLikeTerm($term).'%');
+                    }
+                });
             }
         });
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function searchTerms(string $search): array
+    {
+        return preg_split('/[\s-]+/u', trim($search), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    private function escapeLikeTerm(string $term): string
+    {
+        return addcslashes($term, '%_\\');
     }
 
     /**

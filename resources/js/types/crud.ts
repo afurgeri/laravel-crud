@@ -9,6 +9,15 @@ export type CrudHref =
 
 export type CrudLayoutWidth = 'standard' | 'wide' | 'full';
 
+export type CrudSpan = {
+    base: number;
+    sm?: number;
+    md?: number;
+    lg?: number;
+    xl?: number;
+    '2xl'?: number;
+};
+
 export type CrudColumn = {
     name: string;
     label: string;
@@ -73,6 +82,7 @@ export type CrudSort = {
 export type CrudSearch = {
     enabled: boolean;
     value: string | null;
+    span: CrudSpan;
 };
 
 export type CrudFilterOption = {
@@ -96,6 +106,7 @@ export type CrudFilter = {
     clearable: boolean;
     range: string | null;
     value: unknown;
+    span: CrudSpan;
     options?: CrudFilterOption[];
     remote?: CrudRemoteFilter;
     max_date?: string | null;

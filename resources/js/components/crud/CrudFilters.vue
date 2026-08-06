@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/composables/useTranslation';
-import type { CrudFilter, CrudSearch } from '@/types/crud';
+import type { CrudFilter, CrudSearch, CrudSpan } from '@/types/crud';
 
 const props = defineProps<{
     search: CrudSearch;
@@ -31,6 +31,100 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslation();
+
+const spanClassesByBreakpoint: Record<keyof CrudSpan, string[]> = {
+    base: [
+        'col-span-1',
+        'col-span-2',
+        'col-span-3',
+        'col-span-4',
+        'col-span-5',
+        'col-span-6',
+        'col-span-7',
+        'col-span-8',
+        'col-span-9',
+        'col-span-10',
+        'col-span-11',
+        'col-span-12',
+    ],
+    sm: [
+        'sm:col-span-1',
+        'sm:col-span-2',
+        'sm:col-span-3',
+        'sm:col-span-4',
+        'sm:col-span-5',
+        'sm:col-span-6',
+        'sm:col-span-7',
+        'sm:col-span-8',
+        'sm:col-span-9',
+        'sm:col-span-10',
+        'sm:col-span-11',
+        'sm:col-span-12',
+    ],
+    md: [
+        'md:col-span-1',
+        'md:col-span-2',
+        'md:col-span-3',
+        'md:col-span-4',
+        'md:col-span-5',
+        'md:col-span-6',
+        'md:col-span-7',
+        'md:col-span-8',
+        'md:col-span-9',
+        'md:col-span-10',
+        'md:col-span-11',
+        'md:col-span-12',
+    ],
+    lg: [
+        'lg:col-span-1',
+        'lg:col-span-2',
+        'lg:col-span-3',
+        'lg:col-span-4',
+        'lg:col-span-5',
+        'lg:col-span-6',
+        'lg:col-span-7',
+        'lg:col-span-8',
+        'lg:col-span-9',
+        'lg:col-span-10',
+        'lg:col-span-11',
+        'lg:col-span-12',
+    ],
+    xl: [
+        'xl:col-span-1',
+        'xl:col-span-2',
+        'xl:col-span-3',
+        'xl:col-span-4',
+        'xl:col-span-5',
+        'xl:col-span-6',
+        'xl:col-span-7',
+        'xl:col-span-8',
+        'xl:col-span-9',
+        'xl:col-span-10',
+        'xl:col-span-11',
+        'xl:col-span-12',
+    ],
+    '2xl': [
+        '2xl:col-span-1',
+        '2xl:col-span-2',
+        '2xl:col-span-3',
+        '2xl:col-span-4',
+        '2xl:col-span-5',
+        '2xl:col-span-6',
+        '2xl:col-span-7',
+        '2xl:col-span-8',
+        '2xl:col-span-9',
+        '2xl:col-span-10',
+        '2xl:col-span-11',
+        '2xl:col-span-12',
+    ],
+};
+
+function spanClasses(span: CrudSpan): string[] {
+    return (Object.entries(span) as [keyof CrudSpan, number][]).flatMap(
+        ([breakpoint, columns]) =>
+            spanClassesByBreakpoint[breakpoint]?.[columns - 1] ?? [],
+    );
+}
 
 type FilterEntry =
     | { kind: 'single'; filter: CrudFilter }
@@ -96,12 +190,13 @@ function clearFilter(name: string): void {
             v-if="search.enabled || filters.length > 0"
             class="flex flex-col gap-4 rounded-xl bg-card p-4"
         >
-            <div
-                class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end"
-            >
+            <div class="grid grid-cols-12 items-start gap-4">
                 <div
                     v-if="search.enabled"
-                    class="flex w-full flex-col gap-2 sm:w-auto"
+                    :class="[
+                        'flex w-full flex-col gap-2',
+                        spanClasses(search.span),
+                    ]"
                 >
                     <Label
                         for="crud-search"
@@ -113,7 +208,7 @@ function clearFilter(name: string): void {
                         :model-value="searchValue"
                         type="search"
                         :placeholder="t('Search records...')"
-                        class="w-full bg-muted/40 sm:w-64"
+                        class="w-full bg-muted/40"
                         @update:model-value="
                             (value) => emit('search', String(value))
                         "
@@ -130,7 +225,10 @@ function clearFilter(name: string): void {
                 >
                     <div
                         v-if="entry.kind === 'single'"
-                        class="flex w-full flex-col gap-2 sm:w-auto"
+                        :class="[
+                            'flex w-full flex-col gap-2',
+                            spanClasses(entry.filter.span),
+                        ]"
                     >
                         <Label
                             :for="`filter-${entry.filter.name}`"
@@ -140,7 +238,7 @@ function clearFilter(name: string): void {
                             }}</Label
                         >
 
-                        <div class="flex w-full items-center gap-1 sm:w-48">
+                        <div class="flex w-full items-center gap-1">
                             <RemoteCombobox
                                 v-if="entry.filter.type === 'remote-select'"
                                 :id="`filter-${entry.filter.name}`"
@@ -253,15 +351,17 @@ function clearFilter(name: string): void {
                         </div>
                     </div>
 
-                    <div
-                        v-else
-                        class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-end sm:gap-2"
-                    >
-                        <div class="flex w-full flex-col gap-2 sm:w-auto">
+                    <div v-else :class="['contents']">
+                        <div
+                            :class="[
+                                'flex w-full min-w-0 flex-col gap-2 self-start',
+                                spanClasses(entry.from.span),
+                            ]"
+                        >
                             <Label :for="`filter-${entry.from.name}`">{{
                                 t(entry.from.label)
                             }}</Label>
-                            <div class="flex w-full items-center gap-1 sm:w-40">
+                            <div class="flex w-full items-center gap-1">
                                 <DatePicker
                                     :id="`filter-${entry.from.name}`"
                                     :model-value="
@@ -301,13 +401,28 @@ function clearFilter(name: string): void {
                                     <X class="size-4" />
                                 </Button>
                             </div>
+                            <p
+                                v-if="rangeInvalid(entry)"
+                                class="text-sm text-destructive"
+                            >
+                                {{
+                                    t(
+                                        'The start of the range cannot be after the end.',
+                                    )
+                                }}
+                            </p>
                         </div>
 
-                        <div class="flex w-full flex-col gap-2 sm:w-auto">
+                        <div
+                            :class="[
+                                'flex w-full min-w-0 flex-col gap-2 self-start',
+                                spanClasses(entry.to.span),
+                            ]"
+                        >
                             <Label :for="`filter-${entry.to.name}`">{{
                                 t(entry.to.label)
                             }}</Label>
-                            <div class="flex w-full items-center gap-1 sm:w-40">
+                            <div class="flex w-full items-center gap-1">
                                 <DatePicker
                                     :id="`filter-${entry.to.name}`"
                                     :model-value="
@@ -346,26 +461,19 @@ function clearFilter(name: string): void {
                                 </Button>
                             </div>
                         </div>
-
-                        <p
-                            v-if="rangeInvalid(entry)"
-                            class="text-sm text-destructive sm:pb-2"
-                        >
-                            {{
-                                t(
-                                    'The start of the range cannot be after the end.',
-                                )
-                            }}
-                        </p>
                     </div>
                 </template>
 
                 <Button
-                    v-if="hasActiveFilters"
                     type="button"
                     variant="ghost"
                     size="sm"
-                    class="w-full shrink-0 sm:ml-auto sm:w-auto"
+                    :disabled="!hasActiveFilters"
+                    :aria-hidden="!hasActiveFilters"
+                    :class="[
+                        'col-span-full w-auto shrink-0 justify-self-end',
+                        !hasActiveFilters && 'invisible',
+                    ]"
                     @click="emit('clear')"
                 >
                     {{ clearLabel ?? t('Clear filters') }}

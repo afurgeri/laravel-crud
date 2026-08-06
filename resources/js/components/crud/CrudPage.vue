@@ -1,11 +1,20 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus } from '@lucide/vue';
-import { reactive, ref, useSlots } from 'vue';
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    Pencil,
+    Plus,
+    SlidersHorizontal,
+} from '@lucide/vue';
+import { computed, reactive, ref, useSlots } from 'vue';
 import CrudDeleteDialog from '@/components/crud/CrudDeleteDialog.vue';
 import CrudFilters from '@/components/crud/CrudFilters.vue';
 import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
 import CrudTable from '@/components/crud/CrudTable.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Tooltip,
@@ -106,6 +115,7 @@ const sortState = reactive({
 
 const searchValue = ref(props.schema.search.value ?? '');
 const isLoading = ref(false);
+const filtersOpen = ref(true);
 
 const filterValues = reactive<Record<string, string>>(
     Object.fromEntries(
@@ -114,6 +124,12 @@ const filterValues = reactive<Record<string, string>>(
             filterSchemaValue(filter),
         ]),
     ),
+);
+
+const activeFilterCount = computed(
+    () =>
+        Object.values(filterValues).filter((value) => value !== '').length +
+        (searchValue.value !== '' ? 1 : 0),
 );
 
 let navigateTimer: ReturnType<typeof setTimeout> | undefined;
@@ -227,17 +243,14 @@ function handleClearFilters(): void {
     <TooltipProvider :delay-duration="0">
         <div
             :class="[
-                'mx-auto flex w-full flex-col gap-6 p-4 sm:p-4 lg:p-4',
+                'mx-auto flex w-full flex-col gap-5 p-4 sm:p-6 lg:p-8',
                 layoutWidthClasses[schema.page_width],
             ]"
         >
             <div
-                class="relative overflow-hidden rounded-2xl border border-indigo-100/80 bg-linear-to-br from-indigo-50 via-card to-card px-5 py-6 shadow-[0_12px_32px_-24px_rgba(49,46,129,0.45)] md:flex md:items-center md:justify-between md:px-7 dark:border-indigo-400/15 dark:from-indigo-950/30"
+                class="flex flex-col gap-4 px-1 py-2 md:flex-row md:items-center md:justify-between"
             >
-                <div
-                    class="absolute -top-16 -right-12 size-44 rounded-full bg-indigo-400/10 blur-2xl"
-                />
-                <div class="relative space-y-2">
+                <div class="space-y-2">
                     <p
                         v-if="workspace"
                         class="text-[11px] font-semibold tracking-[0.18em] text-primary uppercase"
@@ -245,7 +258,7 @@ function handleClearFilters(): void {
                         {{ t(workspace ?? '') }}
                     </p>
                     <h1
-                        class="text-3xl font-semibold tracking-tight text-foreground"
+                        class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
                     >
                         {{ schema.title }}
                     </h1>
@@ -257,7 +270,7 @@ function handleClearFilters(): void {
                     </p>
                 </div>
 
-                <div class="relative mt-5 flex items-center gap-2 md:mt-0">
+                <div class="flex items-center gap-2">
                     <slot name="toolbar-actions" />
 
                     <Link
@@ -315,21 +328,6 @@ function handleClearFilters(): void {
                 </div>
             </div>
 
-            <div
-                class="rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.45)]"
-                v-if="schema.search?.enabled || schema.filters?.length > 0"
-            >
-                <CrudFilters
-                    :search="schema.search"
-                    :filters="schema.filters"
-                    :search-value="searchValue"
-                    :filter-values="filterValues"
-                    @search="handleSearch"
-                    @filter="handleFilter"
-                    @clear="handleClearFilters"
-                />
-            </div>
-
             <CrudTable
                 :columns="schema.columns"
                 :records="records.data"
@@ -338,6 +336,66 @@ function handleClearFilters(): void {
                 :empty-label="schema.empty_label ?? t('No records found.')"
                 @sort="handleSort"
             >
+                <template
+                    v-if="schema.search?.enabled || schema.filters?.length > 0"
+                    #toolbar
+                >
+                    <div
+                        class="flex items-center justify-end border-b border-border/70 px-3 py-2 sm:px-4"
+                    >
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            :aria-expanded="filtersOpen"
+                            :aria-controls="`${schema.resource}-filters`"
+                            class="gap-2 text-muted-foreground hover:text-foreground"
+                            @click="filtersOpen = !filtersOpen"
+                        >
+                            <SlidersHorizontal class="size-3.5" />
+                            {{ t('Filters') }}
+                            <Badge
+                                v-if="activeFilterCount > 0"
+                                variant="secondary"
+                                class="min-w-5 justify-center rounded-full px-1.5 text-[10px]"
+                            >
+                                {{ activeFilterCount }}
+                            </Badge>
+                            <ChevronDown
+                                class="size-3.5 transition-transform duration-300 ease-out"
+                                :class="filtersOpen && 'rotate-180'"
+                            />
+                        </Button>
+                    </div>
+
+                    <Transition
+                        enter-active-class="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out"
+                        enter-from-class="grid-rows-[0fr]"
+                        enter-to-class="grid-rows-[1fr]"
+                        leave-active-class="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in"
+                        leave-from-class="grid-rows-[1fr]"
+                        leave-to-class="grid-rows-[0fr]"
+                    >
+                        <div
+                            v-show="filtersOpen"
+                            :id="`${schema.resource}-filters`"
+                            class="grid min-h-0 border-b border-border/70"
+                        >
+                            <div class="min-h-0 overflow-hidden">
+                                <CrudFilters
+                                    :search="schema.search"
+                                    :filters="schema.filters"
+                                    :search-value="searchValue"
+                                    :filter-values="filterValues"
+                                    @search="handleSearch"
+                                    @filter="handleFilter"
+                                    @clear="handleClearFilters"
+                                />
+                            </div>
+                        </div>
+                    </Transition>
+                </template>
+
                 <template
                     v-for="column in schema.columns"
                     :key="column.name"
@@ -478,57 +536,60 @@ function handleClearFilters(): void {
                         <slot name="actions-after" :record="record" />
                     </div>
                 </template>
+                <template #footer>
+                    <div
+                        v-if="records.last_page > 1"
+                        class="flex flex-col gap-3 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <span>
+                            {{
+                                t('Showing :from to :to of :count', {
+                                    from: records.from ?? 0,
+                                    to: records.to ?? 0,
+                                    count: records.total,
+                                })
+                            }}
+                        </span>
+
+                        <div
+                            class="flex items-center justify-between gap-3 sm:justify-end"
+                        >
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="records.current_page === 1"
+                                @click="goToPage(records.current_page - 1)"
+                            >
+                                <ChevronLeft class="size-4" />
+                                {{ t('Previous') }}
+                            </Button>
+
+                            <span class="whitespace-nowrap">
+                                {{
+                                    t('Page :current of :last', {
+                                        current: records.current_page,
+                                        last: records.last_page,
+                                    })
+                                }}
+                            </span>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="
+                                    records.current_page === records.last_page
+                                "
+                                @click="goToPage(records.current_page + 1)"
+                            >
+                                {{ t('Next') }}
+                                <ChevronRight class="size-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </template>
             </CrudTable>
-
-            <div
-                v-if="records.last_page > 1"
-                class="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-                <span>
-                    {{
-                        t('Showing :from to :to of :count', {
-                            from: records.from ?? 0,
-                            to: records.to ?? 0,
-                            count: records.total,
-                        })
-                    }}
-                </span>
-
-                <div
-                    class="flex items-center justify-between gap-3 sm:justify-end"
-                >
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        :disabled="records.current_page === 1"
-                        @click="goToPage(records.current_page - 1)"
-                    >
-                        <ChevronLeft class="size-4" />
-                        {{ t('Previous') }}
-                    </Button>
-
-                    <span class="whitespace-nowrap">
-                        {{
-                            t('Page :current of :last', {
-                                current: records.current_page,
-                                last: records.last_page,
-                            })
-                        }}
-                    </span>
-
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        :disabled="records.current_page === records.last_page"
-                        @click="goToPage(records.current_page + 1)"
-                    >
-                        {{ t('Next') }}
-                        <ChevronRight class="size-4" />
-                    </Button>
-                </div>
-            </div>
         </div>
     </TooltipProvider>
 </template>

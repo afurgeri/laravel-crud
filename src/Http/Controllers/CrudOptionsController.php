@@ -83,7 +83,7 @@ final class CrudOptionsController
                     foreach ($searchTerms as $term) {
                         $query->where(function (Builder $termQuery) use ($searchColumns, $term): void {
                             foreach ($searchColumns as $column) {
-                                $termQuery->orWhere($column, 'like', "%{$term}%");
+                                $termQuery->orWhere($column, 'like', '%'.addcslashes($term, '%_\\').'%');
                             }
                         });
                     }

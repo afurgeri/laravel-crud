@@ -4,6 +4,7 @@ namespace Modules\Crud;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use ReflectionFunction;
 
 final class CrudFilter
@@ -19,6 +20,9 @@ final class CrudFilter
     private string $relationColumn = 'id';
 
     private ?string $rangeGroup = null;
+
+    /** @var array<string, int>|null */
+    private ?array $spans = null;
 
     /** @var array<int|string, string>|Closure(): array<int|string, string>|Closure(array<string, mixed>): array<int|string, string>|null */
     private array|Closure|null $options = null;
@@ -148,6 +152,32 @@ final class CrudFilter
         $this->rangeGroup = $group;
 
         return $this;
+    }
+
+    public function span(int $columns, ?string $breakpoint = null): self
+    {
+        if ($columns < 1 || $columns > 12) {
+            throw new InvalidArgumentException('Filter spans must be between 1 and 12 columns.');
+        }
+
+        $breakpoint ??= 'base';
+
+        if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+            throw new InvalidArgumentException("Unsupported filter span breakpoint [{$breakpoint}].");
+        }
+
+        $this->spans ??= ['base' => 12];
+        $this->spans[$breakpoint] = $columns;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function spans(): array
+    {
+        return $this->spans ?? ['base' => 12, 'sm' => 4];
     }
 
     public function maxDate(string|Closure $maxDate): self

@@ -477,7 +477,11 @@ test('it exposes search metadata when a definition has searchable columns', func
 
     $schema = app(CrudSchemaManager::class)->for($definition, 'users', search: 'ada');
 
-    expect($schema['search'])->toBe(['enabled' => true, 'value' => 'ada']);
+    expect($schema['search'])->toBe([
+        'enabled' => true,
+        'value' => 'ada',
+        'span' => ['base' => 12],
+    ]);
 });
 
 test('search is disabled when a definition has no searchable columns', function () {
@@ -516,7 +520,11 @@ test('search is disabled when a definition has no searchable columns', function 
 
     $schema = app(CrudSchemaManager::class)->for($definition, 'users');
 
-    expect($schema['search'])->toBe(['enabled' => false, 'value' => null]);
+    expect($schema['search'])->toBe([
+        'enabled' => false,
+        'value' => null,
+        'span' => ['base' => 12],
+    ]);
 });
 
 test('it resolves the definition default sort when no sort is requested', function () {
@@ -671,6 +679,7 @@ test('it exposes declared filters with their resolved values and options', funct
             'clearable' => false,
             'range' => null,
             'value' => 'ada',
+            'span' => ['base' => 12, 'sm' => 4],
         ],
         [
             'name' => 'role',
@@ -681,6 +690,7 @@ test('it exposes declared filters with their resolved values and options', funct
             'clearable' => false,
             'range' => null,
             'value' => null,
+            'span' => ['base' => 12, 'sm' => 4],
             'options' => [
                 ['value' => '1', 'label' => 'Admin'],
             ],
@@ -741,6 +751,7 @@ test('it exposes remote filter configuration without resolving options', functio
                 'clearable' => false,
                 'range' => null,
                 'value' => null,
+                'span' => ['base' => 12, 'sm' => 4],
                 'remote' => [
                     'url' => 'http://localhost/appointments/options/patient',
                     'min_chars' => 3,

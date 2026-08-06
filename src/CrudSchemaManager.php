@@ -9,6 +9,7 @@ use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasCrudFormMode;
 use Modules\Crud\Contracts\HasCrudOperations;
 use Modules\Crud\Contracts\HasCrudPresentation;
+use Modules\Crud\Contracts\HasCrudSearchLayout;
 
 class CrudSchemaManager
 {
@@ -31,8 +32,8 @@ class CrudSchemaManager
      *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
      *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
-     *     search: array{enabled: bool, value: ?string},
-     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
+     *     search: array{enabled: bool, value: ?string, span: array<string, int>},
+     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
      * }
      */
     public function for(CrudDefinition $definition, string $resource, ?string $sort = null, string $direction = 'asc', ?string $search = null, array $filterValues = []): array
@@ -74,6 +75,7 @@ class CrudSchemaManager
             'search' => [
                 'enabled' => $this->hasSearchableColumns($definition),
                 'value' => $search,
+                'span' => $this->searchSpan($definition),
             ],
             'filters' => $definition instanceof HasCrudFilters
                 ? array_map(
@@ -234,7 +236,7 @@ class CrudSchemaManager
 
     /**
      * @param  array<string, mixed>  $filterValues  Current values of every filter, forwarded so cascading select filters can narrow their options.
-     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
+     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
      */
     private function filterSchema(CrudFilter $filter, array $filterValues, string $resource): array
     {
@@ -249,6 +251,7 @@ class CrudSchemaManager
             'value' => array_key_exists($filter->name(), $filterValues)
                 ? $filterValues[$filter->name()]
                 : $filter->resolvedDefault(),
+            'span' => $filter->spans(),
         ];
 
         if ($filter->type() === 'select') {
@@ -283,6 +286,39 @@ class CrudSchemaManager
     private function hasSearchableColumns(CrudDefinition $definition): bool
     {
         return collect($definition->columns())->contains(fn (CrudColumn $column): bool => $column->isSearchable());
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function searchSpan(CrudDefinition $definition): array
+    {
+        return $definition instanceof HasCrudSearchLayout
+            ? $this->normalizeSpan($definition->searchSpan(), 'Search')
+            : ['base' => 12];
+    }
+
+    /**
+     * @param  array<string, int>  $spans
+     * @return array<string, int>
+     */
+    private function normalizeSpan(array $spans, string $subject): array
+    {
+        $normalized = ['base' => 12];
+
+        foreach ($spans as $breakpoint => $columns) {
+            if ($columns < 1 || $columns > 12) {
+                throw new InvalidArgumentException("{$subject} spans must be between 1 and 12 columns.");
+            }
+
+            if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+                throw new InvalidArgumentException("Unsupported {$subject} span breakpoint [{$breakpoint}].");
+            }
+
+            $normalized[$breakpoint] = $columns;
+        }
+
+        return $normalized;
     }
 
     private function label(?string $labelKey, string $name): string

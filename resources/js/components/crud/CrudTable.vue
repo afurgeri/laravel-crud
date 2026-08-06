@@ -46,17 +46,21 @@ defineEmits<{
 </script>
 
 <template>
-    <div>
-        <div
-            class="hidden overflow-x-auto rounded-2xl border border-border/70 bg-card shadow-[0_12px_32px_-24px_rgba(15,23,42,0.45)] md:block"
-        >
+    <div
+        class="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_12px_32px_-24px_rgba(15,23,42,0.35)]"
+    >
+        <div v-if="$slots.toolbar">
+            <slot name="toolbar" />
+        </div>
+
+        <div class="hidden overflow-x-auto md:block">
             <table class="w-full text-left text-sm">
-                <thead class="border-b bg-muted/60 text-muted-foreground">
+                <thead class="border-b bg-muted/30 text-muted-foreground">
                     <tr>
                         <th
                             v-for="column in columns"
                             :key="column.name"
-                            class="px-5 py-3.5 text-xs font-semibold tracking-wide"
+                            class="px-4 py-3 text-[11px] font-semibold tracking-wide"
                             :style="columnStyle(column)"
                         >
                             <button
@@ -85,24 +89,34 @@ defineEmits<{
                                 {{ t(column.label) }}
                             </template>
                         </th>
-                        <th class="px-5 py-3.5 text-right text-xs font-semibold tracking-wide uppercase">
+                        <th
+                            class="px-4 py-3 text-right text-[11px] font-semibold tracking-wide uppercase"
+                        >
                             {{ actionsLabel ?? t('Actions') }}
                         </th>
                     </tr>
                 </thead>
-                <tbody
-                    class="divide-y divide-border/70"
-                >
+                <tbody class="divide-y divide-border/70">
                     <template v-if="loading">
-                        <tr v-for="row in loadingRows" :key="row" aria-hidden="true">
+                        <tr
+                            v-for="row in loadingRows"
+                            :key="row"
+                            aria-hidden="true"
+                        >
                             <td
                                 v-for="column in columns"
                                 :key="column.name"
                                 class="px-5 py-3"
                             >
-                                <div class="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                                <div
+                                    class="h-4 w-3/4 animate-pulse rounded bg-muted"
+                                />
                             </td>
-                            <td class="px-5 py-3"><div class="ml-auto h-8 w-16 animate-pulse rounded-lg bg-muted" /></td>
+                            <td class="px-5 py-3">
+                                <div
+                                    class="ml-auto h-8 w-16 animate-pulse rounded-lg bg-muted"
+                                />
+                            </td>
                         </tr>
                     </template>
                     <tr
@@ -140,15 +154,25 @@ defineEmits<{
                     </tr>
                 </tbody>
             </table>
+            <div v-if="$slots.footer" class="border-t border-border/70">
+                <slot name="footer" />
+            </div>
         </div>
 
-        <div class="flex flex-col gap-3 md:hidden">
+        <div class="flex flex-col gap-3 p-3 md:hidden">
             <template v-if="loading">
-                <div v-for="row in loadingRows" :key="row" class="rounded-2xl border border-border/70 bg-card p-4 shadow-sm" aria-hidden="true">
+                <div
+                    v-for="row in loadingRows"
+                    :key="row"
+                    class="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+                    aria-hidden="true"
+                >
                     <div class="flex flex-col gap-3">
                         <div class="h-4 w-2/3 animate-pulse rounded bg-muted" />
                         <div class="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                        <div class="h-8 w-20 animate-pulse self-end rounded-lg bg-muted" />
+                        <div
+                            class="h-8 w-20 animate-pulse self-end rounded-lg bg-muted"
+                        />
                     </div>
                 </div>
             </template>
@@ -156,7 +180,7 @@ defineEmits<{
                 v-else
                 v-for="record in records"
                 :key="record.id"
-                class="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
             >
                 <dl class="flex flex-col gap-2">
                     <div
@@ -191,9 +215,13 @@ defineEmits<{
 
             <div
                 v-if="!loading && records.length === 0"
-                class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground"
+                class="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground"
             >
                 {{ emptyLabel ?? t('No records found.') }}
+            </div>
+
+            <div v-if="$slots.footer">
+                <slot name="footer" />
             </div>
         </div>
     </div>

@@ -134,6 +134,16 @@ test('crud filters can be tagged as part of a range group', function () {
     expect($filter->rangeGroup())->toBe('created_at');
 });
 
+test('crud filters configure responsive column spans', function () {
+    $filter = CrudFilter::make('name')->span(6, 'md')->span(4, 'xl');
+
+    expect($filter->spans())->toBe([
+        'base' => 12,
+        'md' => 6,
+        'xl' => 4,
+    ]);
+});
+
 test('crud filters have no maximum date by default', function () {
     $filter = CrudFilter::make('created_at')->date();
 
