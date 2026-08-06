@@ -135,6 +135,12 @@ const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
 const arrayCleared = ref(false);
 const { t } = useTranslation();
+const clearButtonClass =
+    'absolute top-1/2 right-2 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const selectClearButtonClass =
+    'absolute top-1/2 right-8 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const textareaClearButtonClass =
+    'absolute top-2 right-2 z-10 inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
 const fieldId = computed(() =>
     props.idPrefix ? `${props.idPrefix}-${props.field.name}` : props.field.name,
@@ -311,22 +317,36 @@ function clearValue(): void {
 
                 <div v-else class="space-y-2">
                     <div class="flex items-center gap-2">
-                        <Input
-                            :id="
-                                idPrefix
-                                    ? `${idPrefix}-${field.name}`
-                                    : field.name
-                            "
-                            v-model="arrayInputValue"
-                            :required="
-                                field.required && arrayValues.length === 0
-                            "
-                            :disabled="readOnly"
-                            :aria-invalid="
-                                error || arrayInputError ? 'true' : undefined
-                            "
-                            @keydown.enter.prevent="addArrayValue"
-                        />
+                        <div class="relative min-w-0 flex-1">
+                            <Input
+                                :id="
+                                    idPrefix
+                                        ? `${idPrefix}-${field.name}`
+                                        : field.name
+                                "
+                                v-model="arrayInputValue"
+                                :required="
+                                    field.required && arrayValues.length === 0
+                                "
+                                :disabled="readOnly"
+                                :aria-invalid="
+                                    error || arrayInputError
+                                        ? 'true'
+                                        : undefined
+                                "
+                                class="pr-9"
+                                @keydown.enter.prevent="addArrayValue"
+                            />
+                            <button
+                                v-if="hasClearableValue"
+                                type="button"
+                                :class="clearButtonClass"
+                                :aria-label="`Clear ${field.label}`"
+                                @click="clearValue"
+                            >
+                                <X class="size-3.5" />
+                            </button>
+                        </div>
                         <button
                             type="button"
                             class="rounded-md border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
@@ -372,13 +392,26 @@ function clearValue(): void {
                 :name="field.name"
                 :value="checkboxValue ? '1' : '0'"
             />
-            <Checkbox
+            <div
                 v-if="!$slots.default && field.type === 'checkbox'"
-                :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
-                v-model="checkboxValue"
-                :disabled="readOnly"
-                :aria-invalid="error ? 'true' : undefined"
-            />
+                class="flex items-center gap-2"
+            >
+                <Checkbox
+                    :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                    v-model="checkboxValue"
+                    :disabled="readOnly"
+                    :aria-invalid="error ? 'true' : undefined"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    class="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
             <input
                 v-if="
                     !$slots.default &&
@@ -388,55 +421,107 @@ function clearValue(): void {
                 :name="field.name"
                 :value="selectValue ?? ''"
             />
-            <Select
+            <div
                 v-if="!$slots.default && field.type === 'select'"
-                v-model="selectValue"
-                :disabled="readOnly"
+                class="relative"
             >
-                <SelectTrigger
-                    :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
-                    class="w-full"
-                    :aria-invalid="error ? 'true' : undefined"
-                >
-                    <SelectValue :placeholder="field.label" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem
-                        v-for="option in field.options ?? []"
-                        :key="option.value"
-                        :value="option.value"
+                <Select v-model="selectValue" :disabled="readOnly">
+                    <SelectTrigger
+                        :id="
+                            idPrefix ? `${idPrefix}-${field.name}` : field.name
+                        "
+                        class="w-full pr-16"
+                        :aria-invalid="error ? 'true' : undefined"
                     >
-                        {{ option.label }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
-            <CrudCombobox
+                        <SelectValue :placeholder="field.label" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="option in field.options ?? []"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="selectClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
                 v-if="!$slots.default && field.type === 'combobox'"
-                v-model="selectValue"
-                :id="fieldId"
-                :options="field.options ?? []"
-                :disabled="readOnly"
-                :invalid="Boolean(error)"
-                :placeholder="field.label"
-            />
-            <RemoteCombobox
+                class="relative"
+            >
+                <CrudCombobox
+                    v-model="selectValue"
+                    :id="fieldId"
+                    :options="field.options ?? []"
+                    :disabled="readOnly"
+                    :invalid="Boolean(error)"
+                    :placeholder="field.label"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="selectClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
                 v-if="!$slots.default && field.type === 'remote-select'"
-                v-model="remoteSelectValue"
-                :id="fieldId"
-                :remote="field.remote!"
-                :placeholder="field.label"
-                :disabled="readOnly"
-            />
-            <Textarea
+                class="relative"
+            >
+                <RemoteCombobox
+                    v-model="remoteSelectValue"
+                    :id="fieldId"
+                    :remote="field.remote!"
+                    :placeholder="field.label"
+                    :disabled="readOnly"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="selectClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
                 v-if="!$slots.default && field.type === 'textarea'"
-                :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
-                :name="field.name"
-                :required="field.required"
-                :disabled="readOnly"
-                :aria-invalid="error ? 'true' : undefined"
-                v-model="textValue"
-            />
-            <Input
+                class="relative"
+            >
+                <Textarea
+                    :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                    :name="field.name"
+                    :required="field.required"
+                    :disabled="readOnly"
+                    :aria-invalid="error ? 'true' : undefined"
+                    class="pr-9"
+                    v-model="textValue"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="textareaClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
                 v-if="
                     !$slots.default &&
                     ![
@@ -448,34 +533,38 @@ function clearValue(): void {
                         'textarea',
                     ].includes(field.type)
                 "
-                :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
-                :name="field.name"
-                :type="field.type"
-                :step="field.step"
-                :required="field.required"
-                :disabled="readOnly"
-                :autocomplete="
-                    field.type === 'password' ? 'new-password' : undefined
-                "
-                :aria-invalid="error ? 'true' : undefined"
-                v-model="textValue"
-            />
+                class="relative"
+            >
+                <Input
+                    :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                    :name="field.name"
+                    :type="field.type"
+                    :step="field.step"
+                    :required="field.required"
+                    :disabled="readOnly"
+                    :autocomplete="
+                        field.type === 'password' ? 'new-password' : undefined
+                    "
+                    :aria-invalid="error ? 'true' : undefined"
+                    class="pr-9"
+                    v-model="textValue"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="clearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
             <input
                 v-if="!$slots.default && field.type === 'array' && arrayCleared"
                 type="hidden"
                 :name="`${field.name}__clear`"
                 value="1"
             />
-            <button
-                v-if="hasClearableValue"
-                type="button"
-                class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                :aria-label="`Clear ${field.label}`"
-                @click="clearValue"
-            >
-                <X class="size-3.5" />
-                Clear
-            </button>
             <InputError :message="arrayInputError ?? error" />
         </div>
 
