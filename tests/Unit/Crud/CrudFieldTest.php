@@ -79,6 +79,17 @@ test('crud fields allow explicit input type overrides', function () {
     expect(CrudField::make('is_active', ['boolean'])->number()->type())->toBe('number');
 });
 
+test('crud fields configure decimal input precision', function () {
+    expect(CrudField::make('amount', ['required', 'decimal:2'])->decimal()->type())
+        ->toBe('number')
+        ->and(CrudField::make('amount')->decimal()->step())->toBe('0.01')
+        ->and(CrudField::make('amount')->decimal(3)->step())->toBe('0.001');
+});
+
+test('crud fields reject invalid decimal precision', function () {
+    CrudField::make('amount')->decimal(0);
+})->throws(InvalidArgumentException::class);
+
 test('crud fields can configure static select options', function () {
     $field = CrudField::make('is_active', ['required', 'boolean'])->select([
         ['value' => false, 'label' => 'No'],

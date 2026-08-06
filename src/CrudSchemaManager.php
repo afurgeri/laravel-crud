@@ -139,7 +139,7 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int, source: 'field'}}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, clearable: bool, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int, source: 'field'}}
      */
     private function fieldSchema(CrudField $field, string $resource): array
     {
@@ -152,6 +152,7 @@ class CrudSchemaManager
             'confirmed' => $field->requiresConfirmation(),
             'required' => in_array('required', $rules, true),
             'rules' => $rules,
+            'clearable' => $field->isClearable(),
             'visible' => $field->isVisible(),
             'visible_on_update' => $field->isVisibleOnUpdate(),
             'span' => $field->spans(),
@@ -161,13 +162,17 @@ class CrudSchemaManager
             $schema['unique_items'] = $field->hasUniqueItems();
         }
 
+        if ($field->step() !== null) {
+            $schema['step'] = $field->step();
+        }
+
         if (in_array($field->type(), ['select', 'combobox'], true)) {
             $schema['options'] = array_map(
                 fn (array $option): array => [
                     'value' => $this->optionValue($option['value']),
                     'label' => $option['label'],
                 ],
-                $field->options(),
+                $this->fieldOptions($field->options()),
             );
             $schema['options'] = array_values($schema['options']);
         }
@@ -198,6 +203,39 @@ class CrudSchemaManager
             $value === null => '',
             default => (string) $value,
         };
+    }
+
+    /**
+     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
+     * @return list<array{value: bool|float|int|string|null, label: string}>
+     */
+    private function fieldOptions(array $options): array
+    {
+        if (array_is_list($options)) {
+            $isStructured = true;
+
+            foreach ($options as $option) {
+                if (! is_array($option) || ! array_key_exists('value', $option) || ! array_key_exists('label', $option)) {
+                    $isStructured = false;
+
+                    break;
+                }
+            }
+
+            if ($isStructured) {
+                /** @var list<array{value: bool|float|int|string|null, label: string}> $options */
+                return $options;
+            }
+        }
+
+        return array_map(
+            fn (int|string $value, string $label): array => [
+                'value' => $value,
+                'label' => $label,
+            ],
+            array_keys($options),
+            array_values($options),
+        );
     }
 
     /**

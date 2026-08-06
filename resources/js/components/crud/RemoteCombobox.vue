@@ -23,8 +23,9 @@ const props = withDefaults(
         remote: CrudRemoteFilter;
         id?: string;
         placeholder?: string;
+        disabled?: boolean;
     }>(),
-    { placeholder: undefined },
+    { placeholder: undefined, disabled: false },
 );
 
 const emit = defineEmits<{
@@ -212,6 +213,7 @@ onBeforeUnmount(() => {
                     :id="id"
                     role="combobox"
                     :aria-expanded="open"
+                    :disabled="disabled"
                     :data-placeholder="selectedOption ? undefined : ''"
                     class="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='text-'])]:text-muted-foreground"
                 >

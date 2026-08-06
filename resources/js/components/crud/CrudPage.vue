@@ -317,6 +317,7 @@ function handleClearFilters(): void {
 
             <div
                 class="rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.45)]"
+                v-if="schema.search?.enabled || schema.filters?.length > 0"
             >
                 <CrudFilters
                     :search="schema.search"
@@ -457,7 +458,8 @@ function handleClearFilters(): void {
                             "
                             :confirm-label="
                                 destroy.confirmLabel ??
-                                destroy.label ?? t('Delete')
+                                destroy.label ??
+                                t('Delete')
                             "
                             :cancel-label="destroy.cancelLabel ?? t('Cancel')"
                         />

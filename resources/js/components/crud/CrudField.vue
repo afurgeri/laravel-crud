@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { X } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
@@ -121,6 +122,8 @@ const spanClassesByBreakpoint: Record<CrudFieldBreakpoint, string[]> = {
 
 const checkboxValue = ref(booleanValue(props.defaultValue));
 const selectValue = ref(optionValue(props.defaultValue));
+const textValue = ref(inputValue(props.defaultValue));
+const confirmationValue = ref('');
 const remoteSelectValue = computed({
     get: () => selectValue.value ?? '',
     set: (value: string) => {
@@ -130,6 +133,7 @@ const remoteSelectValue = computed({
 const arrayValues = ref(arrayValue(props.defaultValue));
 const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
+const arrayCleared = ref(false);
 const { t } = useTranslation();
 
 const fieldId = computed(() =>
@@ -140,6 +144,7 @@ watch(
     () => props.defaultValue,
     (value) => {
         checkboxValue.value = booleanValue(value);
+        textValue.value = inputValue(value);
     },
 );
 
@@ -156,8 +161,29 @@ watch(
         arrayValues.value = arrayValue(value);
         arrayInputValue.value = '';
         arrayInputError.value = undefined;
+        arrayCleared.value = false;
     },
 );
+
+const hasClearableValue = computed(() => {
+    if (!props.field.clearable || props.readOnly) {
+        return false;
+    }
+
+    if (props.field.type === 'checkbox') {
+        return checkboxValue.value;
+    }
+
+    if (props.field.type === 'array') {
+        return arrayValues.value.length > 0 || arrayInputValue.value !== '';
+    }
+
+    if (['select', 'combobox', 'remote-select'].includes(props.field.type)) {
+        return selectValue.value !== undefined && selectValue.value !== '';
+    }
+
+    return textValue.value !== undefined && textValue.value !== '';
+});
 
 function inputValue(value: unknown): string | number | undefined {
     return typeof value === 'string' || typeof value === 'number'
@@ -224,6 +250,29 @@ function addArrayValue(): void {
 function removeArrayValue(index: number): void {
     arrayValues.value.splice(index, 1);
     arrayInputError.value = undefined;
+}
+
+function clearValue(): void {
+    switch (props.field.type) {
+        case 'checkbox':
+            checkboxValue.value = false;
+            break;
+        case 'array':
+            arrayValues.value = [];
+            arrayInputValue.value = '';
+            arrayInputError.value = undefined;
+            arrayCleared.value = true;
+            break;
+        case 'select':
+        case 'combobox':
+        case 'remote-select':
+            selectValue.value = undefined;
+            break;
+        default:
+            textValue.value = '';
+            confirmationValue.value = '';
+            break;
+    }
 }
 </script>
 
@@ -376,6 +425,7 @@ function removeArrayValue(index: number): void {
                 :id="fieldId"
                 :remote="field.remote!"
                 :placeholder="field.label"
+                :disabled="readOnly"
             />
             <Textarea
                 v-if="!$slots.default && field.type === 'textarea'"
@@ -384,7 +434,7 @@ function removeArrayValue(index: number): void {
                 :required="field.required"
                 :disabled="readOnly"
                 :aria-invalid="error ? 'true' : undefined"
-                :default-value="inputValue(defaultValue)"
+                v-model="textValue"
             />
             <Input
                 v-if="
@@ -401,14 +451,31 @@ function removeArrayValue(index: number): void {
                 :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                 :name="field.name"
                 :type="field.type"
+                :step="field.step"
                 :required="field.required"
                 :disabled="readOnly"
                 :autocomplete="
                     field.type === 'password' ? 'new-password' : undefined
                 "
                 :aria-invalid="error ? 'true' : undefined"
-                :default-value="inputValue(defaultValue)"
+                v-model="textValue"
             />
+            <input
+                v-if="!$slots.default && field.type === 'array' && arrayCleared"
+                type="hidden"
+                :name="`${field.name}__clear`"
+                value="1"
+            />
+            <button
+                v-if="hasClearableValue"
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                :aria-label="`Clear ${field.label}`"
+                @click="clearValue"
+            >
+                <X class="size-3.5" />
+                Clear
+            </button>
             <InputError :message="arrayInputError ?? error" />
         </div>
 
@@ -432,6 +499,7 @@ function removeArrayValue(index: number): void {
                 :type="field.type"
                 :required="field.required"
                 autocomplete="new-password"
+                v-model="confirmationValue"
             />
         </div>
     </div>

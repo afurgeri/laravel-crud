@@ -9,7 +9,7 @@ use InvalidArgumentException;
 final class CrudField
 {
     /**
-     * @var array<int, array{value: bool|float|int|string|null, label: string}>|null
+     * @var list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>|null
      */
     private ?array $options = null;
 
@@ -37,6 +37,8 @@ final class CrudField
         private ?string $uniqueColumn = null,
         private bool $visibleOnUpdate = true,
         private string $type = 'text',
+        private ?string $step = null,
+        private bool $clearable = false,
         private bool $confirmed = false,
         private ?string $label = null,
         private bool $uniqueItems = false,
@@ -218,6 +220,23 @@ final class CrudField
         return $this;
     }
 
+    public function decimal(int $places = 2): self
+    {
+        if ($places < 1) {
+            throw new InvalidArgumentException('Decimal places must be at least 1.');
+        }
+
+        $this->type = 'number';
+        $this->step = '0.'.str_pad('1', $places, '0', STR_PAD_LEFT);
+
+        return $this;
+    }
+
+    public function step(): ?string
+    {
+        return $this->step;
+    }
+
     public function date(): self
     {
         $this->type = 'date';
@@ -262,8 +281,20 @@ final class CrudField
         return $this->type;
     }
 
+    public function clearable(bool $clearable = true): self
+    {
+        $this->clearable = $clearable;
+
+        return $this;
+    }
+
+    public function isClearable(): bool
+    {
+        return $this->clearable;
+    }
+
     /**
-     * @param  array<int, array{value: bool|float|int|string|null, label: string}>  $options
+     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
      */
     public function select(array $options): self
     {
@@ -274,7 +305,7 @@ final class CrudField
     }
 
     /**
-     * @param  array<int, array{value: bool|float|int|string|null, label: string}>  $options
+     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
      */
     public function combobox(array $options): self
     {
@@ -364,7 +395,7 @@ final class CrudField
     }
 
     /**
-     * @return array<int, array{value: bool|float|int|string|null, label: string}>
+     * @return list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>
      */
     public function options(): array
     {

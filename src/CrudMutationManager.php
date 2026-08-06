@@ -100,6 +100,16 @@ class CrudMutationManager
      */
     private function validatedData(CrudDefinition $definition, array $data, ?Model $model): array
     {
+        foreach ($definition->fields() as $field) {
+            $clearMarker = $field->name().'__clear';
+
+            if ($field->isArray() && ! empty($data[$clearMarker])) {
+                $data[$field->name()] = [];
+            }
+
+            unset($data[$clearMarker]);
+        }
+
         $validated = Validator::make($data, $this->validationRules($definition, $model))->validate();
         $modelClass = $definition->model();
 

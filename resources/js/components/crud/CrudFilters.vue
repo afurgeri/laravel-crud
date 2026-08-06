@@ -91,253 +91,286 @@ function clearFilter(name: string): void {
 </script>
 
 <template>
-    <div
-        v-if="search.enabled || filters.length > 0"
-        class="flex flex-col gap-4 rounded-xl bg-card p-4"
-    >
-        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+    <div>
+        <div
+            v-if="search.enabled || filters.length > 0"
+            class="flex flex-col gap-4 rounded-xl bg-card p-4"
+        >
             <div
-                v-if="search.enabled"
-                class="flex w-full flex-col gap-2 sm:w-auto"
-            >
-                <Label
-                    for="crud-search"
-                    class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-                    ><Search class="size-3.5" /> {{ t('Search') }}</Label
-                >
-                <Input
-                    id="crud-search"
-                    :model-value="searchValue"
-                    type="search"
-                    :placeholder="t('Search records...')"
-                    class="w-full bg-muted/40 sm:w-64"
-                    @update:model-value="
-                        (value) => emit('search', String(value))
-                    "
-                />
-            </div>
-
-            <template
-                v-for="entry in entries"
-                :key="entry.kind === 'single' ? entry.filter.name : entry.group"
+                class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end"
             >
                 <div
-                    v-if="entry.kind === 'single'"
+                    v-if="search.enabled"
                     class="flex w-full flex-col gap-2 sm:w-auto"
                 >
                     <Label
-                        :for="`filter-${entry.filter.name}`"
+                        for="crud-search"
                         class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-                        ><SlidersHorizontal class="size-3.5" />{{
-                            t(entry.filter.label)
-                        }}</Label
+                        ><Search class="size-3.5" /> {{ t('Search') }}</Label
                     >
-
-                    <div class="flex w-full items-center gap-1 sm:w-48">
-                        <RemoteCombobox
-                            v-if="entry.filter.type === 'remote-select'"
-                            :id="`filter-${entry.filter.name}`"
-                            :model-value="filterValues[entry.filter.name] || ''"
-                            :remote="entry.filter.remote!"
-                            :placeholder="entry.filter.label"
-                            @update:model-value="
-                                (value) =>
-                                    emit(
-                                        'filter',
-                                        entry.filter.name,
-                                        value,
-                                        true,
-                                    )
-                            "
-                        />
-                        <Select
-                            v-else-if="entry.filter.type === 'select'"
-                            :model-value="
-                                filterValues[entry.filter.name] || undefined
-                            "
-                            @update:model-value="
-                                (value) =>
-                                    emit(
-                                        'filter',
-                                        entry.filter.name,
-                                        String(value ?? ''),
-                                        true,
-                                    )
-                            "
-                        >
-                            <SelectTrigger
-                                :id="`filter-${entry.filter.name}`"
-                                class="w-full"
-                            >
-                                <SelectValue
-                                    :placeholder="t(entry.filter.label)"
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in entry.filter.options ?? []"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ t(option.label) }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <DatePicker
-                            v-else-if="entry.filter.type === 'date'"
-                            :id="`filter-${entry.filter.name}`"
-                            :model-value="filterValues[entry.filter.name] ?? ''"
-                            :max-value="entry.filter.max_date ?? undefined"
-                            class="w-full"
-                            @update:model-value="
-                                (value) =>
-                                    emit(
-                                        'filter',
-                                        entry.filter.name,
-                                        value,
-                                        false,
-                                    )
-                            "
-                        />
-
-                        <Input
-                            v-else
-                            :id="`filter-${entry.filter.name}`"
-                            :model-value="filterValues[entry.filter.name] ?? ''"
-                            :type="inputType(entry.filter)"
-                            class="w-full"
-                            @update:model-value="
-                                (value) =>
-                                    emit(
-                                        'filter',
-                                        entry.filter.name,
-                                        String(value),
-                                        false,
-                                    )
-                            "
-                        />
-
-                        <Button
-                            v-if="
-                                entry.filter.clearable &&
-                                filterValues[entry.filter.name]
-                            "
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            class="shrink-0"
-                            :aria-label="t('Clear :label', { label: entry.filter.label })"
-                            @click="clearFilter(entry.filter.name)"
-                        >
-                            <X class="size-4" />
-                        </Button>
-                    </div>
+                    <Input
+                        id="crud-search"
+                        :model-value="searchValue"
+                        type="search"
+                        :placeholder="t('Search records...')"
+                        class="w-full bg-muted/40 sm:w-64"
+                        @update:model-value="
+                            (value) => emit('search', String(value))
+                        "
+                    />
                 </div>
 
-                <div
-                    v-else
-                    class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-end sm:gap-2"
+                <template
+                    v-for="entry in entries"
+                    :key="
+                        entry.kind === 'single'
+                            ? entry.filter.name
+                            : entry.group
+                    "
                 >
-                    <div class="flex w-full flex-col gap-2 sm:w-auto">
-                        <Label :for="`filter-${entry.from.name}`">{{
-                            t(entry.from.label)
-                        }}</Label>
-                        <div class="flex w-full items-center gap-1 sm:w-40">
-                            <DatePicker
-                                :id="`filter-${entry.from.name}`"
-                                :model-value="
-                                    filterValues[entry.from.name] ?? ''
-                                "
-                                :max-value="entry.from.max_date ?? undefined"
-                                :aria-invalid="rangeInvalid(entry)"
-                                class="w-full"
-                                @update:model-value="
-                                    (value) =>
-                                        emit(
-                                            'filter',
-                                            entry.from.name,
-                                            value,
-                                            false,
-                                        )
-                                "
-                            />
-                            <Button
-                                v-if="
-                                    entry.from.clearable &&
-                                    filterValues[entry.from.name]
-                                "
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                class="shrink-0"
-                                :aria-label="t('Clear :label', { label: entry.from.label })"
-                                @click="clearFilter(entry.from.name)"
-                            >
-                                <X class="size-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div class="flex w-full flex-col gap-2 sm:w-auto">
-                        <Label :for="`filter-${entry.to.name}`">{{
-                            t(entry.to.label)
-                        }}</Label>
-                        <div class="flex w-full items-center gap-1 sm:w-40">
-                            <DatePicker
-                                :id="`filter-${entry.to.name}`"
-                                :model-value="filterValues[entry.to.name] ?? ''"
-                                :max-value="entry.to.max_date ?? undefined"
-                                :aria-invalid="rangeInvalid(entry)"
-                                class="w-full"
-                                @update:model-value="
-                                    (value) =>
-                                        emit(
-                                            'filter',
-                                            entry.to.name,
-                                            value,
-                                            false,
-                                        )
-                                "
-                            />
-                            <Button
-                                v-if="
-                                    entry.to.clearable &&
-                                    filterValues[entry.to.name]
-                                "
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                class="shrink-0"
-                                :aria-label="t('Clear :label', { label: entry.to.label })"
-                                @click="clearFilter(entry.to.name)"
-                            >
-                                <X class="size-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    <p
-                        v-if="rangeInvalid(entry)"
-                        class="text-sm text-destructive sm:pb-2"
+                    <div
+                        v-if="entry.kind === 'single'"
+                        class="flex w-full flex-col gap-2 sm:w-auto"
                     >
-                        {{
-                            t('The start of the range cannot be after the end.')
-                        }}
-                    </p>
-                </div>
-            </template>
+                        <Label
+                            :for="`filter-${entry.filter.name}`"
+                            class="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                            ><SlidersHorizontal class="size-3.5" />{{
+                                t(entry.filter.label)
+                            }}</Label
+                        >
 
-            <Button
-                v-if="hasActiveFilters"
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="w-full shrink-0 sm:ml-auto sm:w-auto"
-                @click="emit('clear')"
-            >
-                {{ clearLabel ?? t('Clear filters') }}
-            </Button>
+                        <div class="flex w-full items-center gap-1 sm:w-48">
+                            <RemoteCombobox
+                                v-if="entry.filter.type === 'remote-select'"
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="
+                                    filterValues[entry.filter.name] || ''
+                                "
+                                :remote="entry.filter.remote!"
+                                :placeholder="entry.filter.label"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value,
+                                            true,
+                                        )
+                                "
+                            />
+                            <Select
+                                v-else-if="entry.filter.type === 'select'"
+                                :model-value="
+                                    filterValues[entry.filter.name] || undefined
+                                "
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            String(value ?? ''),
+                                            true,
+                                        )
+                                "
+                            >
+                                <SelectTrigger
+                                    :id="`filter-${entry.filter.name}`"
+                                    class="w-full"
+                                >
+                                    <SelectValue
+                                        :placeholder="t(entry.filter.label)"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="option in entry.filter.options ??
+                                        []"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ t(option.label) }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <DatePicker
+                                v-else-if="entry.filter.type === 'date'"
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="
+                                    filterValues[entry.filter.name] ?? ''
+                                "
+                                :max-value="entry.filter.max_date ?? undefined"
+                                class="w-full"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value,
+                                            false,
+                                        )
+                                "
+                            />
+
+                            <Input
+                                v-else
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="
+                                    filterValues[entry.filter.name] ?? ''
+                                "
+                                :type="inputType(entry.filter)"
+                                class="w-full"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            String(value),
+                                            false,
+                                        )
+                                "
+                            />
+
+                            <Button
+                                v-if="
+                                    entry.filter.clearable &&
+                                    filterValues[entry.filter.name]
+                                "
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                class="shrink-0"
+                                :aria-label="
+                                    t('Clear :label', {
+                                        label: entry.filter.label,
+                                    })
+                                "
+                                @click="clearFilter(entry.filter.name)"
+                            >
+                                <X class="size-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-end sm:gap-2"
+                    >
+                        <div class="flex w-full flex-col gap-2 sm:w-auto">
+                            <Label :for="`filter-${entry.from.name}`">{{
+                                t(entry.from.label)
+                            }}</Label>
+                            <div class="flex w-full items-center gap-1 sm:w-40">
+                                <DatePicker
+                                    :id="`filter-${entry.from.name}`"
+                                    :model-value="
+                                        filterValues[entry.from.name] ?? ''
+                                    "
+                                    :max-value="
+                                        entry.from.max_date ?? undefined
+                                    "
+                                    :aria-invalid="rangeInvalid(entry)"
+                                    class="w-full"
+                                    @update:model-value="
+                                        (value) =>
+                                            emit(
+                                                'filter',
+                                                entry.from.name,
+                                                value,
+                                                false,
+                                            )
+                                    "
+                                />
+                                <Button
+                                    v-if="
+                                        entry.from.clearable &&
+                                        filterValues[entry.from.name]
+                                    "
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="shrink-0"
+                                    :aria-label="
+                                        t('Clear :label', {
+                                            label: entry.from.label,
+                                        })
+                                    "
+                                    @click="clearFilter(entry.from.name)"
+                                >
+                                    <X class="size-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div class="flex w-full flex-col gap-2 sm:w-auto">
+                            <Label :for="`filter-${entry.to.name}`">{{
+                                t(entry.to.label)
+                            }}</Label>
+                            <div class="flex w-full items-center gap-1 sm:w-40">
+                                <DatePicker
+                                    :id="`filter-${entry.to.name}`"
+                                    :model-value="
+                                        filterValues[entry.to.name] ?? ''
+                                    "
+                                    :max-value="entry.to.max_date ?? undefined"
+                                    :aria-invalid="rangeInvalid(entry)"
+                                    class="w-full"
+                                    @update:model-value="
+                                        (value) =>
+                                            emit(
+                                                'filter',
+                                                entry.to.name,
+                                                value,
+                                                false,
+                                            )
+                                    "
+                                />
+                                <Button
+                                    v-if="
+                                        entry.to.clearable &&
+                                        filterValues[entry.to.name]
+                                    "
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="shrink-0"
+                                    :aria-label="
+                                        t('Clear :label', {
+                                            label: entry.to.label,
+                                        })
+                                    "
+                                    @click="clearFilter(entry.to.name)"
+                                >
+                                    <X class="size-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <p
+                            v-if="rangeInvalid(entry)"
+                            class="text-sm text-destructive sm:pb-2"
+                        >
+                            {{
+                                t(
+                                    'The start of the range cannot be after the end.',
+                                )
+                            }}
+                        </p>
+                    </div>
+                </template>
+
+                <Button
+                    v-if="hasActiveFilters"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="w-full shrink-0 sm:ml-auto sm:w-auto"
+                    @click="emit('clear')"
+                >
+                    {{ clearLabel ?? t('Clear filters') }}
+                </Button>
+            </div>
         </div>
     </div>
 </template>

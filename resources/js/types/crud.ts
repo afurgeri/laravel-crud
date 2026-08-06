@@ -27,9 +27,9 @@ export type CrudField = {
         | 'email'
         | 'password'
         | 'checkbox'
-         | 'select'
-         | 'combobox'
-         | 'remote-select'
+        | 'select'
+        | 'combobox'
+        | 'remote-select'
         | 'number'
         | 'date'
         | 'textarea'
@@ -37,6 +37,8 @@ export type CrudField = {
     confirmed: boolean;
     required: boolean;
     rules: string[];
+    clearable: boolean;
+    step?: string;
     unique_items?: boolean;
     visible: boolean;
     visible_on_update: boolean;
