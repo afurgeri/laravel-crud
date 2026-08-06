@@ -4,6 +4,7 @@ namespace Modules\Crud;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasCrudFormMode;
 use Modules\Crud\Contracts\HasCrudOperations;
@@ -174,7 +175,6 @@ class CrudSchemaManager
                 ],
                 $this->fieldOptions($field->options()),
             );
-            $schema['options'] = array_values($schema['options']);
         }
 
         if ($field->isRemote()) {
@@ -211,31 +211,25 @@ class CrudSchemaManager
      */
     private function fieldOptions(array $options): array
     {
-        if (array_is_list($options)) {
-            $isStructured = true;
-
-            foreach ($options as $option) {
-                if (! is_array($option) || ! array_key_exists('value', $option) || ! array_key_exists('label', $option)) {
-                    $isStructured = false;
-
-                    break;
-                }
-            }
-
-            if ($isStructured) {
-                /** @var list<array{value: bool|float|int|string|null, label: string}> $options */
-                return $options;
-            }
+        if (array_is_list($options) && ($options === [] || is_array($options[0]))) {
+            /** @var list<array{value: bool|float|int|string|null, label: string}> $options */
+            return $options;
         }
 
-        return array_map(
-            fn (int|string $value, string $label): array => [
+        $normalized = [];
+
+        foreach ($options as $value => $label) {
+            if (! is_string($label)) {
+                throw new InvalidArgumentException('Field option labels must be strings.');
+            }
+
+            $normalized[] = [
                 'value' => $value,
                 'label' => $label,
-            ],
-            array_keys($options),
-            array_values($options),
-        );
+            ];
+        }
+
+        return $normalized;
     }
 
     /**
