@@ -43,6 +43,7 @@ final class CrudField
         private ?string $label = null,
         private bool $uniqueItems = false,
         private bool $visible = true,
+        private bool $multiple = false,
     ) {}
 
     private mixed $defaultValue = null;
@@ -195,6 +196,7 @@ final class CrudField
     public function email(): self
     {
         $this->type = 'email';
+        $this->multiple = false;
 
         return $this;
     }
@@ -202,6 +204,7 @@ final class CrudField
     public function password(): self
     {
         $this->type = 'password';
+        $this->multiple = false;
 
         return $this;
     }
@@ -209,6 +212,7 @@ final class CrudField
     public function checkbox(): self
     {
         $this->type = 'checkbox';
+        $this->multiple = false;
 
         return $this;
     }
@@ -216,6 +220,7 @@ final class CrudField
     public function number(): self
     {
         $this->type = 'number';
+        $this->multiple = false;
 
         return $this;
     }
@@ -228,6 +233,7 @@ final class CrudField
 
         $this->type = 'number';
         $this->step = '0.'.str_pad('1', $places, '0', STR_PAD_LEFT);
+        $this->multiple = false;
 
         return $this;
     }
@@ -240,6 +246,7 @@ final class CrudField
     public function date(): self
     {
         $this->type = 'date';
+        $this->multiple = false;
 
         return $this;
     }
@@ -247,6 +254,7 @@ final class CrudField
     public function textarea(): self
     {
         $this->type = 'textarea';
+        $this->multiple = false;
 
         return $this;
     }
@@ -255,6 +263,7 @@ final class CrudField
     {
         $this->type = 'array';
         $this->uniqueItems = $unique;
+        $this->multiple = false;
 
         return $this;
     }
@@ -315,6 +324,22 @@ final class CrudField
         return $this;
     }
 
+    public function multiple(): self
+    {
+        if (! in_array($this->type, ['select', 'combobox'], true)) {
+            throw new InvalidArgumentException('Multiple fields must be configured as select or combobox fields.');
+        }
+
+        $this->multiple = true;
+
+        return $this;
+    }
+
+    public function isMultiple(): bool
+    {
+        return $this->multiple;
+    }
+
     public function relation(string $relation, string $column = 'id'): self
     {
         $this->relation = $relation;
@@ -334,6 +359,7 @@ final class CrudField
         ?Closure $label = null,
     ): self {
         $this->type = 'remote-select';
+        $this->multiple = false;
         $this->remoteUrl = $url;
         $this->remoteMinChars = max(0, $minChars);
         $this->remoteDebounce = max(0, $debounce);

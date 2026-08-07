@@ -47,6 +47,7 @@ export type CrudField = {
     required: boolean;
     rules: string[];
     clearable: boolean;
+    multiple?: boolean;
     step?: string;
     unique_items?: boolean;
     visible: boolean;
@@ -110,6 +111,7 @@ export type CrudFilter = {
     operator: string;
     relation: boolean;
     clearable: boolean;
+    multiple?: boolean;
     range: string | null;
     value: unknown;
     span: CrudSpan;

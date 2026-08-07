@@ -30,6 +30,12 @@ final class CrudFilterValues
 
             $options = $filter->resolvedOptions($values);
 
+            if ($filter->isMultiple()) {
+                $values[$filter->name()] = $this->validOptionValues($options, $value);
+
+                continue;
+            }
+
             if ($options !== [] && ! $this->optionExists($options, $value)) {
                 $values[$filter->name()] = null;
             }
@@ -73,5 +79,25 @@ final class CrudFilterValues
         }
 
         return false;
+    }
+
+    /**
+     * @param  array<int|string, string>  $options
+     * @return list<string>
+     */
+    private function validOptionValues(array $options, mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_map(
+            strval(...),
+            array_filter(
+                $value,
+                fn (mixed $option): bool => (is_string($option) || is_int($option))
+                    && ($options === [] || $this->optionExists($options, $option)),
+            ),
+        ));
     }
 }

@@ -61,6 +61,25 @@ test('crud filters can be configured as a searchable combobox with an options ar
         ->and($filter->resolvedOptions())->toBe(['active' => 'Active', 'inactive' => 'Inactive']);
 });
 
+test('crud filters can enable multiple local options', function () {
+    $filter = CrudFilter::make('status')->combobox(['active' => 'Active'])->multiple();
+
+    expect($filter->isMultiple())->toBeTrue();
+});
+
+test('crud filters reject multiple options for unsupported filter types', function () {
+    CrudFilter::make('name')->multiple();
+})->throws(InvalidArgumentException::class);
+
+test('crud filters reset multiple options when changing to an unsupported filter type', function () {
+    $filter = CrudFilter::make('roles')
+        ->select([1 => 'Admin'])
+        ->multiple()
+        ->remoteSelect();
+
+    expect($filter->isMultiple())->toBeFalse();
+});
+
 test('crud filters can be configured as remote selects', function () {
     $filter = CrudFilter::make('patient')
         ->remoteSelect('/patients/options', 3, 500);

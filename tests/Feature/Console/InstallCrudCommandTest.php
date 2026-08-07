@@ -64,6 +64,8 @@ test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $field = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudField.vue');
     $combobox = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudCombobox.vue');
+    $comboboxMultiple = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudComboboxMultiple.vue');
+    $selectMultiple = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudSelectMultiple.vue');
     $table = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudTable.vue');
     $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
     $form = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudForm.vue');
@@ -109,9 +111,15 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($field)
         ->toContain('CrudFieldSlotProps')
         ->toContain('$slots.default')
+        ->toContain('multipleValues')
+        ->toContain('`${field.name}[]`')
         ->and($combobox)
         ->toContain('filteredOptions')
         ->toContain(':ignore-filter="true"')
+        ->and($comboboxMultiple)
+        ->toContain('multiple')
+        ->and($selectMultiple)
+        ->toContain('DropdownMenuCheckboxItem')
         ->and($form)
         ->toContain('field-${field.name}')
         ->and($formPage)

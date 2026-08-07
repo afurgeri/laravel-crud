@@ -199,9 +199,11 @@ test('it serializes static combobox options in the field schema', function () {
         public function fields(): array
         {
             return [
-                CrudField::make('user_id', ['nullable', 'string'])->combobox([
-                    ['value' => 1, 'label' => 'Ada Lovelace'],
-                ]),
+                CrudField::make('user_id', ['nullable', 'string'])
+                    ->combobox([
+                        ['value' => 1, 'label' => 'Ada Lovelace'],
+                    ])
+                    ->multiple(),
             ];
         }
     };
@@ -212,6 +214,7 @@ test('it serializes static combobox options in the field schema', function () {
         ->toMatchArray([
             'name' => 'user_id',
             'type' => 'combobox',
+            'multiple' => true,
             'options' => [
                 ['value' => '1', 'label' => 'Ada Lovelace'],
             ],
@@ -662,7 +665,10 @@ test('it exposes declared filters with their resolved values and options', funct
         {
             return [
                 CrudFilter::make('name')->text(),
-                CrudFilter::make('role')->combobox([1 => 'Admin'])->relation('roles'),
+                CrudFilter::make('role')
+                    ->combobox([1 => 'Admin'])
+                    ->multiple()
+                    ->relation('roles'),
             ];
         }
     };
@@ -691,6 +697,7 @@ test('it exposes declared filters with their resolved values and options', funct
             'range' => null,
             'value' => null,
             'span' => ['base' => 12, 'sm' => 4],
+            'multiple' => true,
             'options' => [
                 ['value' => '1', 'label' => 'Admin'],
             ],

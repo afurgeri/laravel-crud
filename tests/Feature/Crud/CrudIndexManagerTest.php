@@ -482,6 +482,55 @@ test('it filters through a relation via whereHas', function () {
         ->and($paginator->items()[0]->name)->toBe('Ada');
 });
 
+test('it filters multiple local values with where in', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition implements HasCrudFilters
+    {
+        public function filters(): array
+        {
+            return [
+                CrudFilter::make('name')->combobox([
+                    'Ada' => 'Ada',
+                    'Grace' => 'Grace',
+                ])->multiple(),
+            ];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        filters: ['name' => ['Ada', 'Grace']],
+    );
+
+    expect($paginator->items())->toHaveCount(2);
+});
+
+test('it filters multiple relation values with where has and where in', function () {
+    $ada = CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    $grace = CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+    $adaNote = CrudTestRecordNote::query()->create(['crud_test_record_id' => $ada->id, 'body' => 'Ada']);
+    $graceNote = CrudTestRecordNote::query()->create(['crud_test_record_id' => $grace->id, 'body' => 'Grace']);
+
+    $definition = new class extends CrudTestRecordDefinition implements HasCrudFilters
+    {
+        public function filters(): array
+        {
+            return [
+                CrudFilter::make('note')->select([])->multiple()->relation('notes', 'id'),
+            ];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        filters: ['note' => [$adaNote->id, $graceNote->id]],
+    );
+
+    expect($paginator->items())->toHaveCount(2);
+});
+
 test('unknown filter names are ignored', function () {
     CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
     CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);

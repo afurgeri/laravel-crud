@@ -260,6 +260,21 @@ class CrudIndexManager
      */
     private function applyFilter(Builder $query, CrudFilter $filter, mixed $value): void
     {
+        if ($filter->isMultiple()) {
+            if ($filter->isRelation()) {
+                $query->whereHas(
+                    $filter->relationName(),
+                    fn (Builder $query): Builder => $query->whereIn($filter->relationColumn(), $value),
+                );
+
+                return;
+            }
+
+            $query->whereIn($filter->column(), $value);
+
+            return;
+        }
+
         if ($filter->isRelation()) {
             $query->whereHas(
                 $filter->relationName(),

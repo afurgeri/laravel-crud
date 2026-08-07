@@ -2,7 +2,9 @@
 import { Search, SlidersHorizontal, X } from '@lucide/vue';
 import { computed } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
+import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
+import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
@@ -17,17 +19,19 @@ import {
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudFilter, CrudSearch, CrudSpan } from '@/types/crud';
 
+type CrudFilterValue = string | string[];
+
 const props = defineProps<{
     search: CrudSearch;
     filters: CrudFilter[];
     searchValue: string;
-    filterValues: Record<string, string>;
+    filterValues: Record<string, CrudFilterValue>;
     clearLabel?: string;
 }>();
 
 const emit = defineEmits<{
     search: [value: string];
-    filter: [name: string, value: string, immediate: boolean];
+    filter: [name: string, value: CrudFilterValue, immediate: boolean];
     clear: [];
 }>();
 
@@ -166,7 +170,7 @@ const entries = computed<FilterEntry[]>(() => {
 const hasActiveFilters = computed(
     () =>
         props.searchValue !== '' ||
-        Object.values(props.filterValues).some((value) => value !== ''),
+        Object.values(props.filterValues).some(hasFilterValue),
 );
 
 function inputType(filter: CrudFilter): string {
@@ -177,11 +181,32 @@ function rangeInvalid(entry: { from: CrudFilter; to: CrudFilter }): boolean {
     const from = props.filterValues[entry.from.name];
     const to = props.filterValues[entry.to.name];
 
-    return Boolean(from && to && from > to);
+    return typeof from === 'string' && typeof to === 'string' && from > to;
 }
 
-function clearFilter(name: string): void {
-    emit('filter', name, '', true);
+function hasFilterValue(value: CrudFilterValue): boolean {
+    return Array.isArray(value) ? value.length > 0 : value !== '';
+}
+
+function filterTextValue(name: string): string {
+    const value = props.filterValues[name];
+
+    return typeof value === 'string' ? value : '';
+}
+
+function filterArrayValue(name: string): string[] {
+    const value = props.filterValues[name];
+
+    return Array.isArray(value) ? value : [];
+}
+
+function clearFilter(filter: CrudFilter | string): void {
+    emit(
+        'filter',
+        typeof filter === 'string' ? filter : filter.name,
+        typeof filter === 'string' || !filter.multiple ? '' : [],
+        true,
+    );
 }
 </script>
 
@@ -244,7 +269,7 @@ function clearFilter(name: string): void {
                                 v-if="entry.filter.type === 'remote-select'"
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
-                                    filterValues[entry.filter.name] || ''
+                                    filterTextValue(entry.filter.name)
                                 "
                                 :remote="entry.filter.remote!"
                                 :placeholder="entry.filter.label"
@@ -259,10 +284,13 @@ function clearFilter(name: string): void {
                                 "
                             />
                             <CrudCombobox
-                                v-else-if="entry.filter.type === 'combobox'"
+                                v-else-if="
+                                    entry.filter.type === 'combobox' &&
+                                    !entry.filter.multiple
+                                "
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
-                                    filterValues[entry.filter.name] || undefined
+                                    filterTextValue(entry.filter.name) || undefined
                                 "
                                 :options="entry.filter.options ?? []"
                                 :placeholder="entry.filter.label"
@@ -276,10 +304,32 @@ function clearFilter(name: string): void {
                                         )
                                 "
                             />
+                            <CrudComboboxMultiple
+                                v-else-if="
+                                    entry.filter.type === 'combobox' &&
+                                    entry.filter.multiple
+                                "
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="filterArrayValue(entry.filter.name)"
+                                :options="entry.filter.options ?? []"
+                                :placeholder="entry.filter.label"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value,
+                                            true,
+                                        )
+                                "
+                            />
                             <Select
-                                v-else-if="entry.filter.type === 'select'"
+                                v-else-if="
+                                    entry.filter.type === 'select' &&
+                                    !entry.filter.multiple
+                                "
                                 :model-value="
-                                    filterValues[entry.filter.name] || undefined
+                                    filterTextValue(entry.filter.name) || undefined
                                 "
                                 @update:model-value="
                                     (value) =>
@@ -310,12 +360,31 @@ function clearFilter(name: string): void {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
+                            <CrudSelectMultiple
+                                v-else-if="
+                                    entry.filter.type === 'select' &&
+                                    entry.filter.multiple
+                                "
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="filterArrayValue(entry.filter.name)"
+                                :options="entry.filter.options ?? []"
+                                :placeholder="entry.filter.label"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value,
+                                            true,
+                                        )
+                                "
+                            />
 
                             <DatePicker
                                 v-else-if="entry.filter.type === 'date'"
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
-                                    filterValues[entry.filter.name] ?? ''
+                                    filterTextValue(entry.filter.name)
                                 "
                                 :max-value="entry.filter.max_date ?? undefined"
                                 class="w-full"
@@ -334,7 +403,7 @@ function clearFilter(name: string): void {
                                 v-else
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
-                                    filterValues[entry.filter.name] ?? ''
+                                    filterTextValue(entry.filter.name)
                                 "
                                 :type="inputType(entry.filter)"
                                 class="w-full"
@@ -352,7 +421,9 @@ function clearFilter(name: string): void {
                             <Button
                                 v-if="
                                     entry.filter.clearable &&
-                                    filterValues[entry.filter.name]
+                                    hasFilterValue(
+                                        filterValues[entry.filter.name],
+                                    )
                                 "
                                 type="button"
                                 variant="ghost"
@@ -363,7 +434,7 @@ function clearFilter(name: string): void {
                                         label: entry.filter.label,
                                     })
                                 "
-                                @click="clearFilter(entry.filter.name)"
+                                @click="clearFilter(entry.filter)"
                             >
                                 <X class="size-4" />
                             </Button>
@@ -384,7 +455,7 @@ function clearFilter(name: string): void {
                                 <DatePicker
                                     :id="`filter-${entry.from.name}`"
                                     :model-value="
-                                        filterValues[entry.from.name] ?? ''
+                                        filterTextValue(entry.from.name)
                                     "
                                     :max-value="
                                         entry.from.max_date ?? undefined
@@ -445,7 +516,7 @@ function clearFilter(name: string): void {
                                 <DatePicker
                                     :id="`filter-${entry.to.name}`"
                                     :model-value="
-                                        filterValues[entry.to.name] ?? ''
+                                        filterTextValue(entry.to.name)
                                     "
                                     :max-value="entry.to.max_date ?? undefined"
                                     :aria-invalid="rangeInvalid(entry)"

@@ -33,6 +33,8 @@ final class CrudFilter
 
     private bool $clearable = false;
 
+    private bool $multiple = false;
+
     private ?string $label = null;
 
     private ?string $remoteUrl = null;
@@ -78,6 +80,7 @@ final class CrudFilter
     public function text(): self
     {
         $this->type = 'text';
+        $this->multiple = false;
 
         return $this;
     }
@@ -85,6 +88,7 @@ final class CrudFilter
     public function date(): self
     {
         $this->type = 'date';
+        $this->multiple = false;
 
         return $this;
     }
@@ -92,6 +96,7 @@ final class CrudFilter
     public function number(): self
     {
         $this->type = 'number';
+        $this->multiple = false;
 
         return $this;
     }
@@ -118,6 +123,22 @@ final class CrudFilter
         return $this;
     }
 
+    public function multiple(): self
+    {
+        if (! in_array($this->type, ['select', 'combobox'], true)) {
+            throw new InvalidArgumentException('Multiple filters must be configured as select or combobox filters.');
+        }
+
+        $this->multiple = true;
+
+        return $this;
+    }
+
+    public function isMultiple(): bool
+    {
+        return $this->multiple;
+    }
+
     /**
      * @param  list<string>  $searchColumns
      */
@@ -129,6 +150,7 @@ final class CrudFilter
         ?Closure $label = null,
     ): self {
         $this->type = 'remote-select';
+        $this->multiple = false;
         $this->remoteUrl = $url;
         $this->remoteMinChars = max(0, $minChars);
         $this->remoteDebounce = max(0, $debounce);

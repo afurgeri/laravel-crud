@@ -2,7 +2,9 @@
 import { X } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
+import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
+import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -131,6 +133,7 @@ const remoteSelectValue = computed({
     },
 });
 const arrayValues = ref(arrayValue(props.defaultValue));
+const multipleValues = ref(arrayValue(props.defaultValue));
 const arrayInputValue = ref('');
 const arrayInputError = ref<string>();
 const arrayCleared = ref(false);
@@ -158,6 +161,7 @@ watch(
     () => props.defaultValue,
     (value) => {
         selectValue.value = optionValue(value);
+        multipleValues.value = arrayValue(value);
     },
 );
 
@@ -182,6 +186,10 @@ const hasClearableValue = computed(() => {
 
     if (props.field.type === 'array') {
         return arrayValues.value.length > 0 || arrayInputValue.value !== '';
+    }
+
+    if (props.field.multiple) {
+        return multipleValues.value.length > 0;
     }
 
     if (['select', 'combobox', 'remote-select'].includes(props.field.type)) {
@@ -271,6 +279,14 @@ function clearValue(): void {
             break;
         case 'select':
         case 'combobox':
+            if (props.field.multiple) {
+                multipleValues.value = [];
+
+                break;
+            }
+
+            selectValue.value = undefined;
+            break;
         case 'remote-select':
             selectValue.value = undefined;
             break;
@@ -415,14 +431,34 @@ function clearValue(): void {
             <input
                 v-if="
                     !$slots.default &&
-                    ['select', 'combobox', 'remote-select'].includes(field.type)
+                    ['select', 'combobox', 'remote-select'].includes(field.type) &&
+                    !field.multiple
                 "
                 type="hidden"
                 :name="field.name"
                 :value="selectValue ?? ''"
             />
+            <template
+                v-if="
+                    !$slots.default &&
+                    field.multiple &&
+                    ['select', 'combobox'].includes(field.type)
+                "
+            >
+                <input
+                    v-for="value in multipleValues"
+                    :key="value"
+                    type="hidden"
+                    :name="`${field.name}[]`"
+                    :value="value"
+                />
+            </template>
             <div
-                v-if="!$slots.default && field.type === 'select'"
+                v-if="
+                    !$slots.default &&
+                    field.type === 'select' &&
+                    !field.multiple
+                "
                 class="relative"
             >
                 <Select v-model="selectValue" :disabled="readOnly">
@@ -456,11 +492,67 @@ function clearValue(): void {
                 </button>
             </div>
             <div
-                v-if="!$slots.default && field.type === 'combobox'"
+                v-if="
+                    !$slots.default &&
+                    field.type === 'select' &&
+                    field.multiple
+                "
+                class="relative"
+            >
+                <CrudSelectMultiple
+                    v-model="multipleValues"
+                    :id="fieldId"
+                    :options="field.options ?? []"
+                    :disabled="readOnly"
+                    :invalid="Boolean(error)"
+                    :placeholder="field.label"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="selectClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
+                v-if="
+                    !$slots.default &&
+                    field.type === 'combobox' &&
+                    !field.multiple
+                "
                 class="relative"
             >
                 <CrudCombobox
                     v-model="selectValue"
+                    :id="fieldId"
+                    :options="field.options ?? []"
+                    :disabled="readOnly"
+                    :invalid="Boolean(error)"
+                    :placeholder="field.label"
+                />
+                <button
+                    v-if="hasClearableValue"
+                    type="button"
+                    :class="selectClearButtonClass"
+                    :aria-label="`Clear ${field.label}`"
+                    @click="clearValue"
+                >
+                    <X class="size-3.5" />
+                </button>
+            </div>
+            <div
+                v-if="
+                    !$slots.default &&
+                    field.type === 'combobox' &&
+                    field.multiple
+                "
+                class="relative"
+            >
+                <CrudComboboxMultiple
+                    v-model="multipleValues"
                     :id="fieldId"
                     :options="field.options ?? []"
                     :disabled="readOnly"

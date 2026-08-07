@@ -165,6 +165,10 @@ class CrudSchemaManager
             $schema['unique_items'] = $field->hasUniqueItems();
         }
 
+        if ($field->isMultiple()) {
+            $schema['multiple'] = true;
+        }
+
         if ($field->step() !== null) {
             $schema['step'] = $field->step();
         }
@@ -253,6 +257,10 @@ class CrudSchemaManager
                 : $filter->resolvedDefault(),
             'span' => $filter->spans(),
         ];
+
+        if ($filter->isMultiple()) {
+            $schema['multiple'] = true;
+        }
 
         if (in_array($filter->type(), ['select', 'combobox'], true)) {
             $options = $filter->resolvedOptions($filterValues);

@@ -116,6 +116,25 @@ test('crud fields can configure static combobox options', function () {
         ]);
 });
 
+test('crud fields can enable multiple local options', function () {
+    $field = CrudField::make('roles')->select([1 => 'Admin'])->multiple();
+
+    expect($field->isMultiple())->toBeTrue();
+});
+
+test('crud fields reject multiple options for unsupported field types', function () {
+    CrudField::make('name')->multiple();
+})->throws(InvalidArgumentException::class);
+
+test('crud fields reset multiple options when changing to an unsupported field type', function () {
+    $field = CrudField::make('roles')
+        ->select([1 => 'Admin'])
+        ->multiple()
+        ->remoteSelect();
+
+    expect($field->isMultiple())->toBeFalse();
+});
+
 test('crud fields can configure remote selects', function () {
     $field = CrudField::make('user_id', ['nullable', 'string'])
         ->relation('user', 'uuid')

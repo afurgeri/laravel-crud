@@ -33,6 +33,8 @@ import type {
     CrudShowConfig,
 } from '@/types/crud';
 
+type CrudFilterValue = string | string[];
+
 const props = withDefaults(
     defineProps<{
         schema: CrudSchema;
@@ -117,7 +119,7 @@ const searchValue = ref(props.schema.search.value ?? '');
 const isLoading = ref(false);
 const filtersOpen = ref(true);
 
-const filterValues = reactive<Record<string, string>>(
+const filterValues = reactive<Record<string, CrudFilterValue>>(
     Object.fromEntries(
         props.schema.filters.map((filter) => [
             filter.name,
@@ -128,7 +130,7 @@ const filterValues = reactive<Record<string, string>>(
 
 const activeFilterCount = computed(
     () =>
-        Object.values(filterValues).filter((value) => value !== '').length +
+        Object.values(filterValues).filter(hasFilterValue).length +
         (searchValue.value !== '' ? 1 : 0),
 );
 
@@ -139,11 +141,23 @@ type CrudQuery = {
     sort?: string;
     direction?: 'asc' | 'desc';
     search?: string;
-    filters?: Record<string, string>;
+    filters?: Record<string, CrudFilterValue>;
 };
 
-function filterSchemaValue(filter: CrudSchema['filters'][number]): string {
+function filterSchemaValue(
+    filter: CrudSchema['filters'][number],
+): CrudFilterValue {
+    if (filter.multiple && Array.isArray(filter.value)) {
+        return filter.value.filter(
+            (value): value is string => typeof value === 'string',
+        );
+    }
+
     return typeof filter.value === 'string' ? filter.value : '';
+}
+
+function hasFilterValue(value: CrudFilterValue): boolean {
+    return Array.isArray(value) ? value.length > 0 : value !== '';
 }
 
 function navigate(page = 1): void {
@@ -165,7 +179,7 @@ function navigate(page = 1): void {
     }
 
     const activeFilters = Object.fromEntries(
-        Object.entries(filterValues).filter(([, value]) => value !== ''),
+        Object.entries(filterValues).filter(([, value]) => hasFilterValue(value)),
     );
 
     if (Object.keys(activeFilters).length > 0) {
@@ -216,7 +230,11 @@ function handleSearch(value: string): void {
     navigateDebounced();
 }
 
-function handleFilter(name: string, value: string, immediate: boolean): void {
+function handleFilter(
+    name: string,
+    value: CrudFilterValue,
+    immediate: boolean,
+): void {
     filterValues[name] = value;
 
     if (immediate) {
@@ -231,8 +249,8 @@ function handleFilter(name: string, value: string, immediate: boolean): void {
 function handleClearFilters(): void {
     searchValue.value = '';
 
-    for (const key of Object.keys(filterValues)) {
-        filterValues[key] = '';
+    for (const filter of props.schema.filters) {
+        filterValues[filter.name] = filter.multiple ? [] : '';
     }
 
     navigate();
