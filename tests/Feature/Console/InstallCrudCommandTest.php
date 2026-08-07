@@ -96,6 +96,8 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('bg-muted/40')
         ->toContain('justify-self-end')
         ->toContain('v-if="search.enabled || filters.length > 0"')
+        ->toContain("import CrudCombobox from '@/components/crud/CrudCombobox.vue';")
+        ->toContain("entry.filter.type === 'combobox'")
         ->and($field)
         ->toContain("import { useTranslation } from '@/composables/useTranslation';")
         ->toContain("{{ t('Add') }}")

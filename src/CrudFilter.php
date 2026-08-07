@@ -108,6 +108,17 @@ final class CrudFilter
     }
 
     /**
+     * @param  array<int|string, string>|Closure(): array<int|string, string>|Closure(array<string, mixed>): array<int|string, string>  $options
+     */
+    public function combobox(array|Closure $options): self
+    {
+        $this->type = 'combobox';
+        $this->options = $options;
+
+        return $this;
+    }
+
+    /**
      * @param  list<string>  $searchColumns
      */
     public function remoteSelect(

@@ -100,7 +100,13 @@ export type CrudRemoteFilter = {
 export type CrudFilter = {
     name: string;
     label: string;
-    type: 'text' | 'date' | 'number' | 'select' | 'remote-select';
+    type:
+        | 'text'
+        | 'date'
+        | 'number'
+        | 'select'
+        | 'combobox'
+        | 'remote-select';
     operator: string;
     relation: boolean;
     clearable: boolean;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Search, SlidersHorizontal, X } from '@lucide/vue';
 import { computed } from 'vue';
+import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -253,6 +254,24 @@ function clearFilter(name: string): void {
                                             'filter',
                                             entry.filter.name,
                                             value,
+                                            true,
+                                        )
+                                "
+                            />
+                            <CrudCombobox
+                                v-else-if="entry.filter.type === 'combobox'"
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="
+                                    filterValues[entry.filter.name] || undefined
+                                "
+                                :options="entry.filter.options ?? []"
+                                :placeholder="entry.filter.label"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value ?? '',
                                             true,
                                         )
                                 "

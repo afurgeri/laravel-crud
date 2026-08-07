@@ -18,7 +18,7 @@ final class CrudFilterValues
         }
 
         foreach ($filters as $filter) {
-            if ($filter->type() !== 'select') {
+            if (! in_array($filter->type(), ['select', 'combobox'], true)) {
                 continue;
             }
 

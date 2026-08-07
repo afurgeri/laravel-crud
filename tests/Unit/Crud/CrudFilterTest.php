@@ -54,6 +54,13 @@ test('crud filters can be configured as a select filter with an options array', 
         ->and($filter->resolvedOptions())->toBe(['active' => 'Active', 'inactive' => 'Inactive']);
 });
 
+test('crud filters can be configured as a searchable combobox with an options array', function () {
+    $filter = CrudFilter::make('status')->combobox(['active' => 'Active', 'inactive' => 'Inactive']);
+
+    expect($filter->type())->toBe('combobox')
+        ->and($filter->resolvedOptions())->toBe(['active' => 'Active', 'inactive' => 'Inactive']);
+});
+
 test('crud filters can be configured as remote selects', function () {
     $filter = CrudFilter::make('patient')
         ->remoteSelect('/patients/options', 3, 500);

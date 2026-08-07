@@ -662,7 +662,7 @@ test('it exposes declared filters with their resolved values and options', funct
         {
             return [
                 CrudFilter::make('name')->text(),
-                CrudFilter::make('role')->select([1 => 'Admin'])->relation('roles'),
+                CrudFilter::make('role')->combobox([1 => 'Admin'])->relation('roles'),
             ];
         }
     };
@@ -684,7 +684,7 @@ test('it exposes declared filters with their resolved values and options', funct
         [
             'name' => 'role',
             'label' => 'Role',
-            'type' => 'select',
+            'type' => 'combobox',
             'operator' => '=',
             'relation' => true,
             'clearable' => false,

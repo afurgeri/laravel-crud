@@ -254,7 +254,7 @@ class CrudSchemaManager
             'span' => $filter->spans(),
         ];
 
-        if ($filter->type() === 'select') {
+        if (in_array($filter->type(), ['select', 'combobox'], true)) {
             $options = $filter->resolvedOptions($filterValues);
 
             $schema['options'] = array_map(
