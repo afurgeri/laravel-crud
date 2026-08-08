@@ -118,6 +118,7 @@ export type CrudFilter = {
     range: string | null;
     value: unknown;
     span: CrudSpan;
+    step?: string;
     options?: CrudFilterOption[];
     remote?: CrudRemoteFilter;
     max_date?: string | null;

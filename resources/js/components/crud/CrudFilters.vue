@@ -183,6 +183,44 @@ function inputType(filter: CrudFilter): string {
     return filter.type === 'number' ? 'number' : 'text';
 }
 
+const clearButtonClass =
+    'absolute top-1/2 right-2 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const selectClearButtonClass =
+    'absolute top-1/2 right-8 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const nativeIndicatorClearButtonClass =
+    'absolute top-1/2 right-10 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+function hasNativeIndicator(type: CrudFilter['type']): boolean {
+    return ['number', 'date', 'time', 'datetime'].includes(type);
+}
+
+function clearButtonClassForFilter(filter: CrudFilter): string {
+    if (hasNativeIndicator(filter.type)) {
+        return nativeIndicatorClearButtonClass;
+    }
+
+    if (['select', 'combobox', 'remote-select'].includes(filter.type)) {
+        return selectClearButtonClass;
+    }
+
+    return clearButtonClass;
+}
+
+function filterControlClass(filter: CrudFilter): string {
+    if (hasNativeIndicator(filter.type)) {
+        return 'w-full pr-4';
+    }
+
+    if (
+        filter.clearable &&
+        !['select', 'combobox', 'remote-select'].includes(filter.type)
+    ) {
+        return 'w-full pr-9';
+    }
+
+    return 'w-full';
+}
+
 function isTemporalFilter(type: CrudFilter['type']): type is CrudTemporalType {
     return ['date', 'time', 'datetime'].includes(type);
 }
@@ -274,7 +312,7 @@ function clearFilter(filter: CrudFilter | string): void {
                             }}</Label
                         >
 
-                        <div class="flex w-full items-center gap-1">
+                        <div class="relative w-full">
                             <RemoteCombobox
                                 v-if="entry.filter.type === 'remote-select'"
                                 :id="`filter-${entry.filter.name}`"
@@ -404,7 +442,7 @@ function clearFilter(filter: CrudFilter | string): void {
                                     filterTextValue(entry.filter.name)
                                 "
                                 :max-value="entry.filter.max_date ?? undefined"
-                                class="w-full"
+                                :class="filterControlClass(entry.filter)"
                                 @update:model-value="
                                     (value) =>
                                         emit(
@@ -423,7 +461,8 @@ function clearFilter(filter: CrudFilter | string): void {
                                     filterTextValue(entry.filter.name)
                                 "
                                 :type="inputType(entry.filter)"
-                                class="w-full"
+                                :step="entry.filter.step"
+                                :class="filterControlClass(entry.filter)"
                                 @update:model-value="
                                     (value) =>
                                         emit(
@@ -445,7 +484,7 @@ function clearFilter(filter: CrudFilter | string): void {
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
-                                class="shrink-0"
+                                :class="clearButtonClassForFilter(entry.filter)"
                                 :aria-label="
                                     t('Clear :label', {
                                         label: entry.filter.label,
@@ -468,7 +507,7 @@ function clearFilter(filter: CrudFilter | string): void {
                             <Label :for="`filter-${entry.from.name}`">{{
                                 t(entry.from.label)
                             }}</Label>
-                            <div class="flex w-full items-center gap-1">
+                            <div class="relative w-full">
                                 <CrudTemporalInput
                                     :id="`filter-${entry.from.name}`"
                                     :type="
@@ -502,7 +541,9 @@ function clearFilter(filter: CrudFilter | string): void {
                                     type="button"
                                     variant="ghost"
                                     size="icon-sm"
-                                    class="shrink-0"
+                                    :class="
+                                        clearButtonClassForFilter(entry.from)
+                                    "
                                     :aria-label="
                                         t('Clear :label', {
                                             label: entry.from.label,
@@ -534,7 +575,7 @@ function clearFilter(filter: CrudFilter | string): void {
                             <Label :for="`filter-${entry.to.name}`">{{
                                 t(entry.to.label)
                             }}</Label>
-                            <div class="flex w-full items-center gap-1">
+                            <div class="relative w-full">
                                 <CrudTemporalInput
                                     :id="`filter-${entry.to.name}`"
                                     :type="
@@ -566,7 +607,7 @@ function clearFilter(filter: CrudFilter | string): void {
                                     type="button"
                                     variant="ghost"
                                     size="icon-sm"
-                                    class="shrink-0"
+                                    :class="clearButtonClassForFilter(entry.to)"
                                     :aria-label="
                                         t('Clear :label', {
                                             label: entry.to.label,
