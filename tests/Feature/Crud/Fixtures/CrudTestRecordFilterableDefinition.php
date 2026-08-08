@@ -15,6 +15,7 @@ class CrudTestRecordFilterableDefinition extends CrudTestRecordDefinition implem
             CrudFilter::make('created_to', 'created_at')->date()->operator('<=')->range('created_at'),
             CrudFilter::make('note')->select(fn (): array => [])->relation('notes', 'id'),
             CrudFilter::make('min_id', 'id')->number()->operator('>='),
+            CrudFilter::make('min_amount', 'amount')->decimal(2)->operator('>='),
             CrudFilter::make('joined_before', 'created_at')->date()->operator('<=')->maxDate(fn (): string => now()->toDateString()),
         ];
     }

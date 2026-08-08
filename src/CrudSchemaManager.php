@@ -33,7 +33,7 @@ class CrudSchemaManager
      *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string, span: array<string, int>},
-     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
+     *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
      * }
      */
     public function for(CrudDefinition $definition, string $resource, ?string $sort = null, string $direction = 'asc', ?string $search = null, array $filterValues = []): array
@@ -244,7 +244,7 @@ class CrudSchemaManager
 
     /**
      * @param  array<string, mixed>  $filterValues  Current values of every filter, forwarded so cascading select filters can narrow their options.
-     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
+     * @return array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}
      */
     private function filterSchema(CrudFilter $filter, array $filterValues, string $resource): array
     {
@@ -264,6 +264,10 @@ class CrudSchemaManager
 
         if ($filter->isMultiple()) {
             $schema['multiple'] = true;
+        }
+
+        if ($filter->step() !== null) {
+            $schema['step'] = $filter->step();
         }
 
         if (in_array($filter->type(), ['select', 'combobox'], true)) {

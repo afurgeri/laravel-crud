@@ -140,6 +140,8 @@ const arrayCleared = ref(false);
 const { t } = useTranslation();
 const clearButtonClass =
     'absolute top-1/2 right-2 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const nativeIndicatorClearButtonClass =
+    'absolute top-1/2 right-16 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 const selectClearButtonClass =
     'absolute top-1/2 right-8 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 const textareaClearButtonClass =
@@ -207,6 +209,24 @@ function inputValue(value: unknown): string | number | undefined {
 
 function htmlInputType(type: CrudField['type']): string {
     return type === 'datetime' ? 'datetime-local' : type;
+}
+
+function hasNativeIndicator(type: CrudField['type']): boolean {
+    return ['number', 'date', 'time', 'datetime'].includes(type);
+}
+
+function clearButtonClassForField(field: CrudField): string {
+    return hasNativeIndicator(field.type)
+        ? nativeIndicatorClearButtonClass
+        : clearButtonClass;
+}
+
+function inputClassForField(field: CrudField): string | undefined {
+    if (hasNativeIndicator(field.type)) {
+        return 'pr-4';
+    }
+
+    return hasClearableValue.value ? 'pr-9' : undefined;
 }
 
 function fieldInputValue(
@@ -411,7 +431,7 @@ function clearValue(): void {
                                         ? 'true'
                                         : undefined
                                 "
-                                class="pr-9"
+                                :class="hasClearableValue ? 'pr-9' : undefined"
                                 @keydown.enter.prevent="addArrayValue"
                             />
                             <button
@@ -661,7 +681,7 @@ function clearValue(): void {
                     :required="field.required"
                     :disabled="readOnly"
                     :aria-invalid="error ? 'true' : undefined"
-                    class="pr-9"
+                    :class="hasClearableValue ? 'pr-9' : undefined"
                     v-model="textValue"
                 />
                 <button
@@ -699,13 +719,13 @@ function clearValue(): void {
                         field.type === 'password' ? 'new-password' : undefined
                     "
                     :aria-invalid="error ? 'true' : undefined"
-                    class="pr-9"
+                    :class="inputClassForField(field)"
                     v-model="textValue"
                 />
                 <button
                     v-if="hasClearableValue"
                     type="button"
-                    :class="clearButtonClass"
+                    :class="clearButtonClassForField(field)"
                     :aria-label="`Clear ${field.label}`"
                     @click="clearValue"
                 >

@@ -5,6 +5,7 @@ namespace Modules\Crud;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Validator;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
 use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
@@ -184,6 +185,7 @@ class CrudIndexManager
 
         $this->validateRanges($definitionFilters, $effectiveFilters);
         $this->validateMaxDates($definitionFilters, $effectiveFilters);
+        $this->validateFilterValues($definitionFilters, $effectiveFilters);
 
         foreach ($definitionFilters as $filter) {
             $value = $effectiveFilters[$filter->name()] ?? null;
@@ -263,6 +265,29 @@ class CrudIndexManager
                 throw InvalidCrudFilterValue::exceedsMaximumDate($filter->name(), $max);
             }
         }
+    }
+
+    /**
+     * @param  list<CrudFilter>  $definitionFilters
+     * @param  array<string, mixed>  $filters
+     */
+    private function validateFilterValues(array $definitionFilters, array $filters): void
+    {
+        $rules = [];
+
+        foreach ($definitionFilters as $filter) {
+            if ($filter->validationRules() === []) {
+                continue;
+            }
+
+            $rules[$filter->name()] = $filter->validationRules();
+        }
+
+        if ($rules === []) {
+            return;
+        }
+
+        Validator::make($filters, $rules)->validate();
     }
 
     /**

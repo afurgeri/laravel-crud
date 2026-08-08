@@ -46,12 +46,26 @@ test('crud fields configure responsive column spans', function () {
     ]);
 });
 
+test('crud fields configure multiple responsive column spans at once', function () {
+    $field = CrudField::make('email')->span(6, ['md', 'lg']);
+
+    expect($field->spans())->toBe([
+        'base' => 12,
+        'md' => 6,
+        'lg' => 6,
+    ]);
+});
+
 test('crud fields reject invalid responsive column spans', function (int $columns) {
     CrudField::make('email')->span($columns);
 })->with([0, 13])->throws(InvalidArgumentException::class);
 
 test('crud fields reject unsupported responsive span breakpoints', function () {
     CrudField::make('email')->span(6, 'tablet');
+})->throws(InvalidArgumentException::class);
+
+test('crud fields reject empty responsive span breakpoint arrays', function () {
+    CrudField::make('email')->span(6, []);
 })->throws(InvalidArgumentException::class);
 
 test('crud fields can define a translation label key', function () {

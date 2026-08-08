@@ -39,8 +39,7 @@ class {{ entity }}Controller
         );
 
         ${{ pluralVariable }}->through(fn ({{ entity }} ${{ entityVariable }}): array => [
-            'id' => ${{ entityVariable }}->id,
-            'name' => ${{ entityVariable }}->name,
+            ...${{ entityVariable }}->toArray(),
             'can' => [
                 'update' => Gate::allows('update', ${{ entityVariable }}),
                 'delete' => Gate::allows('delete', ${{ entityVariable }}),
@@ -98,8 +97,7 @@ class {{ entity }}Controller
         return Inertia::render('{{ resource }}/Edit', [
             'crud' => $schema->for($definition, '{{ resource }}'),
             '{{ entityVariable }}' => [
-                'id' => ${{ routeParameter }}->id,
-                'name' => ${{ routeParameter }}->name,
+                ...${{ routeParameter }}->toArray(),
             ],
         ]);
     }
@@ -113,8 +111,7 @@ class {{ entity }}Controller
         return Inertia::render('{{ resource }}/Show', [
             'crud' => $schema->for($definition, '{{ resource }}'),
             '{{ entityVariable }}' => [
-                'id' => ${{ routeParameter }}->id,
-                'name' => ${{ routeParameter }}->name,
+                ...${{ routeParameter }}->toArray(),
             ],
         ]);
     }

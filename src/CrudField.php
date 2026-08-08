@@ -168,19 +168,30 @@ final class CrudField
         return $this->visible;
     }
 
-    public function span(int $columns, ?string $breakpoint = null): self
+    /**
+     * @param  string|list<string>|null  $breakpoint
+     */
+    public function span(int $columns, array|string|null $breakpoint = null): self
     {
         if ($columns < 1 || $columns > 12) {
             throw new InvalidArgumentException('Field spans must be between 1 and 12 columns.');
         }
 
-        $breakpoint ??= 'base';
+        $breakpoints = is_array($breakpoint)
+            ? $breakpoint
+            : [$breakpoint ?? 'base'];
 
-        if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
-            throw new InvalidArgumentException("Unsupported field span breakpoint [{$breakpoint}].");
+        if ($breakpoints === []) {
+            throw new InvalidArgumentException('Field spans must define at least one breakpoint.');
         }
 
-        $this->spans[$breakpoint] = $columns;
+        foreach ($breakpoints as $breakpoint) {
+            if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+                throw new InvalidArgumentException("Unsupported field span breakpoint [{$breakpoint}].");
+            }
+
+            $this->spans[$breakpoint] = $columns;
+        }
 
         return $this;
     }

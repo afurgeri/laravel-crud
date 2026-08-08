@@ -13,6 +13,10 @@ final class CrudFilter
 
     private string $type = 'text';
 
+    private ?string $step = null;
+
+    private ?int $decimalPlaces = null;
+
     private string $operator = '=';
 
     private ?string $relation = null;
@@ -112,6 +116,22 @@ final class CrudFilter
     public function number(): self
     {
         $this->type = 'number';
+        $this->step = null;
+        $this->decimalPlaces = null;
+        $this->multiple = false;
+
+        return $this;
+    }
+
+    public function decimal(int $places = 2): self
+    {
+        if ($places < 1) {
+            throw new InvalidArgumentException('Decimal places must be at least 1.');
+        }
+
+        $this->type = 'number';
+        $this->step = '0.'.str_pad('1', $places, '0', STR_PAD_LEFT);
+        $this->decimalPlaces = $places;
         $this->multiple = false;
 
         return $this;
@@ -203,20 +223,32 @@ final class CrudFilter
         return $this;
     }
 
-    public function span(int $columns, ?string $breakpoint = null): self
+    /**
+     * @param  string|list<string>|null  $breakpoint
+     */
+    public function span(int $columns, array|string|null $breakpoint = null): self
     {
         if ($columns < 1 || $columns > 12) {
             throw new InvalidArgumentException('Filter spans must be between 1 and 12 columns.');
         }
 
-        $breakpoint ??= 'base';
+        $breakpoints = is_array($breakpoint)
+            ? $breakpoint
+            : [$breakpoint ?? 'base'];
 
-        if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
-            throw new InvalidArgumentException("Unsupported filter span breakpoint [{$breakpoint}].");
+        if ($breakpoints === []) {
+            throw new InvalidArgumentException('Filter spans must define at least one breakpoint.');
         }
 
         $this->spans ??= ['base' => 12];
-        $this->spans[$breakpoint] = $columns;
+
+        foreach ($breakpoints as $breakpoint) {
+            if (! in_array($breakpoint, ['base', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+                throw new InvalidArgumentException("Unsupported filter span breakpoint [{$breakpoint}].");
+            }
+
+            $this->spans[$breakpoint] = $columns;
+        }
 
         return $this;
     }
@@ -258,6 +290,25 @@ final class CrudFilter
     public function type(): string
     {
         return $this->type;
+    }
+
+    public function step(): ?string
+    {
+        return $this->step;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function validationRules(): array
+    {
+        if ($this->type !== 'number') {
+            return [];
+        }
+
+        return $this->decimalPlaces === null
+            ? ['nullable', 'numeric']
+            : ['nullable', 'numeric', "decimal:0,{$this->decimalPlaces}"];
     }
 
     public function isRemote(): bool

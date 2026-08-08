@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasDefaultCrudPageSize;
 use Modules\Crud\CrudFilter;
@@ -112,7 +113,7 @@ test('it keeps all model attributes available to the index mapping layer', funct
     $record = $paginator->items()[0];
 
     expect(array_keys($record->getAttributes()))
-        ->toEqualCanonicalizing(['id', 'name', 'email', 'professional_id', 'is_active', 'duration_minutes', 'internal_notes', 'created_at', 'updated_at']);
+        ->toEqualCanonicalizing(['id', 'name', 'email', 'professional_id', 'is_active', 'duration_minutes', 'amount', 'internal_notes', 'created_at', 'updated_at']);
 });
 
 test('it keeps foreign keys available for eager loaded belongs to relations', function () {
@@ -464,6 +465,34 @@ test('it filters a number column with the operator configured on the filter', fu
     expect($paginator->items())->toHaveCount(1)
         ->and($paginator->items()[0]->name)->toBe('Grace');
 });
+
+test('it filters a decimal column with the configured precision and operator', function () {
+    CrudTestRecord::query()->create([
+        'name' => 'Ada',
+        'email' => 'ada@example.com',
+        'amount' => '10.49',
+    ]);
+    $matching = CrudTestRecord::query()->create([
+        'name' => 'Grace',
+        'email' => 'grace@example.com',
+        'amount' => '10.50',
+    ]);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordFilterableDefinition,
+        filters: ['min_amount' => '10.50'],
+    );
+
+    expect($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->is($matching))->toBeTrue();
+});
+
+test('it rejects non-numeric values for numeric filters before querying', function () {
+    app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordFilterableDefinition,
+        filters: ['min_amount' => 'not-a-number'],
+    );
+})->throws(ValidationException::class);
 
 test('it filters through a relation via whereHas', function () {
     $withNote = CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);

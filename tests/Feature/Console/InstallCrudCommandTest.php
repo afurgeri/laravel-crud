@@ -60,6 +60,22 @@ test('crud install copies the translation composable when it is missing', functi
     }
 });
 
+test('crud install copies the local time composable when it is missing', function () {
+    $target = base_path('resources/js/composables/useLocalTime.ts');
+
+    File::delete($target);
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        expect(File::exists($target))->toBeTrue()
+            ->and(File::get($target))->toContain('export function useLocalTime()');
+    } finally {
+        File::delete($target);
+    }
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $field = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudField.vue');

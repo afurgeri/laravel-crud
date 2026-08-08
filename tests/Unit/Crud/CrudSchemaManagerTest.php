@@ -669,6 +669,7 @@ test('it exposes declared filters with their resolved values and options', funct
                     ->combobox([1 => 'Admin'])
                     ->multiple()
                     ->relation('roles'),
+                CrudFilter::make('height')->decimal(2),
             ];
         }
     };
@@ -701,6 +702,18 @@ test('it exposes declared filters with their resolved values and options', funct
             'options' => [
                 ['value' => '1', 'label' => 'Admin'],
             ],
+        ],
+        [
+            'name' => 'height',
+            'label' => 'Height',
+            'type' => 'number',
+            'operator' => '=',
+            'relation' => false,
+            'clearable' => false,
+            'range' => null,
+            'value' => null,
+            'span' => ['base' => 12, 'sm' => 4],
+            'step' => '0.01',
         ],
     ]);
 });

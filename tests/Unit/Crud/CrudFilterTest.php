@@ -38,8 +38,22 @@ test('crud filters support date, time, and datetime values', function () {
 test('crud filters can be configured as a number filter', function () {
     $filter = CrudFilter::make('age')->number();
 
-    expect($filter->type())->toBe('number');
+    expect($filter->type())->toBe('number')
+        ->and($filter->step())->toBeNull()
+        ->and($filter->validationRules())->toBe(['nullable', 'numeric']);
 });
+
+test('crud filters can be configured as a decimal filter', function () {
+    $filter = CrudFilter::make('height')->decimal(3);
+
+    expect($filter->type())->toBe('number')
+        ->and($filter->step())->toBe('0.001')
+        ->and($filter->validationRules())->toBe(['nullable', 'numeric', 'decimal:0,3']);
+});
+
+test('crud filters reject invalid decimal precision', function () {
+    CrudFilter::make('height')->decimal(0);
+})->throws(InvalidArgumentException::class);
 
 test('crud filters can be configured with a comparison operator', function () {
     $filter = CrudFilter::make('created_from', 'created_at')->date()->operator('>=');
@@ -175,6 +189,20 @@ test('crud filters configure responsive column spans', function () {
         'xl' => 4,
     ]);
 });
+
+test('crud filters configure multiple responsive column spans at once', function () {
+    $filter = CrudFilter::make('name')->span(6, ['md', 'lg']);
+
+    expect($filter->spans())->toBe([
+        'base' => 12,
+        'md' => 6,
+        'lg' => 6,
+    ]);
+});
+
+test('crud filters reject empty responsive span breakpoint arrays', function () {
+    CrudFilter::make('name')->span(6, []);
+})->throws(InvalidArgumentException::class);
 
 test('crud filters have no maximum date by default', function () {
     $filter = CrudFilter::make('created_at')->date();
