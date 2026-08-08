@@ -3,8 +3,9 @@ import { Search, SlidersHorizontal, X } from '@lucide/vue';
 import { computed } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
-import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
+import CrudTemporalInput from '@/components/crud/CrudTemporalInput.vue';
+import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/composables/useTranslation';
-import type { CrudFilter, CrudSearch, CrudSpan } from '@/types/crud';
+import type {
+    CrudFilter,
+    CrudSearch,
+    CrudSpan,
+    CrudTemporalType,
+} from '@/types/crud';
 
 type CrudFilterValue = string | string[];
 
@@ -177,6 +183,10 @@ function inputType(filter: CrudFilter): string {
     return filter.type === 'number' ? 'number' : 'text';
 }
 
+function isTemporalFilter(type: CrudFilter['type']): type is CrudTemporalType {
+    return ['date', 'time', 'datetime'].includes(type);
+}
+
 function rangeInvalid(entry: { from: CrudFilter; to: CrudFilter }): boolean {
     const from = props.filterValues[entry.from.name];
     const to = props.filterValues[entry.to.name];
@@ -290,7 +300,8 @@ function clearFilter(filter: CrudFilter | string): void {
                                 "
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
-                                    filterTextValue(entry.filter.name) || undefined
+                                    filterTextValue(entry.filter.name) ||
+                                    undefined
                                 "
                                 :options="entry.filter.options ?? []"
                                 :placeholder="entry.filter.label"
@@ -310,7 +321,9 @@ function clearFilter(filter: CrudFilter | string): void {
                                     entry.filter.multiple
                                 "
                                 :id="`filter-${entry.filter.name}`"
-                                :model-value="filterArrayValue(entry.filter.name)"
+                                :model-value="
+                                    filterArrayValue(entry.filter.name)
+                                "
                                 :options="entry.filter.options ?? []"
                                 :placeholder="entry.filter.label"
                                 @update:model-value="
@@ -329,7 +342,8 @@ function clearFilter(filter: CrudFilter | string): void {
                                     !entry.filter.multiple
                                 "
                                 :model-value="
-                                    filterTextValue(entry.filter.name) || undefined
+                                    filterTextValue(entry.filter.name) ||
+                                    undefined
                                 "
                                 @update:model-value="
                                     (value) =>
@@ -366,7 +380,9 @@ function clearFilter(filter: CrudFilter | string): void {
                                     entry.filter.multiple
                                 "
                                 :id="`filter-${entry.filter.name}`"
-                                :model-value="filterArrayValue(entry.filter.name)"
+                                :model-value="
+                                    filterArrayValue(entry.filter.name)
+                                "
                                 :options="entry.filter.options ?? []"
                                 :placeholder="entry.filter.label"
                                 @update:model-value="
@@ -380,9 +396,10 @@ function clearFilter(filter: CrudFilter | string): void {
                                 "
                             />
 
-                            <DatePicker
-                                v-else-if="entry.filter.type === 'date'"
+                            <CrudTemporalInput
+                                v-else-if="isTemporalFilter(entry.filter.type)"
                                 :id="`filter-${entry.filter.name}`"
+                                :type="entry.filter.type"
                                 :model-value="
                                     filterTextValue(entry.filter.name)
                                 "
@@ -452,8 +469,13 @@ function clearFilter(filter: CrudFilter | string): void {
                                 t(entry.from.label)
                             }}</Label>
                             <div class="flex w-full items-center gap-1">
-                                <DatePicker
+                                <CrudTemporalInput
                                     :id="`filter-${entry.from.name}`"
+                                    :type="
+                                        isTemporalFilter(entry.from.type)
+                                            ? entry.from.type
+                                            : 'date'
+                                    "
                                     :model-value="
                                         filterTextValue(entry.from.name)
                                     "
@@ -513,8 +535,13 @@ function clearFilter(filter: CrudFilter | string): void {
                                 t(entry.to.label)
                             }}</Label>
                             <div class="flex w-full items-center gap-1">
-                                <DatePicker
+                                <CrudTemporalInput
                                     :id="`filter-${entry.to.name}`"
+                                    :type="
+                                        isTemporalFilter(entry.to.type)
+                                            ? entry.to.type
+                                            : 'date'
+                                    "
                                     :model-value="
                                         filterTextValue(entry.to.name)
                                     "

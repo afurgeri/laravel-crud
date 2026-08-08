@@ -161,6 +161,10 @@ class CrudSchemaManager
             'span' => $field->spans(),
         ];
 
+        if (in_array($field->type(), ['date', 'time', 'datetime'], true)) {
+            $schema['timezone'] = CrudTemporal::displayTimezone();
+        }
+
         if ($field->isArray()) {
             $schema['unique_items'] = $field->hasUniqueItems();
         }
@@ -286,6 +290,10 @@ class CrudSchemaManager
 
         if ($filter->type() === 'date') {
             $schema['max_date'] = $filter->resolvedMaxDate();
+        }
+
+        if (in_array($filter->type(), ['date', 'time', 'datetime'], true)) {
+            $schema['timezone'] = CrudTemporal::displayTimezone();
         }
 
         return $schema;

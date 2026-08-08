@@ -124,7 +124,7 @@ const spanClassesByBreakpoint: Record<CrudFieldBreakpoint, string[]> = {
 
 const checkboxValue = ref(booleanValue(props.defaultValue));
 const selectValue = ref(optionValue(props.defaultValue));
-const textValue = ref(inputValue(props.defaultValue));
+const textValue = ref(fieldInputValue(props.field, props.defaultValue));
 const confirmationValue = ref('');
 const remoteSelectValue = computed({
     get: () => selectValue.value ?? '',
@@ -153,7 +153,7 @@ watch(
     () => props.defaultValue,
     (value) => {
         checkboxValue.value = booleanValue(value);
-        textValue.value = inputValue(value);
+        textValue.value = fieldInputValue(props.field, value);
     },
 );
 
@@ -203,6 +203,67 @@ function inputValue(value: unknown): string | number | undefined {
     return typeof value === 'string' || typeof value === 'number'
         ? value
         : undefined;
+}
+
+function htmlInputType(type: CrudField['type']): string {
+    return type === 'datetime' ? 'datetime-local' : type;
+}
+
+function fieldInputValue(
+    field: CrudField,
+    value: unknown,
+): string | number | undefined {
+    const normalized = inputValue(value);
+
+    if (typeof normalized !== 'string') {
+        return normalized;
+    }
+
+    if (field.type === 'date') {
+        return normalized.slice(0, 10);
+    }
+
+    if (field.type === 'time') {
+        return normalized.slice(0, 5);
+    }
+
+    if (field.type !== 'datetime') {
+        return normalized;
+    }
+
+    return formatDateTimeLocal(normalized, field.timezone);
+}
+
+function formatDateTimeLocal(
+    value: string,
+    timezone = 'America/Argentina/Buenos_Aires',
+): string {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
+        return value.slice(0, 16);
+    }
+
+    const timestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(value)
+        ? Date.parse(`${value.replace(' ', 'T')}Z`)
+        : Date.parse(value);
+
+    if (Number.isNaN(timestamp)) {
+        return value.slice(0, 16);
+    }
+
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(timestamp);
+    const values = Object.fromEntries(
+        parts.map(({ type, value: partValue }) => [type, partValue]),
+    );
+
+    return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}`;
 }
 
 function spanClasses(span: CrudField['span']): string[] {
@@ -431,7 +492,9 @@ function clearValue(): void {
             <input
                 v-if="
                     !$slots.default &&
-                    ['select', 'combobox', 'remote-select'].includes(field.type) &&
+                    ['select', 'combobox', 'remote-select'].includes(
+                        field.type,
+                    ) &&
                     !field.multiple
                 "
                 type="hidden"
@@ -493,9 +556,7 @@ function clearValue(): void {
             </div>
             <div
                 v-if="
-                    !$slots.default &&
-                    field.type === 'select' &&
-                    field.multiple
+                    !$slots.default && field.type === 'select' && field.multiple
                 "
                 class="relative"
             >
@@ -630,7 +691,7 @@ function clearValue(): void {
                 <Input
                     :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                     :name="field.name"
-                    :type="field.type"
+                    :type="htmlInputType(field.type)"
                     :step="field.step"
                     :required="field.required"
                     :disabled="readOnly"
@@ -680,7 +741,7 @@ function clearValue(): void {
                         : `${field.name}_confirmation`
                 "
                 :name="`${field.name}_confirmation`"
-                :type="field.type"
+                :type="htmlInputType(field.type)"
                 :required="field.required"
                 autocomplete="new-password"
                 v-model="confirmationValue"

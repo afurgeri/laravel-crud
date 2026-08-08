@@ -29,6 +29,12 @@ test('crud filters can be configured as a date filter', function () {
     expect($filter->type())->toBe('date');
 });
 
+test('crud filters support date, time, and datetime values', function () {
+    expect(CrudFilter::make('starts_on')->date()->type())->toBe('date')
+        ->and(CrudFilter::make('starts_at')->time()->type())->toBe('time')
+        ->and(CrudFilter::make('starts_on')->datetime()->type())->toBe('datetime');
+});
+
 test('crud filters can be configured as a number filter', function () {
     $filter = CrudFilter::make('age')->number();
 

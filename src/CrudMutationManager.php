@@ -113,6 +113,12 @@ class CrudMutationManager
         $validated = Validator::make($data, $this->validationRules($definition, $model))->validate();
         $modelClass = $definition->model();
 
+        foreach ($definition->fields() as $field) {
+            if ($field->type() === 'datetime' && array_key_exists($field->name(), $validated)) {
+                $validated[$field->name()] = CrudTemporal::normalizeDateTime($validated[$field->name()]);
+            }
+        }
+
         /** @var Model $caster */
         $caster = new $modelClass;
 

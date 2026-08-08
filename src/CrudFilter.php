@@ -93,6 +93,22 @@ final class CrudFilter
         return $this;
     }
 
+    public function time(): self
+    {
+        $this->type = 'time';
+        $this->multiple = false;
+
+        return $this;
+    }
+
+    public function datetime(): self
+    {
+        $this->type = 'datetime';
+        $this->multiple = false;
+
+        return $this;
+    }
+
     public function number(): self
     {
         $this->type = 'number';

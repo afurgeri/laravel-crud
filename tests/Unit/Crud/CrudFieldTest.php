@@ -75,6 +75,12 @@ test('crud fields configure visual input types explicitly', function () {
         ->and(CrudField::make('name', ['required', 'string'])->type())->toBe('text');
 });
 
+test('crud fields support date, time, and datetime inputs', function () {
+    expect(CrudField::make('starts_on')->date()->type())->toBe('date')
+        ->and(CrudField::make('starts_at')->time()->type())->toBe('time')
+        ->and(CrudField::make('starts_on')->datetime()->type())->toBe('datetime');
+});
+
 test('crud fields allow explicit input type overrides', function () {
     expect(CrudField::make('is_active', ['boolean'])->number()->type())->toBe('number');
 });

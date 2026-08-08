@@ -251,6 +251,22 @@ final class CrudField
         return $this;
     }
 
+    public function time(): self
+    {
+        $this->type = 'time';
+        $this->multiple = false;
+
+        return $this;
+    }
+
+    public function datetime(): self
+    {
+        $this->type = 'datetime';
+        $this->multiple = false;
+
+        return $this;
+    }
+
     public function textarea(): self
     {
         $this->type = 'textarea';

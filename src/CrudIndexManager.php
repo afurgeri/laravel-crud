@@ -172,6 +172,16 @@ class CrudIndexManager
         $definitionFilters = $definition->filters();
         $effectiveFilters = $this->filterValues->for($definitionFilters, $filters);
 
+        foreach ($definitionFilters as $filter) {
+            if ($filter->type() === 'datetime' && array_key_exists($filter->name(), $effectiveFilters)) {
+                $value = $effectiveFilters[$filter->name()];
+
+                if (is_string($value) && $value !== '') {
+                    $effectiveFilters[$filter->name()] = CrudTemporal::utcDateTime($value);
+                }
+            }
+        }
+
         $this->validateRanges($definitionFilters, $effectiveFilters);
         $this->validateMaxDates($definitionFilters, $effectiveFilters);
 
@@ -287,6 +297,7 @@ class CrudIndexManager
         match ($filter->type()) {
             'text' => $query->where($filter->column(), 'like', '%'.(string) $value.'%'),
             'date' => $query->whereDate($filter->column(), $filter->comparisonOperator(), $value),
+            'time' => $query->whereTime($filter->column(), $filter->comparisonOperator(), $value),
             default => $query->where($filter->column(), $filter->comparisonOperator(), $value),
         };
     }

@@ -9,6 +9,8 @@ export type CrudHref =
 
 export type CrudLayoutWidth = 'standard' | 'wide' | 'full';
 
+export type CrudTemporalType = 'date' | 'time' | 'datetime';
+
 export type CrudSpan = {
     base: number;
     sm?: number;
@@ -40,7 +42,7 @@ export type CrudField = {
         | 'combobox'
         | 'remote-select'
         | 'number'
-        | 'date'
+        | CrudTemporalType
         | 'textarea'
         | 'array';
     confirmed: boolean;
@@ -61,6 +63,7 @@ export type CrudField = {
         '2xl'?: number;
     };
     defaultValue?: unknown;
+    timezone?: string;
     options?: CrudFilterOption[];
     remote?: CrudRemoteFilter;
 };
@@ -103,7 +106,7 @@ export type CrudFilter = {
     label: string;
     type:
         | 'text'
-        | 'date'
+        | CrudTemporalType
         | 'number'
         | 'select'
         | 'combobox'
@@ -118,6 +121,7 @@ export type CrudFilter = {
     options?: CrudFilterOption[];
     remote?: CrudRemoteFilter;
     max_date?: string | null;
+    timezone?: string;
 };
 
 export type CrudSchema = {
