@@ -549,7 +549,7 @@ function clearValue(): void {
                         :id="
                             idPrefix ? `${idPrefix}-${field.name}` : field.name
                         "
-                        class="w-full pr-16"
+                        :class="['w-full', hasClearableValue && 'pr-16']"
                         :aria-invalid="error ? 'true' : undefined"
                     >
                         <SelectValue :placeholder="field.label" />
