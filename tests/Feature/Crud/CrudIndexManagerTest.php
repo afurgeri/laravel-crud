@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Crud\Contracts\HasCrudFilters;
@@ -45,6 +46,21 @@ test('it paginates records for a crud definition', function () {
     expect($paginator->total())->toBe(2)
         ->and($paginator->perPage())->toBe(1)
         ->and($paginator->items())->toHaveCount(1);
+});
+
+test('it applies a server scope before paginating records', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordDefinition,
+        scope: function (Builder $query): void {
+            $query->where('name', 'Ada');
+        },
+    );
+
+    expect($paginator->total())->toBe(1)
+        ->and($paginator->items()[0]->name)->toBe('Ada');
 });
 
 test('it uses ten items per page by default', function () {

@@ -94,6 +94,8 @@ export type CrudFilterOption = {
     label: string;
 };
 
+export type CrudFilterValue = string | string[];
+
 export type CrudRemoteFilter = {
     url: string;
     min_chars: number;

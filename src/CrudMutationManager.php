@@ -14,8 +14,9 @@ class CrudMutationManager
 {
     /**
      * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $attributes  Server-controlled attributes applied after validation.
      */
-    public function create(CrudDefinition $definition, array $data): Model
+    public function create(CrudDefinition $definition, array $data, array $attributes = []): Model
     {
         CrudOperationGuard::ensureEnabled($definition, CrudOperation::Create);
 
@@ -28,6 +29,7 @@ class CrudMutationManager
         /** @var Model $instance */
         $instance = new $model;
         $instance->fill($this->validatedData($definition, $data, null));
+        $instance->forceFill($attributes);
 
         if ($definition instanceof HasCrudMutationHooks) {
             $definition->beforeCreate($instance, $data);

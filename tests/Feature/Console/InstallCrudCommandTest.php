@@ -78,6 +78,7 @@ test('crud install copies the local time composable when it is missing', functio
 
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
+    $panel = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPanel.vue');
     $field = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudField.vue');
     $combobox = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudCombobox.vue');
     $comboboxMultiple = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudComboboxMultiple.vue');
@@ -99,16 +100,20 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('schema.operations.update')
         ->toContain('schema.operations.delete')
         ->toContain('workspace?: string;')
+        ->toContain('panelKey?: string;')
         ->toContain('v-if="workspace"')
         ->toContain('canShowRecord')
         ->toContain('show.href(record)')
         ->toContain('font-bold')
         ->toContain('filtersOpen')
         ->toContain('#toolbar')
-        ->toContain('schema.search?.enabled || schema.filters?.length > 0')
+        ->toContain('schema.search?.enabled || visibleFilters.length > 0')
         ->and($table)
         ->toContain('md:hidden')
         ->toContain('animate-pulse')
+        ->and($panel)
+        ->toContain('panelKey: string;')
+        ->toContain('embedded')
         ->and($filters)
         ->toContain('SlidersHorizontal')
         ->toContain('bg-muted/40')

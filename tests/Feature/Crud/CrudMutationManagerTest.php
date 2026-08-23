@@ -32,6 +32,20 @@ test('it creates records using configured fields only', function () {
         ->and($record->internal_notes)->toBeNull();
 });
 
+test('it applies server-controlled attributes after validating client data', function () {
+    $record = app(CrudMutationManager::class)->create(
+        definition: new CrudTestRecordDefinition,
+        data: [
+            'name' => 'Ada',
+            'email' => 'ada@example.com',
+            'internal_notes' => 'Client supplied value',
+        ],
+        attributes: ['internal_notes' => 'Server supplied value'],
+    );
+
+    expect($record->internal_notes)->toBe('Server supplied value');
+});
+
 test('it normalizes casted values before persisting records', function () {
     $record = app(CrudMutationManager::class)->create(
         definition: new CrudTestRecordDefinition,

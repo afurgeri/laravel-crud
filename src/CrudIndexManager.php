@@ -2,6 +2,7 @@
 
 namespace Modules\Crud;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -25,6 +26,7 @@ class CrudIndexManager
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  Closure(Builder<Model>): mixed|null  $scope
      * @return LengthAwarePaginator<int, Model>
      */
     public function paginate(
@@ -35,6 +37,7 @@ class CrudIndexManager
         string $direction = 'asc',
         ?string $search = null,
         array $filters = [],
+        ?Closure $scope = null,
     ): LengthAwarePaginator {
         if ($definition instanceof AuthorizesCrudIndex) {
             $definition->authorizeViewAny();
@@ -47,6 +50,10 @@ class CrudIndexManager
         $instance = new $model;
 
         $query = $instance->newQuery();
+
+        if ($scope !== null) {
+            $scope($query);
+        }
 
         if ($definition instanceof EagerLoadsCrudRelations) {
             $query->with($definition->eagerLoads());
@@ -363,7 +370,7 @@ class CrudIndexManager
     /**
      * @return list<string>
      */
-    private function columnNamesWhere(CrudDefinition $definition, \Closure $predicate): array
+    private function columnNamesWhere(CrudDefinition $definition, Closure $predicate): array
     {
         return array_values(collect($definition->columns())
             ->filter($predicate)

@@ -26,14 +26,13 @@ import { useTranslation } from '@/composables/useTranslation';
 import type {
     CrudCreateConfig,
     CrudDestroyConfig,
+    CrudFilterValue,
     CrudEditConfig,
     CrudPaginator,
     CrudRecord,
     CrudSchema,
     CrudShowConfig,
 } from '@/types/crud';
-
-type CrudFilterValue = string | string[];
 
 const props = withDefaults(
     defineProps<{
@@ -45,10 +44,20 @@ const props = withDefaults(
         destroy: CrudDestroyConfig<T>;
         lockedLabel?: string;
         workspace?: string;
+        embedded?: boolean;
+        panelKey?: string;
+        reloadProp?: string;
+        hiddenFilters?: string[];
+        fixedFilters?: Record<string, CrudFilterValue>;
     }>(),
     {
         lockedLabel: undefined,
         workspace: undefined,
+        embedded: false,
+        panelKey: undefined,
+        reloadProp: undefined,
+        hiddenFilters: () => [],
+        fixedFilters: () => ({}),
     },
 );
 
@@ -87,7 +96,7 @@ function canShowRecord(record: T): boolean {
 }
 
 function usesFullPageForms(): boolean {
-    return props.schema.form_mode === 'page';
+    return !props.embedded && props.schema.form_mode === 'page';
 }
 
 function editRecordTitle(record: T): string {
@@ -123,14 +132,35 @@ const filterValues = reactive<Record<string, CrudFilterValue>>(
     Object.fromEntries(
         props.schema.filters.map((filter) => [
             filter.name,
-            filterSchemaValue(filter),
+            props.fixedFilters[filter.name] ?? filterSchemaValue(filter),
+        ]),
+    ),
+);
+
+const visibleFilters = computed(() =>
+    props.schema.filters.filter(
+        (filter) =>
+            !props.hiddenFilters.includes(filter.name) &&
+            !Object.hasOwn(props.fixedFilters, filter.name),
+    ),
+);
+
+const visibleFilterValues = computed(() =>
+    Object.fromEntries(
+        visibleFilters.value.map((filter) => [
+            filter.name,
+            filterValues[filter.name],
         ]),
     ),
 );
 
 const activeFilterCount = computed(
     () =>
-        Object.values(filterValues).filter(hasFilterValue).length +
+        Object.entries(filterValues).filter(
+            ([name, value]) =>
+                !Object.hasOwn(props.fixedFilters, name) &&
+                hasFilterValue(value),
+        ).length +
         (searchValue.value !== '' ? 1 : 0),
 );
 
@@ -186,7 +216,12 @@ function navigate(page = 1): void {
         query.filters = activeFilters;
     }
 
-    router.get(window.location.pathname, query, {
+    const requestQuery = props.panelKey
+        ? { [props.panelKey]: query }
+        : query;
+
+    router.get(window.location.pathname, requestQuery, {
+        only: props.panelKey ? [props.reloadProp ?? props.panelKey] : undefined,
         preserveScroll: true,
         preserveState: true,
         onStart: () => {
@@ -250,7 +285,8 @@ function handleClearFilters(): void {
     searchValue.value = '';
 
     for (const filter of props.schema.filters) {
-        filterValues[filter.name] = filter.multiple ? [] : '';
+        filterValues[filter.name] =
+            props.fixedFilters[filter.name] ?? (filter.multiple ? [] : '');
     }
 
     navigate();
@@ -261,14 +297,23 @@ function handleClearFilters(): void {
     <TooltipProvider :delay-duration="0">
         <div
             :class="[
-                'mx-auto flex w-full flex-col gap-5 p-4 sm:p-6 lg:p-8',
-                layoutWidthClasses[schema.page_width],
+                embedded
+                    ? 'flex w-full flex-col gap-5'
+                    : [
+                          'mx-auto flex w-full flex-col gap-5 p-4 sm:p-6 lg:p-8',
+                          layoutWidthClasses[schema.page_width],
+                      ],
             ]"
         >
             <div
+                v-if="
+                    !embedded ||
+                    (schema.operations.create && create.can) ||
+                    $slots['toolbar-actions']
+                "
                 class="flex flex-col gap-4 px-1 py-2 md:flex-row md:items-center md:justify-between"
             >
-                <div class="space-y-2">
+                <div v-if="!embedded" class="space-y-2">
                     <p
                         v-if="workspace"
                         class="text-[11px] font-semibold tracking-[0.18em] text-primary uppercase"
@@ -355,7 +400,7 @@ function handleClearFilters(): void {
                 @sort="handleSort"
             >
                 <template
-                    v-if="schema.search?.enabled || schema.filters?.length > 0"
+                    v-if="schema.search?.enabled || visibleFilters.length > 0"
                     #toolbar
                 >
                     <div
@@ -402,9 +447,9 @@ function handleClearFilters(): void {
                             <div class="min-h-0 overflow-hidden">
                                 <CrudFilters
                                     :search="schema.search"
-                                    :filters="schema.filters"
+                                    :filters="visibleFilters"
                                     :search-value="searchValue"
-                                    :filter-values="filterValues"
+                                    :filter-values="visibleFilterValues"
                                     @search="handleSearch"
                                     @filter="handleFilter"
                                     @clear="handleClearFilters"
