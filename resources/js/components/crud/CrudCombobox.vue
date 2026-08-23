@@ -99,6 +99,7 @@ function selectOption(option: CrudFilterOption): void {
             <ComboboxTrigger as-child>
                 <button
                     type="button"
+                    tabindex="0"
                     :id="id"
                     role="combobox"
                     :aria-expanded="open"

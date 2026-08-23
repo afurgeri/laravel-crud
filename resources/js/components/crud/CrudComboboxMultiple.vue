@@ -88,6 +88,7 @@ function displayValue(): string {
             <ComboboxTrigger as-child>
                 <button
                     type="button"
+                    tabindex="0"
                     :id="id"
                     role="combobox"
                     :aria-expanded="open"
