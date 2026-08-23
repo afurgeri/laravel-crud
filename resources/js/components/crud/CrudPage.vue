@@ -48,6 +48,8 @@ const props = withDefaults(
         panelKey?: string;
         reloadProp?: string;
         hiddenFilters?: string[];
+        hiddenColumns?: string[];
+        hiddenFields?: string[];
         fixedFilters?: Record<string, CrudFilterValue>;
     }>(),
     {
@@ -57,6 +59,8 @@ const props = withDefaults(
         panelKey: undefined,
         reloadProp: undefined,
         hiddenFilters: () => [],
+        hiddenColumns: () => [],
+        hiddenFields: () => [],
         fixedFilters: () => ({}),
     },
 );
@@ -143,6 +147,22 @@ const visibleFilters = computed(() =>
             !props.hiddenFilters.includes(filter.name) &&
             !Object.hasOwn(props.fixedFilters, filter.name),
     ),
+);
+
+const visibleColumns = computed(() =>
+    props.schema.columns.filter(
+        (column) => !props.hiddenColumns.includes(column.name),
+    ),
+);
+
+const visibleFields = computed(() =>
+    props.schema.fields.filter(
+        (field) => !props.hiddenFields.includes(field.name),
+    ),
+);
+
+const visibleUpdateFields = computed(() =>
+    visibleFields.value.filter((field) => field.visible_on_update),
 );
 
 const visibleFilterValues = computed(() =>
@@ -353,7 +373,7 @@ function handleClearFilters(): void {
                     <CrudFormDialog
                         v-else-if="schema.operations.create && create.can"
                         :action="create.action"
-                        :fields="schema.fields"
+                        :fields="visibleFields"
                         :trigger-label="create.label ?? t('Create')"
                         :title="create.title ?? create.label ?? t('Create')"
                         :description="create.description"
@@ -373,7 +393,7 @@ function handleClearFilters(): void {
                             </Button>
                         </template>
                         <template
-                            v-for="field in schema.fields.filter((field) =>
+                            v-for="field in visibleFields.filter((field) =>
                                 hasSlot(`create-field-${field.name}`),
                             )"
                             :key="field.name"
@@ -392,7 +412,7 @@ function handleClearFilters(): void {
             </div>
 
             <CrudTable
-                :columns="schema.columns"
+                :columns="visibleColumns"
                 :records="records.data"
                 :sort="schema.sort"
                 :loading="isLoading"
@@ -460,7 +480,7 @@ function handleClearFilters(): void {
                 </template>
 
                 <template
-                    v-for="column in schema.columns"
+                    v-for="column in visibleColumns"
                     :key="column.name"
                     #[`cell-${column.name}`]="slotProps"
                 >
@@ -518,11 +538,7 @@ function handleClearFilters(): void {
                         <CrudFormDialog
                             v-else-if="canEditRecord(record)"
                             :action="edit.action(record)"
-                            :fields="
-                                schema.fields.filter(
-                                    (field) => field.visible_on_update,
-                                )
-                            "
+                                :fields="visibleUpdateFields"
                             :initial-values="record"
                             :trigger-label="edit.label ?? t('Edit')"
                             :trigger-tooltip="edit.label ?? t('Edit')"
@@ -544,7 +560,7 @@ function handleClearFilters(): void {
                                 </Button>
                             </template>
                             <template
-                                v-for="field in schema.fields.filter(
+                                v-for="field in visibleUpdateFields.filter(
                                     (field) =>
                                         field.visible_on_update &&
                                         hasSlot(`edit-field-${field.name}`),

@@ -23,12 +23,16 @@ const props = withDefaults(
         panelKey: string;
         reloadProp?: string;
         hiddenFilters?: string[];
+        hiddenColumns?: string[];
+        hiddenFields?: string[];
         fixedFilters?: Record<string, CrudFilterValue>;
         lockedLabel?: string;
     }>(),
     {
         reloadProp: undefined,
         hiddenFilters: () => [],
+        hiddenColumns: () => [],
+        hiddenFields: () => [],
         fixedFilters: () => ({}),
         lockedLabel: undefined,
     },
