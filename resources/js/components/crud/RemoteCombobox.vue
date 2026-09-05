@@ -15,12 +15,13 @@ import {
 } from '@/components/ui/combobox';
 import { useTranslation } from '@/composables/useTranslation';
 import { cn } from '@/lib/utils';
-import type { CrudFilterOption, CrudRemoteFilter } from '@/types/crud';
+import type { CrudOption, CrudRemoteFilter } from '@/types/crud';
 
 const props = withDefaults(
     defineProps<{
         modelValue: string;
         remote: CrudRemoteFilter;
+        dependencies?: Readonly<Record<string, unknown>>;
         id?: string;
         placeholder?: string;
         disabled?: boolean;
@@ -35,8 +36,8 @@ const emit = defineEmits<{
 const open = ref(false);
 const searchTerm = ref('');
 const selectedValue = ref<string | undefined>(props.modelValue || undefined);
-const selectedOption = ref<CrudFilterOption>();
-const options = ref<CrudFilterOption[]>([]);
+const selectedOption = ref<CrudOption>();
+const options = ref<CrudOption[]>([]);
 const loading = ref(false);
 const { t } = useTranslation();
 
@@ -44,7 +45,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let requestController: AbortController | undefined;
 let requestSequence = 0;
 
-function normalizeOptions(payload: unknown): CrudFilterOption[] {
+function normalizeOptions(payload: unknown): CrudOption[] {
     const source = Array.isArray(payload)
         ? payload
         : payload && typeof payload === 'object'
@@ -57,7 +58,7 @@ function normalizeOptions(payload: unknown): CrudFilterOption[] {
         return [];
     }
 
-    return source.flatMap((option): CrudFilterOption[] => {
+    return source.flatMap((option): CrudOption[] => {
         if (
             !option ||
             typeof option !== 'object' ||
@@ -70,11 +71,23 @@ function normalizeOptions(payload: unknown): CrudFilterOption[] {
             return [];
         }
 
-        return [{ value: String(option.value), label: option.label }];
+        return [
+            {
+                ...(option as Record<string, unknown>),
+                value: String(option.value),
+                label: option.label,
+            },
+        ];
     });
 }
 
 async function loadOptions(search: string, selected?: string): Promise<void> {
+    if (props.disabled) {
+        options.value = [];
+
+        return;
+    }
+
     if (selected === undefined && search.length < props.remote.min_chars) {
         options.value = [];
 
@@ -86,6 +99,12 @@ async function loadOptions(search: string, selected?: string): Promise<void> {
     const sequence = ++requestSequence;
     const url = new URL(props.remote.url, window.location.origin);
     url.searchParams.set('source', props.remote.source ?? 'filter');
+
+    for (const [name, value] of Object.entries(props.dependencies ?? {})) {
+        if (value !== null && value !== undefined && value !== '') {
+            url.searchParams.set(name, String(value));
+        }
+    }
 
     if (search !== '') {
         url.searchParams.set('search', search);
@@ -153,7 +172,7 @@ function scheduleSearch(value: string): void {
     debounceTimer = setTimeout(() => loadOptions(value), props.remote.debounce);
 }
 
-function selectOption(option: CrudFilterOption): void {
+function selectOption(option: CrudOption): void {
     selectedValue.value = option.value;
     selectedOption.value = option;
     open.value = false;
@@ -176,6 +195,20 @@ watch(
 );
 
 watch(searchTerm, scheduleSearch);
+
+watch(
+    () => props.dependencies,
+    () => {
+        requestController?.abort();
+        options.value = [];
+        selectedOption.value = undefined;
+
+        if (!props.disabled && props.modelValue !== '') {
+            void loadOptions('', props.modelValue);
+        }
+    },
+    { deep: true },
+);
 
 watch(open, async (value) => {
     if (!value) {

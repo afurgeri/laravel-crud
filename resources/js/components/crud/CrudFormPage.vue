@@ -139,6 +139,7 @@ function fieldDefault(
                     :key="field.name"
                     :field="field"
                     :default-value="fieldDefault(field, initialValues)"
+                    :values="initialValues"
                     :id-prefix="fieldIdPrefix"
                     read-only
                 >

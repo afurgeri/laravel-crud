@@ -9,9 +9,12 @@ use InvalidArgumentException;
 final class CrudField
 {
     /**
-     * @var list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>|null
+     * @var list<array<string, mixed>>|array<int|string, string>|null
      */
     private ?array $options = null;
+
+    /** @var list<string> */
+    private array $dependencies = [];
 
     private ?string $relation = null;
 
@@ -344,7 +347,7 @@ final class CrudField
     }
 
     /**
-     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
+     * @param  list<array<string, mixed>>|array<int|string, string>  $options
      */
     public function select(array $options): self
     {
@@ -355,7 +358,7 @@ final class CrudField
     }
 
     /**
-     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
+     * @param  list<array<string, mixed>>|array<int|string, string>  $options
      */
     public function combobox(array $options): self
     {
@@ -363,6 +366,24 @@ final class CrudField
         $this->options = $options;
 
         return $this;
+    }
+
+    /**
+     * @param  string|list<string>  $fields
+     */
+    public function dependsOn(string|array $fields): self
+    {
+        $this->dependencies = is_array($fields) ? $fields : [$fields];
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function dependencies(): array
+    {
+        return $this->dependencies;
     }
 
     public function multiple(): self
@@ -462,7 +483,7 @@ final class CrudField
     }
 
     /**
-     * @return list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>
+     * @return list<array<string, mixed>>|array<int|string, string>
      */
     public function options(): array
     {

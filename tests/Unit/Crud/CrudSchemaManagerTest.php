@@ -221,6 +221,60 @@ test('it serializes static combobox options in the field schema', function () {
         ]);
 });
 
+test('it preserves extra field option attributes and dependencies', function () {
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Contacts';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [];
+        }
+
+        public function fields(): array
+        {
+            return [
+                CrudField::make('contact_id')
+                    ->combobox([
+                        ['value' => 1, 'label' => 'Ada', 'customer_id' => 10, 'status' => 'active'],
+                    ])
+                    ->dependsOn(['customer_id', 'status']),
+            ];
+        }
+    };
+
+    expect(app(CrudSchemaManager::class)->for($definition, 'contacts')['fields'][0])
+        ->toMatchArray([
+            'options' => [
+                [
+                    'value' => '1',
+                    'label' => 'Ada',
+                    'customer_id' => 10,
+                    'status' => 'active',
+                ],
+            ],
+            'depends_on' => ['customer_id', 'status'],
+        ]);
+});
+
 test('it exposes remote field configuration with a field source', function () {
     $definition = new class implements CrudDefinition
     {

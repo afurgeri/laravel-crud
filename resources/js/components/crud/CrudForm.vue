@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { ref, useSlots } from 'vue';
+import { reactive, ref, useSlots } from 'vue';
 import CrudField from '@/components/crud/CrudField.vue';
 import { Button } from '@/components/ui/button';
 import type { CrudField as CrudFieldConfig, FormAction } from '@/types/crud';
@@ -28,6 +28,7 @@ const props = withDefaults(
 );
 
 const fieldRenderKey = ref(0);
+const fieldValues = reactive<Record<string, unknown>>({});
 const slots = useSlots();
 
 function hasFieldSlot(fieldName: string): boolean {
@@ -46,8 +47,20 @@ function fieldDefault(field: CrudFieldConfig): unknown {
     return field.defaultValue;
 }
 
+for (const field of props.fields) {
+    fieldValues[field.name] = fieldDefault(field);
+}
+
+function handleFieldValue(name: string, value: unknown): void {
+    fieldValues[name] = value;
+}
+
 function handleSuccess(): void {
     if (props.resetOnSuccess) {
+        for (const field of props.fields) {
+            fieldValues[field.name] = fieldDefault(field);
+        }
+
         fieldRenderKey.value += 1;
     }
 
@@ -70,14 +83,13 @@ function handleSuccess(): void {
             :read-only="readOnly"
             :error="errors[field.name]"
             :default-value="fieldDefault(field)"
+            :values="fieldValues"
             :label-class="fieldLabelClass"
             :id-prefix="fieldIdPrefix"
+            @value-change="handleFieldValue"
         >
             <template v-if="hasFieldSlot(field.name)" #default="slotProps">
-                <slot
-                    :name="`field-${field.name}`"
-                    v-bind="slotProps"
-                />
+                <slot :name="`field-${field.name}`" v-bind="slotProps" />
             </template>
         </CrudField>
 

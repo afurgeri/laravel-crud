@@ -30,7 +30,7 @@ class CrudSchemaManager
      *     description: string|null,
      *     empty_label: string|null,
      *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
-     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array{value: string, label: string}>}>,
+     *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array<string, mixed>>, depends_on?: list<string>}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
      *     search: array{enabled: bool, value: ?string, span: array<string, int>},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
@@ -142,7 +142,7 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, clearable: bool, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int, source: 'field'}}
+     * @return array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, clearable: bool, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, step?: string, options?: list<array<string, mixed>>, depends_on?: list<string>, remote?: array{url: string, min_chars: int, debounce: int, source: 'field'}}
      */
     private function fieldSchema(CrudField $field, string $resource): array
     {
@@ -180,8 +180,8 @@ class CrudSchemaManager
         if (in_array($field->type(), ['select', 'combobox'], true)) {
             $schema['options'] = array_map(
                 fn (array $option): array => [
+                    ...$option,
                     'value' => $this->optionValue($option['value']),
-                    'label' => $option['label'],
                 ],
                 $this->fieldOptions($field->options()),
             );
@@ -197,6 +197,10 @@ class CrudSchemaManager
                 ...$field->remoteConfig($generatedUrl),
                 'source' => 'field',
             ];
+        }
+
+        if ($field->dependencies() !== []) {
+            $schema['depends_on'] = $field->dependencies();
         }
 
         if ($field->hasDefault()) {
@@ -216,8 +220,8 @@ class CrudSchemaManager
     }
 
     /**
-     * @param  list<array{value: bool|float|int|string|null, label: string}>|array<int|string, string>  $options
-     * @return list<array{value: bool|float|int|string|null, label: string}>
+     * @param  list<array<string, mixed>>|array<int|string, string>  $options
+     * @return list<array<string, mixed>>
      */
     private function fieldOptions(array $options): array
     {

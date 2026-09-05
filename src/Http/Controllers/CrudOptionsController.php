@@ -68,17 +68,37 @@ final class CrudOptionsController
         $searchColumns = $remoteSource->remoteSearchColumns();
         $searchTerms = preg_split('/[\s-]+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
+        $dependencies = $remoteSource instanceof CrudField
+            ? $remoteSource->dependencies()
+            : [];
+
+        foreach ($dependencies as $dependency) {
+            $value = $request->input($dependency);
+
+            if ($value === null || $value === '') {
+                return response()->json(['data' => []]);
+            }
+        }
+
+        $applyDependencies = function (Builder $query) use ($dependencies, $request): void {
+            foreach ($dependencies as $dependency) {
+                $query->where($dependency, $request->input($dependency));
+            }
+        };
+
         if ($selected === '' && mb_strlen($search) < $remoteSource->remoteConfig()['min_chars']) {
             return response()->json(['data' => []]);
         }
 
         $selectedOption = $selected === ''
             ? null
-            : $relatedModel->newQuery()->where($remoteSource->relationColumn(), $selected)->first();
+            : tap($relatedModel->newQuery(), $applyDependencies)
+                ->where($remoteSource->relationColumn(), $selected)
+                ->first();
 
         $matches = $searchTerms === [] || $searchColumns === []
             ? collect()
-            : $relatedModel->newQuery()
+            : tap($relatedModel->newQuery(), $applyDependencies)
                 ->where(function (Builder $query) use ($searchColumns, $searchTerms): void {
                     foreach ($searchTerms as $term) {
                         $query->where(function (Builder $termQuery) use ($searchColumns, $term): void {

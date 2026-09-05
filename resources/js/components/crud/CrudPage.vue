@@ -180,8 +180,7 @@ const activeFilterCount = computed(
             ([name, value]) =>
                 !Object.hasOwn(props.fixedFilters, name) &&
                 hasFilterValue(value),
-        ).length +
-        (searchValue.value !== '' ? 1 : 0),
+        ).length + (searchValue.value !== '' ? 1 : 0),
 );
 
 let navigateTimer: ReturnType<typeof setTimeout> | undefined;
@@ -229,16 +228,16 @@ function navigate(page = 1): void {
     }
 
     const activeFilters = Object.fromEntries(
-        Object.entries(filterValues).filter(([, value]) => hasFilterValue(value)),
+        Object.entries(filterValues).filter(([, value]) =>
+            hasFilterValue(value),
+        ),
     );
 
     if (Object.keys(activeFilters).length > 0) {
         query.filters = activeFilters;
     }
 
-    const requestQuery = props.panelKey
-        ? { [props.panelKey]: query }
-        : query;
+    const requestQuery = props.panelKey ? { [props.panelKey]: query } : query;
 
     router.get(window.location.pathname, requestQuery, {
         only: props.panelKey ? [props.reloadProp ?? props.panelKey] : undefined,
@@ -353,7 +352,7 @@ function handleClearFilters(): void {
                     </p>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="ml-auto flex items-center gap-2">
                     <slot name="toolbar-actions" />
 
                     <Link
@@ -538,7 +537,7 @@ function handleClearFilters(): void {
                         <CrudFormDialog
                             v-else-if="canEditRecord(record)"
                             :action="edit.action(record)"
-                                :fields="visibleUpdateFields"
+                            :fields="visibleUpdateFields"
                             :initial-values="record"
                             :trigger-label="edit.label ?? t('Edit')"
                             :trigger-tooltip="edit.label ?? t('Edit')"

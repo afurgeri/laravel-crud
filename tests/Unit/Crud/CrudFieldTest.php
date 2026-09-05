@@ -144,6 +144,19 @@ test('crud fields can configure static combobox options', function () {
         ]);
 });
 
+test('crud fields preserve option attributes and dependencies', function () {
+    $field = CrudField::make('contact_id')
+        ->combobox([
+            ['value' => 1, 'label' => 'Ada', 'customer_id' => 10, 'status' => 'active'],
+        ])
+        ->dependsOn(['customer_id', 'status']);
+
+    expect($field->options())->toBe([
+        ['value' => 1, 'label' => 'Ada', 'customer_id' => 10, 'status' => 'active'],
+    ])
+        ->and($field->dependencies())->toBe(['customer_id', 'status']);
+});
+
 test('crud fields can enable multiple local options', function () {
     $field = CrudField::make('roles')->select([1 => 'Admin'])->multiple();
 

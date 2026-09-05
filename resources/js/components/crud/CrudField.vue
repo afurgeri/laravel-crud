@@ -20,13 +20,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField, CrudFieldSlotProps } from '@/types/crud';
 
-const props = defineProps<{
-    field: CrudField;
-    error?: string;
-    defaultValue?: unknown;
-    readOnly?: boolean;
-    labelClass?: string;
-    idPrefix?: string;
+const props = withDefaults(
+    defineProps<{
+        field: CrudField;
+        error?: string;
+        defaultValue?: unknown;
+        values?: Readonly<Record<string, unknown>>;
+        readOnly?: boolean;
+        labelClass?: string;
+        idPrefix?: string;
+    }>(),
+    {
+        values: () => ({}),
+        readOnly: false,
+    },
+);
+
+const emit = defineEmits<{
+    'value-change': [name: string, value: unknown];
 }>();
 
 defineSlots<{
@@ -149,6 +160,97 @@ const textareaClearButtonClass =
 
 const fieldId = computed(() =>
     props.idPrefix ? `${props.idPrefix}-${props.field.name}` : props.field.name,
+);
+
+const dependencyValues = computed(() =>
+    Object.fromEntries(
+        (props.field.depends_on ?? []).map((name) => [
+            name,
+            props.values[name],
+        ]),
+    ),
+);
+
+const isDependencyMissing = computed(() =>
+    Object.values(dependencyValues.value).some(
+        (value) =>
+            value === null ||
+            value === undefined ||
+            value === '' ||
+            (Array.isArray(value) && value.length === 0),
+    ),
+);
+
+const disabled = computed(
+    () => Boolean(props.readOnly) || isDependencyMissing.value,
+);
+
+const availableOptions = computed(() => {
+    const options = props.field.options ?? [];
+
+    if ((props.field.depends_on ?? []).length === 0) {
+        return options;
+    }
+
+    if (isDependencyMissing.value) {
+        return [];
+    }
+
+    return options.filter((option) =>
+        Object.entries(dependencyValues.value).every(
+            ([name, value]) => String(option[name]) === String(value),
+        ),
+    );
+});
+
+const currentValue = computed(() => {
+    if (props.field.type === 'checkbox') {
+        return checkboxValue.value;
+    }
+
+    if (props.field.type === 'array') {
+        return arrayValues.value;
+    }
+
+    if (props.field.multiple) {
+        return multipleValues.value;
+    }
+
+    if (['select', 'combobox', 'remote-select'].includes(props.field.type)) {
+        return selectValue.value;
+    }
+
+    return textValue.value;
+});
+
+function setValue(value: unknown): void {
+    if (props.field.type === 'checkbox') {
+        checkboxValue.value = booleanValue(value);
+    } else if (props.field.type === 'array') {
+        arrayValues.value = arrayValue(value);
+    } else if (props.field.multiple) {
+        multipleValues.value = arrayValue(value);
+    } else if (
+        ['select', 'combobox', 'remote-select'].includes(props.field.type)
+    ) {
+        selectValue.value = optionValue(value);
+    } else {
+        textValue.value = inputValue(value) ?? '';
+    }
+}
+
+watch(currentValue, (value) => emit('value-change', props.field.name, value), {
+    deep: true,
+});
+
+watch(
+    dependencyValues,
+    () => {
+        if ((props.field.depends_on ?? []).length > 0) {
+            clearValue();
+        }
+    },
+    { deep: true },
 );
 
 watch(
@@ -393,6 +495,13 @@ function clearValue(): void {
                     error,
                     required: field.required,
                     readOnly: readOnly ?? false,
+                    value: currentValue,
+                    values,
+                    dependencies: dependencyValues,
+                    options: availableOptions,
+                    disabled,
+                    setValue,
+                    clear: clearValue,
                 }"
             />
             <template v-if="!$slots.default && field.type === 'array'">
@@ -425,7 +534,7 @@ function clearValue(): void {
                                 :required="
                                     field.required && arrayValues.length === 0
                                 "
-                                :disabled="readOnly"
+                                :disabled="disabled"
                                 :aria-invalid="
                                     error || arrayInputError
                                         ? 'true'
@@ -496,7 +605,7 @@ function clearValue(): void {
                 <Checkbox
                     :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                     v-model="checkboxValue"
-                    :disabled="readOnly"
+                    :disabled="disabled"
                     :aria-invalid="error ? 'true' : undefined"
                 />
                 <button
@@ -544,7 +653,7 @@ function clearValue(): void {
                 "
                 class="relative"
             >
-                <Select v-model="selectValue" :disabled="readOnly">
+                <Select v-model="selectValue" :disabled="disabled">
                     <SelectTrigger
                         :id="
                             idPrefix ? `${idPrefix}-${field.name}` : field.name
@@ -556,7 +665,7 @@ function clearValue(): void {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem
-                            v-for="option in field.options ?? []"
+                            v-for="option in availableOptions"
                             :key="option.value"
                             :value="option.value"
                         >
@@ -583,8 +692,8 @@ function clearValue(): void {
                 <CrudSelectMultiple
                     v-model="multipleValues"
                     :id="fieldId"
-                    :options="field.options ?? []"
-                    :disabled="readOnly"
+                    :options="availableOptions"
+                    :disabled="disabled"
                     :invalid="Boolean(error)"
                     :placeholder="field.label"
                 />
@@ -609,8 +718,8 @@ function clearValue(): void {
                 <CrudCombobox
                     v-model="selectValue"
                     :id="fieldId"
-                    :options="field.options ?? []"
-                    :disabled="readOnly"
+                    :options="availableOptions"
+                    :disabled="disabled"
                     :invalid="Boolean(error)"
                     :placeholder="field.label"
                 />
@@ -635,8 +744,8 @@ function clearValue(): void {
                 <CrudComboboxMultiple
                     v-model="multipleValues"
                     :id="fieldId"
-                    :options="field.options ?? []"
-                    :disabled="readOnly"
+                    :options="availableOptions"
+                    :disabled="disabled"
                     :invalid="Boolean(error)"
                     :placeholder="field.label"
                 />
@@ -659,7 +768,8 @@ function clearValue(): void {
                     :id="fieldId"
                     :remote="field.remote!"
                     :placeholder="field.label"
-                    :disabled="readOnly"
+                    :dependencies="dependencyValues"
+                    :disabled="disabled"
                 />
                 <button
                     v-if="hasClearableValue"
@@ -679,7 +789,7 @@ function clearValue(): void {
                     :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
                     :name="field.name"
                     :required="field.required"
-                    :disabled="readOnly"
+                    :disabled="disabled"
                     :aria-invalid="error ? 'true' : undefined"
                     :class="hasClearableValue ? 'pr-9' : undefined"
                     v-model="textValue"
@@ -700,7 +810,7 @@ function clearValue(): void {
                 :name="field.name"
                 type="file"
                 :required="field.required"
-                :disabled="readOnly"
+                :disabled="disabled"
                 :aria-invalid="error ? 'true' : undefined"
             />
             <div
@@ -724,7 +834,7 @@ function clearValue(): void {
                     :type="htmlInputType(field.type)"
                     :step="field.step"
                     :required="field.required"
-                    :disabled="readOnly"
+                    :disabled="disabled"
                     :autocomplete="
                         field.type === 'password' ? 'new-password' : undefined
                     "

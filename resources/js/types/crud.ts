@@ -65,7 +65,8 @@ export type CrudField = {
     };
     defaultValue?: unknown;
     timezone?: string;
-    options?: CrudFilterOption[];
+    options?: CrudOption[];
+    depends_on?: string[];
     remote?: CrudRemoteFilter;
 };
 
@@ -77,6 +78,13 @@ export type CrudFieldSlotProps = {
     error?: string;
     required: boolean;
     readOnly: boolean;
+    value: unknown;
+    values: Readonly<Record<string, unknown>>;
+    dependencies: Readonly<Record<string, unknown>>;
+    options: CrudOption[];
+    disabled: boolean;
+    setValue: (value: unknown) => void;
+    clear: () => void;
 };
 
 export type CrudSort = {
@@ -88,6 +96,12 @@ export type CrudSearch = {
     enabled: boolean;
     value: string | null;
     span: CrudSpan;
+};
+
+export type CrudOption = {
+    value: string;
+    label: string;
+    [key: string]: unknown;
 };
 
 export type CrudFilterOption = {

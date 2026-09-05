@@ -419,6 +419,21 @@ CrudColumn::make('permission_ids')->computed();
 - `hidden()` keeps the column out of the generated schema.
 - `computed()` marks a value that is added by the controller and must not be selected, sorted, or searched as a database column.
 
+### Column methods
+
+| Method | Purpose |
+| --- | --- |
+| `label('Product name')` | Sets the translated label key used in the schema. |
+| `width('12rem')` | Sets the column width. |
+| `minWidth('8rem')` | Sets the minimum column width. |
+| `maxWidth('20rem')` | Sets the maximum column width. |
+| `fixedWidth('8rem')` | Sets the same fixed width, minimum width, and maximum width. |
+| `visible()` / `visible(false)` | Includes or excludes the column from the generated schema. |
+| `hidden()` | Shorthand for `visible(false)`. |
+| `sortable()` / `sortable(false)` | Allows or disallows sorting by the column. |
+| `searchable()` / `searchable(false)` | Includes or excludes the column from text search. |
+| `computed()` / `computed(false)` | Marks whether the column is computed instead of a database column. |
+
 ## Fields and validation
 
 Fields define both the generated form metadata and the validation rules used by `CrudMutationManager`.
@@ -442,6 +457,108 @@ CrudField::make('password', ['required', 'string', 'min:8'])
 - `rules([...])` replaces the field's validation rules.
 
 The model must still define `$fillable` or the equivalent Laravel model attribute for every mutable field.
+
+### Field methods
+
+| Method | Purpose |
+| --- | --- |
+| `label('Email address')` | Sets the translated label key used in the schema. |
+| `default($value)` | Sets the default value for create forms. |
+| `rules([...])` | Replaces the field's validation rules. |
+| `unique()` / `unique('column')` | Adds a database uniqueness rule, optionally for another column. |
+| `createOnly()` | Shows the field on create forms but hides it and skips its validation on update. |
+| `visible()` / `visible(false)` | Includes or excludes the field from automatic form rendering. |
+| `hidden()` | Shorthand for `visible(false)`. |
+| `span(6)` | Sets the responsive grid span for the base breakpoint. |
+| `span(6, 'md')` | Sets the span for one breakpoint. Multiple breakpoints can be passed as an array. |
+| `email()` | Renders an email input. |
+| `password()` | Renders a password input. |
+| `checkbox()` | Renders a checkbox input. |
+| `number()` | Renders a numeric input. |
+| `decimal(2)` | Renders a numeric input with a decimal step. |
+| `date()` | Renders a date input. |
+| `time()` | Renders a time input. |
+| `datetime()` | Renders a local datetime input using the configured display timezone. |
+| `textarea()` | Renders a textarea. |
+| `file()` | Renders a file input and adds the `file` validation rule. |
+| `array()` / `array(true)` | Renders a string-array editor; the boolean enables unique items. |
+| `uniqueItems()` | Enables unique items for an array field. |
+| `clearable()` / `clearable(false)` | Shows or hides the clear-value action. |
+| `confirmed()` | Adds Laravel's `confirmed` rule and renders a confirmation input. |
+| `select($options)` | Renders a select with local options. |
+| `combobox($options)` | Renders a searchable combobox with local options. |
+| `multiple()` | Enables multiple values for a `select` or `combobox`. |
+| `relation('users', 'uuid')` | Defines the relation and related column for remote options. |
+| `remoteSelect(...)` | Renders a searchable combobox whose options are loaded from the CRUD options endpoint. |
+| `dependsOn('customer_id')` | Enables the field only after one other field has a value. An array supports multiple dependencies. |
+
+### Local options
+
+Select and combobox options can use the short associative form or explicit option records:
+
+```php
+CrudField::make('status')->select([
+    'active' => 'Active',
+    'archived' => 'Archived',
+]);
+
+CrudField::make('contact_id')->combobox([
+    [
+        'value' => 10,
+        'label' => 'John Doe',
+        'customer_id' => 5,
+        'status' => 'active',
+    ],
+]);
+```
+
+Explicit options always require `value` and `label`, but may include additional JSON-compatible attributes. Those attributes are preserved in the frontend schema and are available to custom field slots.
+
+### Dependent fields
+
+`dependsOn()` accepts either one field name or a list of field names:
+
+```php
+CrudField::make('customer_id')->select($customers);
+
+CrudField::make('contact_id')
+    ->dependsOn('customer_id')
+    ->combobox($contacts);
+
+CrudField::make('contact_id')
+    ->dependsOn(['customer_id', 'status'])
+    ->combobox($contacts);
+```
+
+For local options, each declared dependency must be present as an option attribute. Multiple dependencies are matched with `AND`. The dependent field is disabled while any dependency is empty, its current value is cleared when a dependency changes, and only matching options are displayed.
+
+For large or sensitive option sets, use `remoteSelect()` instead:
+
+```php
+CrudField::make('contact_id')
+    ->relation('contacts')
+    ->dependsOn('customer_id')
+    ->remoteSelect(searchColumns: ['name', 'email']);
+```
+
+The generic options endpoint receives the declared dependency values and applies them server-side. The browser cannot provide arbitrary query constraints.
+
+### Custom field slots
+
+In Inertia/Vue applications, a `field-*` slot can replace the default renderer. It receives the current field value, all form values, declared dependency values, filtered options, disabled state, and controlled actions:
+
+```vue
+<template #field-discount="{ value, values, setValue }">
+    <Input
+        name="discount"
+        :value="value"
+        :disabled="Number(values.total ?? 0) <= 100"
+        @input="setValue(($event.target as HTMLInputElement).value)"
+    />
+</template>
+```
+
+The available slot properties are `field`, `id`, `name`, `defaultValue`, `value`, `values`, `dependencies`, `options`, `error`, `required`, `readOnly`, `disabled`, `setValue`, and `clear`. Custom renderers must keep an input with the field's `name` so the value is submitted by Inertia.
 
 ## Sorting
 
