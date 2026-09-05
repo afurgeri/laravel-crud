@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Modules\Crud\CrudMutationManager;
 use Tests\Feature\Crud\Fixtures\CreatesCrudTestRecordsTable;
@@ -82,6 +83,22 @@ test('it validates data before creating records', function () {
         data: ['name' => '', 'email' => 'not-an-email'],
     );
 })->throws(ValidationException::class);
+
+test('it validates file fields without filling them into the model', function () {
+    $file = UploadedFile::fake()->createWithContent('contract.pdf', '%PDF-1.7');
+
+    $record = app(CrudMutationManager::class)->create(
+        definition: new CrudTestRecordDefinition,
+        data: [
+            'name' => 'Ada',
+            'email' => 'ada@example.com',
+            'attachment' => $file,
+        ],
+    );
+
+    expect($record->exists)->toBeTrue()
+        ->and($record->getAttribute('attachment'))->toBeNull();
+});
 
 test('it rejects duplicate unique fields when creating records', function () {
     CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);

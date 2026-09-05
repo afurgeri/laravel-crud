@@ -86,7 +86,15 @@ test('crud fields configure visual input types explicitly', function () {
         ->and(CrudField::make('duration_minutes', ['required', 'integer'])->number()->type())->toBe('number')
         ->and(CrudField::make('starts_on', ['nullable', 'date'])->date()->type())->toBe('date')
         ->and(CrudField::make('notes', ['nullable', 'string'])->textarea()->type())->toBe('textarea')
+        ->and(CrudField::make('attachment')->file()->type())->toBe('file')
         ->and(CrudField::make('name', ['required', 'string'])->type())->toBe('text');
+});
+
+test('file fields always validate uploaded files', function () {
+    expect(CrudField::make('attachment')->file()->validationRules())->toBe(['file'])
+        ->and(CrudField::make('attachment', ['nullable', 'mimetypes:application/pdf'])
+            ->file()
+            ->validationRules())->toBe(['nullable', 'mimetypes:application/pdf', 'file']);
 });
 
 test('crud fields support date, time, and datetime inputs', function () {

@@ -119,6 +119,10 @@ class CrudMutationManager
             if ($field->type() === 'datetime' && array_key_exists($field->name(), $validated)) {
                 $validated[$field->name()] = CrudTemporal::normalizeDateTime($validated[$field->name()]);
             }
+
+            if ($field->type() === 'file') {
+                unset($validated[$field->name()]);
+            }
         }
 
         /** @var Model $caster */

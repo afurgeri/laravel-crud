@@ -113,6 +113,12 @@ final class CrudField
      */
     public function validationRules(): array
     {
+        if ($this->type === 'file') {
+            return in_array('file', $this->rules, true)
+                ? $this->rules
+                : [...$this->rules, 'file'];
+        }
+
         if (! $this->isArray()) {
             return $this->rules;
         }
@@ -281,6 +287,14 @@ final class CrudField
     public function textarea(): self
     {
         $this->type = 'textarea';
+        $this->multiple = false;
+
+        return $this;
+    }
+
+    public function file(): self
+    {
+        $this->type = 'file';
         $this->multiple = false;
 
         return $this;

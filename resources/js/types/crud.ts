@@ -44,6 +44,7 @@ export type CrudField = {
         | 'number'
         | CrudTemporalType
         | 'textarea'
+        | 'file'
         | 'array';
     confirmed: boolean;
     required: boolean;

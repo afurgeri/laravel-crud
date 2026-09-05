@@ -694,6 +694,15 @@ function clearValue(): void {
                     <X class="size-3.5" />
                 </button>
             </div>
+            <Input
+                v-if="!$slots.default && field.type === 'file'"
+                :id="idPrefix ? `${idPrefix}-${field.name}` : field.name"
+                :name="field.name"
+                type="file"
+                :required="field.required"
+                :disabled="readOnly"
+                :aria-invalid="error ? 'true' : undefined"
+            />
             <div
                 v-if="
                     !$slots.default &&
@@ -704,6 +713,7 @@ function clearValue(): void {
                         'combobox',
                         'remote-select',
                         'textarea',
+                        'file',
                     ].includes(field.type)
                 "
                 class="relative"

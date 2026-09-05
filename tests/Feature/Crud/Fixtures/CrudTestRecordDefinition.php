@@ -45,6 +45,7 @@ class CrudTestRecordDefinition implements CrudDefinition
             CrudField::make('email', ['required', 'email', 'max:255'])->unique(),
             CrudField::make('is_active', ['nullable', 'boolean'])->checkbox(),
             CrudField::make('duration_minutes', ['nullable', 'integer'])->number(),
+            CrudField::make('attachment', ['nullable'])->file(),
         ];
     }
 }
