@@ -242,16 +242,45 @@ It generates the starting files for a complete resource:
 
 MongoDB generation does not create a SQL migration. Define MongoDB indexes in the consuming application, add navigation entries, and keep generated record IDs typed as strings in application-specific frontend code.
 
-Generated pages include previous/next pagination controls. CRUD definitions use 10 items per page by default; implement `HasDefaultCrudPageSize` to override that value:
+Generated pages include previous/next pagination controls. The default CRUD presentation can be configured in the consuming application's `config/crud.php`:
 
 ```php
-use Modules\Crud\Contracts\HasDefaultCrudPageSize;
+return [
+    'default_page_size' => 25,
+    'default_form_mode' => 'dialog',
+    'default_page_width' => 'full',
+    'default_form_width' => 'wide',
+];
+```
 
-class ProductCrudDefinition implements CrudDefinition, HasDefaultCrudPageSize
+Publish the package configuration with:
+
+```bash
+php artisan vendor:publish --tag=crud-config
+```
+
+This creates `config/crud.php` in the consuming application. The `crud:install` command installs only the CRUD frontend resources and translations; it does not publish package configuration.
+
+Definitions using `HasDefaultCrudPresentation` receive these defaults. A method declared directly on a definition takes precedence over the global configuration:
+
+```php
+use Modules\Crud\Concerns\HasDefaultCrudPresentation;
+use Modules\Crud\Contracts\HasCrudPresentation;
+use Modules\Crud\Contracts\HasDefaultCrudPageSize;
+use Modules\Crud\CrudLayoutWidth;
+
+class ProductCrudDefinition implements CrudDefinition, HasCrudPresentation, HasDefaultCrudPageSize
 {
+    use HasDefaultCrudPresentation;
+
     public function defaultPageSize(): int
     {
         return 25;
+    }
+
+    public function pageWidth(): CrudLayoutWidth
+    {
+        return CrudLayoutWidth::Standard;
     }
 }
 ```

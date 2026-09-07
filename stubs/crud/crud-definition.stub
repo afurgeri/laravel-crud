@@ -77,8 +77,4 @@ class {{ entity }}CrudDefinition implements AuthorizesCrudIndex, AuthorizesCrudM
         return 'asc';
     }
 
-    public function defaultPageSize(): int
-    {
-        return 10;
-    }
 }

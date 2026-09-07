@@ -12,8 +12,17 @@ use Modules\Crud\Console\Commands\UpgradeCrudRoutesCommand;
 
 class CrudServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->mergeConfigFrom(dirname(__DIR__).'/config/crud.php', 'crud');
+    }
+
     public function boot(): void
     {
+        $this->publishes([
+            dirname(__DIR__).'/config/crud.php' => config_path('crud.php'),
+        ], 'crud-config');
+
         $this->loadJsonTranslationsFrom(dirname(__DIR__).'/resources/lang');
 
         if (class_exists('Inertia\\Inertia')) {
