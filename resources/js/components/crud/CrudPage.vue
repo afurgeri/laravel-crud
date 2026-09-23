@@ -135,7 +135,7 @@ const sortState = reactive({
 
 const searchValue = ref(props.schema.search.value ?? '');
 const isLoading = ref(false);
-const filtersOpen = ref(true);
+const filtersOpen = ref(props.schema.filters_open);
 
 const filterValues = reactive<Record<string, CrudFilterValue>>(
     Object.fromEntries(
@@ -258,16 +258,38 @@ function navigate(page = 1): void {
 }
 
 function goToPage(page: number): void {
+    if (page < 1 || page === props.records.current_page) {
+        return;
+    }
+
     if (
-        page < 1 ||
-        page > props.records.last_page ||
-        page === props.records.current_page
+        props.records.last_page !== undefined &&
+        page > props.records.last_page
+    ) {
+        return;
+    }
+
+    if (
+        props.records.last_page === undefined &&
+        ((page < props.records.current_page && !props.records.prev_page_url) ||
+            (page > props.records.current_page && !props.records.next_page_url))
     ) {
         return;
     }
 
     navigate(page);
 }
+
+const hasPaginationControls = computed(
+    () =>
+        (props.records.last_page !== undefined &&
+            props.records.last_page > 1) ||
+        Boolean(props.records.prev_page_url || props.records.next_page_url),
+);
+
+const isLengthAwarePaginator = computed(
+    () => props.records.total !== undefined,
+);
 
 function navigateDebounced(): void {
     clearTimeout(navigateTimer);
@@ -621,17 +643,27 @@ function handleClearFilters(): void {
                 </template>
                 <template #footer>
                     <div
-                        v-if="records.last_page > 1"
+                        v-if="hasPaginationControls"
                         class="flex flex-col gap-3 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
                     >
                         <span>
-                            {{
-                                t('Showing :from to :to of :count', {
-                                    from: records.from ?? 0,
-                                    to: records.to ?? 0,
-                                    count: records.total,
-                                })
-                            }}
+                            <template v-if="isLengthAwarePaginator">
+                                {{
+                                    t('Showing :from to :to of :total', {
+                                        from: records.from ?? 0,
+                                        to: records.to ?? 0,
+                                        total: records.total ?? 0,
+                                    })
+                                }}
+                            </template>
+                            <template v-else>
+                                {{
+                                    t('Showing :from to :to', {
+                                        from: records.from ?? 0,
+                                        to: records.to ?? 0,
+                                    })
+                                }}
+                            </template>
                         </span>
 
                         <div
@@ -641,7 +673,7 @@ function handleClearFilters(): void {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                :disabled="records.current_page === 1"
+                                :disabled="!records.prev_page_url"
                                 @click="goToPage(records.current_page - 1)"
                             >
                                 <ChevronLeft class="size-4" />
@@ -649,21 +681,30 @@ function handleClearFilters(): void {
                             </Button>
 
                             <span class="whitespace-nowrap">
-                                {{
-                                    t('Page :current of :last', {
-                                        current: records.current_page,
-                                        last: records.last_page,
-                                    })
-                                }}
+                                <template
+                                    v-if="records.last_page !== undefined"
+                                >
+                                    {{
+                                        t('Page :current of :last', {
+                                            current: records.current_page,
+                                            last: records.last_page,
+                                        })
+                                    }}
+                                </template>
+                                <template v-else>
+                                    {{
+                                        t('Page :current', {
+                                            current: records.current_page,
+                                        })
+                                    }}
+                                </template>
                             </span>
 
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                :disabled="
-                                    records.current_page === records.last_page
-                                "
+                                :disabled="!records.next_page_url"
                                 @click="goToPage(records.current_page + 1)"
                             >
                                 {{ t('Next') }}

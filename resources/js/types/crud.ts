@@ -147,6 +147,7 @@ export type CrudSchema = {
     form_mode: 'dialog' | 'page';
     page_width: CrudLayoutWidth;
     form_width: CrudLayoutWidth;
+    filters_open: boolean;
     operations: {
         show: boolean;
         create: boolean;
@@ -166,11 +167,14 @@ export type CrudSchema = {
 export type CrudPaginator<T> = {
     data: T[];
     current_page: number;
-    last_page: number;
     per_page: number;
-    total: number;
+    last_page?: number;
+    total?: number;
     from: number | null;
     to: number | null;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    has_more_pages?: boolean;
 };
 
 export type CrudRecord = Record<string, unknown> & {
