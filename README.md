@@ -247,10 +247,20 @@ Generated pages include previous/next pagination controls. The default CRUD pres
 ```php
 return [
     'default_page_size' => 25,
+    'default_filters_open' => true,
+    'pagination' => [
+        'driver' => env('CRUD_PAGINATION_DRIVER', 'length_aware'),
+    ],
     'default_form_mode' => 'dialog',
     'default_page_width' => 'full',
     'default_form_width' => 'wide',
 ];
+```
+
+`default_filters_open` controls whether generated CRUD filter panels start expanded. Set it to `false` to start with filters collapsed:
+
+```php
+'default_filters_open' => false,
 ```
 
 Publish the package configuration with:
@@ -286,6 +296,32 @@ class ProductCrudDefinition implements CrudDefinition, HasCrudPresentation, HasD
 ```
 
 The request may still provide `per_page`; values are normalized to the supported range of 1 to 100. Sorting, search, and filters are preserved while changing pages and reset pagination when changed.
+
+CRUD forms support `fieldsAfter` when a custom slot should render before selected generated fields. The `fields` slot also receives the current `values` map:
+
+```vue
+<CrudFormPage :schema="crud" :fields-after="['notes']" ...>
+    <template #fields="{ errors, values }">
+        <CustomEditor :errors="errors" :values="values" />
+    </template>
+</CrudFormPage>
+```
+
+Embedded CRUD panels can opt into full-page create and edit navigation with `fullPageForms`:
+
+```vue
+<CrudPanel panel-key="invoices" full-page-forms ... />
+```
+
+This overrides the default embedded behavior without changing the CRUD definition.
+
+CRUD pagination uses Laravel's length-aware paginator by default. Set `CRUD_PAGINATION_DRIVER=simple` to avoid the `COUNT(*)` query required by length-aware pagination for large tables:
+
+```env
+CRUD_PAGINATION_DRIVER=simple
+```
+
+The `length_aware` driver returns total and last-page metadata. The `simple` driver returns only the current page and previous/next URLs, so CRUD screens using it expose Previous and Next navigation without an exact total. Search, filters, sorting, eager loading, pagination hooks, and `through()` are applied in the same order for both drivers.
 
 The command is intentionally opinionated around the module structure used by this project and Laravel + Inertia/Vue applications. It is not a generic model generator. After generation, review the placeholder `name` field, authorization rules, navigation, relationships, and frontend slots.
 
@@ -724,6 +760,7 @@ The package does not provide resource controllers because the response shape and
 ```php
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Crud\CrudIndexManager;
@@ -740,7 +777,7 @@ public function index(
     $search = $request->string('search')->toString() ?: null;
     $filters = $request->array('filters');
 
-    /** @var LengthAwarePaginator<int, Product> $products */
+    /** @var LengthAwarePaginator<int, Product>|Paginator<int, Product> $products */
     $products = $index->paginate(
         definition: $definition,
         page: $request->integer('page', 1),
@@ -771,9 +808,10 @@ public function index(
 Implement `HasCrudPaginationHooks` and use `HandlesCrudPaginationHooks` when a definition needs to adjust the query before pagination or transform the returned items:
 
 ```php
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Modules\Crud\Concerns\HandlesCrudPaginationHooks;
 use Modules\Crud\Contracts\HasCrudPaginationHooks;
 
@@ -787,8 +825,8 @@ class ProductCrudDefinition implements CrudDefinition, HasCrudPaginationHooks
         // Add resource-specific query constraints here.
     }
 
-    /** @param LengthAwarePaginator<int, Model> $paginator */
-    public function afterPaginate(LengthAwarePaginator $paginator): void
+    /** @param LengthAwarePaginator<int, Model>|Paginator<int, Model> $paginator */
+    public function afterPaginate(LengthAwarePaginator|Paginator $paginator): void
     {
         $paginator->through(fn (Model $product): array => [
             'id' => $product->id,

@@ -10,6 +10,7 @@ use Modules\Crud\CrudLayoutWidth;
 
 test('it registers the package presentation defaults', function () {
     expect(config('crud.default_page_size'))->toBe(10)
+        ->and(config('crud.default_filters_open'))->toBeTrue()
         ->and(config('crud.default_form_mode'))->toBe('page')
         ->and(config('crud.default_page_width'))->toBe('standard')
         ->and(config('crud.default_form_width'))->toBe('standard');

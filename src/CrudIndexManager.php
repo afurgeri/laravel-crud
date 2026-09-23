@@ -6,7 +6,9 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Validator;
+use InvalidArgumentException;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
 use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
@@ -27,7 +29,7 @@ class CrudIndexManager
     /**
      * @param  array<string, mixed>  $filters
      * @param  Closure(Builder<Model>): mixed|null  $scope
-     * @return LengthAwarePaginator<int, Model>
+     * @return LengthAwarePaginator<int, Model>|Paginator<int, Model>
      */
     public function paginate(
         CrudDefinition $definition,
@@ -38,7 +40,7 @@ class CrudIndexManager
         ?string $search = null,
         array $filters = [],
         ?Closure $scope = null,
-    ): LengthAwarePaginator {
+    ): LengthAwarePaginator|Paginator {
         if ($definition instanceof AuthorizesCrudIndex) {
             $definition->authorizeViewAny();
         }
@@ -77,7 +79,17 @@ class CrudIndexManager
             $definition->beforePaginate($query);
         }
 
-        $paginator = $query->paginate(perPage: $this->resolvePerPage($definition, $perPage), page: $page);
+        $paginator = match (config('crud.pagination.driver', 'length_aware')) {
+            'length_aware' => $query->paginate(
+                perPage: $this->resolvePerPage($definition, $perPage),
+                page: $page,
+            ),
+            'simple' => $query->simplePaginate(
+                perPage: $this->resolvePerPage($definition, $perPage),
+                page: $page,
+            ),
+            default => throw new InvalidArgumentException('Unsupported CRUD pagination driver.'),
+        };
 
         if ($definition instanceof HasCrudPaginationHooks) {
             $definition->afterPaginate($paginator);
@@ -162,7 +174,7 @@ class CrudIndexManager
 
         try {
             $key = new ObjectId($search);
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidArgumentException) {
             $query->orWhereRaw(['_id' => ['$in' => []]]);
 
             return;

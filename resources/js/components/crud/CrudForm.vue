@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { reactive, ref, useSlots } from 'vue';
+import { computed, reactive, ref, useSlots } from 'vue';
 import CrudField from '@/components/crud/CrudField.vue';
 import { Button } from '@/components/ui/button';
 import type { CrudField as CrudFieldConfig, FormAction } from '@/types/crud';
@@ -16,6 +16,7 @@ const props = withDefaults(
         formClass?: string;
         fieldLabelClass?: string;
         fieldIdPrefix?: string;
+        fieldsAfter?: string[];
     }>(),
     {
         initialValues: () => ({}),
@@ -24,6 +25,7 @@ const props = withDefaults(
         formClass: 'grid grid-cols-12 gap-4',
         fieldLabelClass: undefined,
         fieldIdPrefix: undefined,
+        fieldsAfter: () => [],
     },
 );
 
@@ -55,6 +57,18 @@ function handleFieldValue(name: string, value: unknown): void {
     fieldValues[name] = value;
 }
 
+const fieldsBefore = computed(() =>
+    props.fields.filter(
+        (field) => field.visible && !props.fieldsAfter.includes(field.name),
+    ),
+);
+
+const fieldsAfter = computed(() =>
+    props.fields.filter(
+        (field) => field.visible && props.fieldsAfter.includes(field.name),
+    ),
+);
+
 function handleSuccess(): void {
     if (props.resetOnSuccess) {
         for (const field of props.fields) {
@@ -77,7 +91,7 @@ function handleSuccess(): void {
         @success="handleSuccess"
     >
         <CrudField
-            v-for="field in fields.filter((field) => field.visible)"
+            v-for="field in fieldsBefore"
             :key="`${field.name}-${fieldRenderKey}`"
             :field="field"
             :read-only="readOnly"
@@ -94,8 +108,25 @@ function handleSuccess(): void {
         </CrudField>
 
         <div class="col-span-12">
-            <slot name="fields" :errors="errors" />
+            <slot name="fields" :errors="errors" :values="fieldValues" />
         </div>
+
+        <CrudField
+            v-for="field in fieldsAfter"
+            :key="`${field.name}-${fieldRenderKey}`"
+            :field="field"
+            :read-only="readOnly"
+            :error="errors[field.name]"
+            :default-value="fieldDefault(field)"
+            :values="fieldValues"
+            :label-class="fieldLabelClass"
+            :id-prefix="fieldIdPrefix"
+            @value-change="handleFieldValue"
+        >
+            <template v-if="hasFieldSlot(field.name)" #default="slotProps">
+                <slot :name="`field-${field.name}`" v-bind="slotProps" />
+            </template>
+        </CrudField>
 
         <Button
             v-if="!readOnly"

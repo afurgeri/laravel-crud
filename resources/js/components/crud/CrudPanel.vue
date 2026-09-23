@@ -21,6 +21,7 @@ const props = withDefaults(
         edit: CrudEditConfig<T>;
         destroy: CrudDestroyConfig<T>;
         panelKey: string;
+        fullPageForms?: boolean;
         reloadProp?: string;
         hiddenFilters?: string[];
         hiddenColumns?: string[];
@@ -35,6 +36,7 @@ const props = withDefaults(
         hiddenFields: () => [],
         fixedFilters: () => ({}),
         lockedLabel: undefined,
+        fullPageForms: undefined,
     },
 );
 

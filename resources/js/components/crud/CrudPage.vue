@@ -45,6 +45,7 @@ const props = withDefaults(
         lockedLabel?: string;
         workspace?: string;
         embedded?: boolean;
+        fullPageForms?: boolean;
         panelKey?: string;
         reloadProp?: string;
         hiddenFilters?: string[];
@@ -56,6 +57,7 @@ const props = withDefaults(
         lockedLabel: undefined,
         workspace: undefined,
         embedded: false,
+        fullPageForms: undefined,
         panelKey: undefined,
         reloadProp: undefined,
         hiddenFilters: () => [],
@@ -100,7 +102,10 @@ function canShowRecord(record: T): boolean {
 }
 
 function usesFullPageForms(): boolean {
-    return !props.embedded && props.schema.form_mode === 'page';
+    return (
+        (props.fullPageForms ?? !props.embedded) &&
+        props.schema.form_mode === 'page'
+    );
 }
 
 function editRecordTitle(record: T): string {

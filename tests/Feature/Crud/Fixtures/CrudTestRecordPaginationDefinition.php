@@ -5,6 +5,7 @@ namespace Tests\Feature\Crud\Fixtures;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Modules\Crud\Concerns\HandlesCrudPaginationHooks;
 use Modules\Crud\Contracts\HasCrudPaginationHooks;
 
@@ -25,9 +26,9 @@ class CrudTestRecordPaginationDefinition extends CrudTestRecordDefinition implem
     }
 
     /**
-     * @param  LengthAwarePaginator<int, Model>  $paginator
+     * @param  LengthAwarePaginator<int, Model>|Paginator<int, Model>  $paginator
      */
-    public function afterPaginate(LengthAwarePaginator $paginator): void
+    public function afterPaginate(LengthAwarePaginator|Paginator $paginator): void
     {
         self::$events[] = 'afterPaginate';
         $paginator->through(fn (Model $model): array => [

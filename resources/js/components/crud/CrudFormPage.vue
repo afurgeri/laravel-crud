@@ -17,6 +17,7 @@ import type {
 type CrudFormPageFieldsSlotProps = {
     errors: Record<string, string | undefined>;
     readOnly: boolean;
+    values: Readonly<Record<string, unknown>>;
 };
 
 defineSlots<{
@@ -36,6 +37,7 @@ withDefaults(
         fields?: CrudFieldConfig[];
         fieldIdPrefix?: string;
         readOnly?: boolean;
+        fieldsAfter?: string[];
     }>(),
     {
         description: undefined,
@@ -43,6 +45,7 @@ withDefaults(
         fields: undefined,
         fieldIdPrefix: undefined,
         readOnly: false,
+        fieldsAfter: () => [],
     },
 );
 
@@ -113,6 +116,7 @@ function fieldDefault(
                 :initial-values="initialValues"
                 :submit-label="submitLabel"
                 :field-id-prefix="fieldIdPrefix"
+                :fields-after="fieldsAfter"
                 form-class="grid w-full grid-cols-12 gap-6"
             >
                 <template
@@ -129,13 +133,16 @@ function fieldDefault(
                         name="fields"
                         :errors="slotProps.errors"
                         :read-only="false"
+                        :values="slotProps.values"
                     />
                 </template>
             </CrudForm>
 
             <div v-else class="grid w-full grid-cols-12 gap-6">
                 <CrudField
-                    v-for="field in fields ?? schema.fields"
+                    v-for="field in (fields ?? schema.fields).filter(
+                        (field) => !fieldsAfter.includes(field.name),
+                    )"
                     :key="field.name"
                     :field="field"
                     :default-value="fieldDefault(field, initialValues)"
@@ -155,8 +162,35 @@ function fieldDefault(
                 </CrudField>
 
                 <div class="col-span-12">
-                    <slot name="fields" :errors="{}" :read-only="true" />
+                    <slot
+                        name="fields"
+                        :errors="{}"
+                        :read-only="true"
+                        :values="initialValues"
+                    />
                 </div>
+
+                <CrudField
+                    v-for="field in (fields ?? schema.fields).filter((field) =>
+                        fieldsAfter.includes(field.name),
+                    )"
+                    :key="field.name"
+                    :field="field"
+                    :default-value="fieldDefault(field, initialValues)"
+                    :values="initialValues"
+                    :id-prefix="fieldIdPrefix"
+                    read-only
+                >
+                    <template
+                        v-if="hasFieldSlot(field.name)"
+                        #default="slotProps"
+                    >
+                        <slot
+                            :name="`field-${field.name}`"
+                            v-bind="slotProps"
+                        />
+                    </template>
+                </CrudField>
             </div>
         </section>
     </div>

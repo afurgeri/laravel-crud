@@ -1,8 +1,11 @@
 <?php
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasDefaultCrudPageSize;
 use Modules\Crud\CrudFilter;
@@ -29,6 +32,7 @@ uses(CreatesCrudTestRecordsTable::class);
 
 beforeEach(function () {
     $this->createCrudTestRecordsTable();
+    config(['crud.pagination.driver' => 'length_aware']);
 
     CrudTestRecordIndexAuthorizedDefinition::$authorized = true;
     CrudTestRecordIndexAuthorizedDefinition::$viewAnyCalls = 0;
@@ -46,6 +50,105 @@ test('it paginates records for a crud definition', function () {
     expect($paginator->total())->toBe(2)
         ->and($paginator->perPage())->toBe(1)
         ->and($paginator->items())->toHaveCount(1);
+});
+
+test('it uses simple pagination without executing a count query', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    config(['crud.pagination.driver' => 'simple']);
+    DB::enableQueryLog();
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordDefinition,
+        perPage: 1,
+    );
+
+    $queries = collect(DB::getQueryLog())->pluck('query');
+    DB::disableQueryLog();
+
+    expect($paginator)->toBeInstanceOf(Paginator::class)
+        ->and($paginator->currentPage())->toBe(1)
+        ->and($paginator->nextPageUrl())->not->toBeNull()
+        ->and($paginator->previousPageUrl())->toBeNull()
+        ->and($queries->contains(fn (string $query): bool => str_contains(strtolower($query), 'count(')))->toBeFalse();
+});
+
+test('it keeps search filters sorting and eager loads with simple pagination', function () {
+    $record = CrudTestRecord::query()->create([
+        'name' => 'Ada',
+        'email' => 'ada@example.com',
+    ]);
+    CrudTestRecord::query()->create([
+        'name' => 'Grace',
+        'email' => 'grace@example.com',
+    ]);
+    CrudTestRecordNote::query()->create([
+        'crud_test_record_id' => $record->id,
+        'body' => 'First note',
+    ]);
+
+    $definition = new class extends CrudTestRecordSearchableDefinition implements EagerLoadsCrudRelations, HasCrudFilters
+    {
+        public function eagerLoads(): array
+        {
+            return ['notes:id,crud_test_record_id,body'];
+        }
+
+        public function filters(): array
+        {
+            return [CrudFilter::make('name')->text()];
+        }
+    };
+
+    config(['crud.pagination.driver' => 'simple']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        perPage: 1,
+        sort: 'name',
+        search: 'Ada',
+        filters: ['name' => 'Ada'],
+    );
+
+    $result = $paginator->items()[0];
+
+    expect($paginator)->toBeInstanceOf(Paginator::class)
+        ->and($result->name)->toBe('Ada')
+        ->and($result->relationLoaded('notes'))->toBeTrue()
+        ->and($result->notes)->toHaveCount(1);
+});
+
+test('it keeps pagination hooks and through transformations with simple pagination', function () {
+    CrudTestRecordPaginationDefinition::$events = [];
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+
+    config(['crud.pagination.driver' => 'simple']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(new CrudTestRecordPaginationDefinition);
+
+    expect($paginator)->toBeInstanceOf(Paginator::class)
+        ->and(CrudTestRecordPaginationDefinition::$events)->toBe([
+            'beforePaginate',
+            'afterPaginate',
+        ])
+        ->and($paginator->items())->toBe([['label' => 'Ada']]);
+});
+
+test('length aware pagination remains the default driver', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: new CrudTestRecordDefinition,
+        perPage: 1,
+    );
+
+    expect($paginator)->toBeInstanceOf(LengthAwarePaginator::class)
+        ->and($paginator->total())->toBe(2)
+        ->and($paginator->lastPage())->toBe(2)
+        ->and($paginator->firstItem())->toBe(1)
+        ->and($paginator->lastItem())->toBe(1);
 });
 
 test('it applies a server scope before paginating records', function () {

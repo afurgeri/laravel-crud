@@ -13,7 +13,7 @@ export function useTranslation() {
 
         for (const [placeholder, value] of Object.entries(replacements)) {
             translation = translation.replaceAll(
-                `:${placeholder}`,
+                new RegExp(`:${placeholder}(?![A-Za-z0-9_])`, 'g'),
                 String(value),
             );
         }
