@@ -585,6 +585,72 @@ test('it filters a number column with the operator configured on the filter', fu
         ->and($paginator->items()[0]->name)->toBe('Grace');
 });
 
+test('it applies an explicit equality operator to a text filter', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Ada Lovelace', 'email' => 'ada.lovelace@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition implements HasCrudFilters
+    {
+        public function filters(): array
+        {
+            return [CrudFilter::make('name')->operator('=')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        filters: ['name' => 'Ada'],
+    );
+
+    expect($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->name)->toBe('Ada');
+});
+
+test('it applies prefix matching to a starts with text filter', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Ada Lovelace', 'email' => 'ada.lovelace@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition implements HasCrudFilters
+    {
+        public function filters(): array
+        {
+            return [CrudFilter::make('name')->startsWith()];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        filters: ['name' => 'Ada'],
+    );
+
+    expect($paginator->items())->toHaveCount(2)
+        ->and(collect($paginator->items())->pluck('name')->all())
+        ->toEqual(['Ada', 'Ada Lovelace']);
+});
+
+test('it applies suffix matching to an ends with text filter', function () {
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Grace Hopper', 'email' => 'grace.hopper@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition implements HasCrudFilters
+    {
+        public function filters(): array
+        {
+            return [CrudFilter::make('name')->endsWith()];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate(
+        definition: $definition,
+        filters: ['name' => 'Grace'],
+    );
+
+    expect($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->name)->toBe('Grace');
+});
+
 test('it filters a decimal column with the configured precision and operator', function () {
     CrudTestRecord::query()->create([
         'name' => 'Ada',

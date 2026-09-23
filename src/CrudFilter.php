@@ -19,6 +19,12 @@ final class CrudFilter
 
     private string $operator = '=';
 
+    private bool $operatorConfigured = false;
+
+    private bool $startsWith = false;
+
+    private bool $endsWith = false;
+
     private ?string $relation = null;
 
     private string $relationColumn = 'id';
@@ -85,6 +91,28 @@ final class CrudFilter
     {
         $this->type = 'text';
         $this->multiple = false;
+        $this->startsWith = false;
+        $this->endsWith = false;
+
+        return $this;
+    }
+
+    public function startsWith(): self
+    {
+        $this->type = 'text';
+        $this->multiple = false;
+        $this->startsWith = true;
+        $this->endsWith = false;
+
+        return $this;
+    }
+
+    public function endsWith(): self
+    {
+        $this->type = 'text';
+        $this->multiple = false;
+        $this->startsWith = false;
+        $this->endsWith = true;
 
         return $this;
     }
@@ -199,8 +227,14 @@ final class CrudFilter
     public function operator(string $operator): self
     {
         $this->operator = in_array($operator, self::OPERATORS, true) ? $operator : '=';
+        $this->operatorConfigured = true;
 
         return $this;
+    }
+
+    public function hasExplicitOperator(): bool
+    {
+        return $this->operatorConfigured;
     }
 
     public function relation(string $relation, string $column = 'id'): self
@@ -351,6 +385,16 @@ final class CrudFilter
     public function comparisonOperator(): string
     {
         return $this->operator;
+    }
+
+    public function isStartsWith(): bool
+    {
+        return $this->startsWith;
+    }
+
+    public function isEndsWith(): bool
+    {
+        return $this->endsWith;
     }
 
     public function isRelation(): bool

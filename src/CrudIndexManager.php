@@ -339,11 +339,39 @@ class CrudIndexManager
         }
 
         match ($filter->type()) {
-            'text' => $query->where($filter->column(), 'like', '%'.(string) $value.'%'),
+            'text' => $this->applyTextFilter($query, $filter, $value),
             'date' => $query->whereDate($filter->column(), $filter->comparisonOperator(), $value),
             'time' => $query->whereTime($filter->column(), $filter->comparisonOperator(), $value),
             default => $query->where($filter->column(), $filter->comparisonOperator(), $value),
         };
+    }
+
+    /**
+     * @param  Builder<Model>  $query
+     */
+    private function applyTextFilter(Builder $query, CrudFilter $filter, mixed $value): void
+    {
+        $value = (string) $value;
+
+        if ($filter->isStartsWith()) {
+            $query->where($filter->column(), 'like', $this->escapeLikeTerm($value).'%');
+
+            return;
+        }
+
+        if ($filter->isEndsWith()) {
+            $query->where($filter->column(), 'like', '%'.$this->escapeLikeTerm($value));
+
+            return;
+        }
+
+        if ($filter->hasExplicitOperator()) {
+            $query->where($filter->column(), $filter->comparisonOperator(), $value);
+
+            return;
+        }
+
+        $query->where($filter->column(), 'like', '%'.$value.'%');
     }
 
     /**

@@ -35,6 +35,20 @@ test('crud filters support date, time, and datetime values', function () {
         ->and(CrudFilter::make('starts_on')->datetime()->type())->toBe('datetime');
 });
 
+test('crud filters can be configured as a prefix text filter', function () {
+    $filter = CrudFilter::make('number')->startsWith();
+
+    expect($filter->type())->toBe('text')
+        ->and($filter->isStartsWith())->toBeTrue();
+});
+
+test('crud filters can be configured as a suffix text filter', function () {
+    $filter = CrudFilter::make('number')->endsWith();
+
+    expect($filter->type())->toBe('text')
+        ->and($filter->isEndsWith())->toBeTrue();
+});
+
 test('crud filters can be configured as a number filter', function () {
     $filter = CrudFilter::make('age')->number();
 
