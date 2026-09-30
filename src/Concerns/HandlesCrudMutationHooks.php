@@ -4,6 +4,7 @@ namespace Modules\Crud\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** @phpstan-ignore trait.unused (Public opt-in trait for CRUD definition classes.) */
 trait HandlesCrudMutationHooks
 {
     /**

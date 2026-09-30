@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 
+/** @phpstan-ignore trait.unused (Public opt-in trait for CRUD definition classes.) */
 trait HandlesCrudPaginationHooks
 {
     /**

@@ -76,6 +76,22 @@ test('crud install copies the local time composable when it is missing', functio
     }
 });
 
+test('crud install includes the full-screen mobile picker used by CRUD fields and filters', function () {
+    $source = dirname(__DIR__, 3).'/resources/js/components/crud/MobileCrudPicker.vue';
+    $target = base_path('resources/js/components/crud/MobileCrudPicker.vue');
+
+    File::delete($target);
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        expect(File::get($target))->toBe(File::get($source));
+    } finally {
+        File::delete($target);
+    }
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $panel = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPanel.vue');

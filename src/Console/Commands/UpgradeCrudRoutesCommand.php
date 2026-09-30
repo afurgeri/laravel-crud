@@ -25,7 +25,7 @@ class UpgradeCrudRoutesCommand extends Command
     public function handle(): int
     {
         $resource = $this->argument('resource');
-        $resource = is_string($resource) && trim($resource) !== '' ? trim($resource) : null;
+        $resource = trim($resource) !== '' ? trim($resource) : null;
         $modelOption = $this->option('model');
         $modelOption = is_string($modelOption) && trim($modelOption) !== ''
             ? ltrim(trim($modelOption), '\\')

@@ -3,6 +3,7 @@ import { X } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
+import MobileCrudPicker from '@/components/crud/MobileCrudPicker.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import InputError from '@/components/InputError.vue';
@@ -645,13 +646,44 @@ function clearValue(): void {
                     :value="value"
                 />
             </template>
+            <MobileCrudPicker
+                v-if="!$slots.default && ['select', 'combobox'].includes(field.type) && !field.multiple"
+                v-model="selectValue"
+                :id="fieldId"
+                :options="availableOptions"
+                :placeholder="field.label"
+                :disabled="disabled"
+                :invalid="Boolean(error)"
+                :searchable="field.type === 'combobox'"
+            />
+            <MobileCrudPicker
+                v-if="!$slots.default && ['select', 'combobox'].includes(field.type) && field.multiple"
+                v-model="multipleValues"
+                :id="fieldId"
+                :options="availableOptions"
+                :placeholder="field.label"
+                :disabled="disabled"
+                :invalid="Boolean(error)"
+                :searchable="field.type === 'combobox'"
+                multiple
+            />
+            <MobileCrudPicker
+                v-if="!$slots.default && field.type === 'remote-select'"
+                v-model="remoteSelectValue"
+                :id="fieldId"
+                :remote="field.remote!"
+                :dependencies="dependencyValues"
+                :placeholder="field.label"
+                :disabled="disabled"
+                :invalid="Boolean(error)"
+            />
             <div
                 v-if="
                     !$slots.default &&
                     field.type === 'select' &&
                     !field.multiple
                 "
-                class="relative"
+                class="relative max-sm:hidden"
             >
                 <Select v-model="selectValue" :disabled="disabled">
                     <SelectTrigger
@@ -687,7 +719,7 @@ function clearValue(): void {
                 v-if="
                     !$slots.default && field.type === 'select' && field.multiple
                 "
-                class="relative"
+                class="relative max-sm:hidden"
             >
                 <CrudSelectMultiple
                     v-model="multipleValues"
@@ -713,7 +745,7 @@ function clearValue(): void {
                     field.type === 'combobox' &&
                     !field.multiple
                 "
-                class="relative"
+                class="relative max-sm:hidden"
             >
                 <CrudCombobox
                     v-model="selectValue"
@@ -739,7 +771,7 @@ function clearValue(): void {
                     field.type === 'combobox' &&
                     field.multiple
                 "
-                class="relative"
+                class="relative max-sm:hidden"
             >
                 <CrudComboboxMultiple
                     v-model="multipleValues"
@@ -761,7 +793,7 @@ function clearValue(): void {
             </div>
             <div
                 v-if="!$slots.default && field.type === 'remote-select'"
-                class="relative"
+                class="relative max-sm:hidden"
             >
                 <RemoteCombobox
                     v-model="remoteSelectValue"

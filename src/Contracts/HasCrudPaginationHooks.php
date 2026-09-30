@@ -14,5 +14,8 @@ interface HasCrudPaginationHooks
      */
     public function beforePaginate(Builder $query): void;
 
+    /**
+     * @param  LengthAwarePaginator<int, Model>|Paginator<int, Model>  $paginator
+     */
     public function afterPaginate(LengthAwarePaginator|Paginator $paginator): void;
 }

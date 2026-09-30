@@ -5,6 +5,7 @@ import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
 import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import CrudTemporalInput from '@/components/crud/CrudTemporalInput.vue';
+import MobileCrudPicker from '@/components/crud/MobileCrudPicker.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -313,8 +314,20 @@ function clearFilter(filter: CrudFilter | string): void {
                         >
 
                         <div class="relative w-full">
+                            <MobileCrudPicker
+                                v-if="['select', 'combobox', 'remote-select'].includes(entry.filter.type)"
+                                :id="`filter-${entry.filter.name}`"
+                                :model-value="entry.filter.multiple ? filterArrayValue(entry.filter.name) : filterTextValue(entry.filter.name)"
+                                :options="entry.filter.options ?? []"
+                                :remote="entry.filter.remote"
+                                :placeholder="entry.filter.label"
+                                :multiple="entry.filter.multiple"
+                                :searchable="entry.filter.type === 'combobox'"
+                                @update:model-value="(value) => emit('filter', entry.filter.name, value, true)"
+                            />
                             <RemoteCombobox
                                 v-if="entry.filter.type === 'remote-select'"
+                                class="max-sm:hidden"
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
                                     filterTextValue(entry.filter.name)
@@ -336,6 +349,7 @@ function clearFilter(filter: CrudFilter | string): void {
                                     entry.filter.type === 'combobox' &&
                                     !entry.filter.multiple
                                 "
+                                class="max-sm:hidden"
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
                                     filterTextValue(entry.filter.name) ||
@@ -358,6 +372,7 @@ function clearFilter(filter: CrudFilter | string): void {
                                     entry.filter.type === 'combobox' &&
                                     entry.filter.multiple
                                 "
+                                class="max-sm:hidden"
                                 :id="`filter-${entry.filter.name}`"
                                 :model-value="
                                     filterArrayValue(entry.filter.name)
@@ -395,7 +410,7 @@ function clearFilter(filter: CrudFilter | string): void {
                             >
                                 <SelectTrigger
                                     :id="`filter-${entry.filter.name}`"
-                                    class="w-full"
+                                    class="w-full max-sm:hidden"
                                 >
                                     <SelectValue
                                         :placeholder="t(entry.filter.label)"

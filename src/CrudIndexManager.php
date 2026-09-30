@@ -175,6 +175,7 @@ class CrudIndexManager
         try {
             $key = new ObjectId($search);
         } catch (InvalidArgumentException) {
+            /** @phpstan-ignore argument.type (MongoDB accepts a query document as the raw expression.) */
             $query->orWhereRaw(['_id' => ['$in' => []]]);
 
             return;
@@ -372,17 +373,6 @@ class CrudIndexManager
         }
 
         $query->where($filter->column(), 'like', '%'.$value.'%');
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function visibleColumnNames(CrudDefinition $definition): array
-    {
-        return $this->columnNamesWhere(
-            $definition,
-            fn (CrudColumn $column): bool => $column->isVisible() && ! $column->isComputed(),
-        );
     }
 
     /**
