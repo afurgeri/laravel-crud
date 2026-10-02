@@ -19,6 +19,7 @@ class CrudTestRecord extends Model implements HasCrudDefinitionContract
     protected $casts = [
         'is_active' => 'boolean',
         'duration_minutes' => 'integer',
+        'starts_at' => 'datetime',
     ];
 
     public static function crudDefinition(): string

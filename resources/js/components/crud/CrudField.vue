@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { formatCrudDateTimeLocal } from '@/composables/useCrudTemporal';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField, CrudFieldSlotProps } from '@/types/crud';
 
@@ -354,39 +355,7 @@ function fieldInputValue(
         return normalized;
     }
 
-    return formatDateTimeLocal(normalized, field.timezone);
-}
-
-function formatDateTimeLocal(
-    value: string,
-    timezone = 'America/Argentina/Buenos_Aires',
-): string {
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
-        return value.slice(0, 16);
-    }
-
-    const timestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(value)
-        ? Date.parse(`${value.replace(' ', 'T')}Z`)
-        : Date.parse(value);
-
-    if (Number.isNaN(timestamp)) {
-        return value.slice(0, 16);
-    }
-
-    const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hourCycle: 'h23',
-    }).formatToParts(timestamp);
-    const values = Object.fromEntries(
-        parts.map(({ type, value: partValue }) => [type, partValue]),
-    );
-
-    return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}`;
+    return formatCrudDateTimeLocal(normalized, field.timezone ?? 'UTC');
 }
 
 function spanClasses(span: CrudField['span']): string[] {

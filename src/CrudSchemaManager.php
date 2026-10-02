@@ -63,7 +63,7 @@ class CrudSchemaManager
             'description' => $definition->description(),
             'empty_label' => $definition->emptyLabel(),
             'columns' => array_map(
-                fn (CrudColumn $column): array => $this->columnSchema($column),
+                fn (CrudColumn $column): array => $this->columnSchema($column, $definition->fields()),
                 array_values(array_filter(
                     $definition->columns(),
                     fn (CrudColumn $column): bool => $column->isVisible(),
@@ -114,9 +114,10 @@ class CrudSchemaManager
     }
 
     /**
-     * @return array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}
+     * @param  list<CrudField>  $fields
+     * @return array{name: string, label: string, sortable: bool, type?: 'date'|'time'|'datetime', timezone?: string, width?: string, min_width?: string, max_width?: string, fixed?: bool}
      */
-    private function columnSchema(CrudColumn $column): array
+    private function columnSchema(CrudColumn $column, array $fields): array
     {
         $schema = [
             'name' => $column->name(),
@@ -138,6 +139,15 @@ class CrudSchemaManager
 
         if ($column->hasFixedWidth()) {
             $schema['fixed'] = true;
+        }
+
+        $temporalType = $column->temporalType() ?? collect($fields)
+            ->first(fn (CrudField $field): bool => $field->name() === $column->name())
+            ?->type();
+
+        if (in_array($temporalType, ['date', 'time', 'datetime'], true)) {
+            $schema['type'] = $temporalType;
+            $schema['timezone'] = CrudTemporal::displayTimezone();
         }
 
         return $schema;

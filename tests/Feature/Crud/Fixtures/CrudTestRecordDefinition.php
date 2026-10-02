@@ -34,6 +34,7 @@ class CrudTestRecordDefinition implements CrudDefinition
             CrudColumn::make('id')->sortable(),
             CrudColumn::make('name')->sortable(),
             CrudColumn::make('email'),
+            CrudColumn::make('starts_at')->datetime(),
             CrudColumn::make('internal_notes')->hidden(),
         ];
     }
@@ -45,6 +46,7 @@ class CrudTestRecordDefinition implements CrudDefinition
             CrudField::make('email', ['required', 'email', 'max:255'])->unique(),
             CrudField::make('is_active', ['nullable', 'boolean'])->checkbox(),
             CrudField::make('duration_minutes', ['nullable', 'integer'])->number(),
+            CrudField::make('starts_at', ['nullable', 'date'])->datetime(),
             CrudField::make('attachment', ['nullable'])->file(),
         ];
     }

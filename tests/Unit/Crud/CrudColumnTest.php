@@ -55,3 +55,9 @@ test('crud columns can define a fixed width', function () {
         ->and($column->maxWidthValue())->toBe('5rem')
         ->and($column->hasFixedWidth())->toBeTrue();
 });
+
+test('crud columns can declare temporal types', function () {
+    expect(CrudColumn::make('starts_on')->date()->temporalType())->toBe('date')
+        ->and(CrudColumn::make('starts_at')->time()->temporalType())->toBe('time')
+        ->and(CrudColumn::make('scheduled_at')->datetime()->temporalType())->toBe('datetime');
+});

@@ -76,6 +76,22 @@ test('crud install copies the local time composable when it is missing', functio
     }
 });
 
+test('crud install copies the CRUD temporal composable when it is missing', function () {
+    $target = base_path('resources/js/composables/useCrudTemporal.ts');
+
+    File::delete($target);
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        expect(File::exists($target))->toBeTrue()
+            ->and(File::get($target))->toContain('formatCrudDateTimeLocal');
+    } finally {
+        File::delete($target);
+    }
+});
+
 test('crud install includes the full-screen mobile picker used by CRUD fields and filters', function () {
     $source = dirname(__DIR__, 3).'/resources/js/components/crud/MobileCrudPicker.vue';
     $target = base_path('resources/js/components/crud/MobileCrudPicker.vue');
@@ -137,6 +153,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($table)
         ->toContain('md:hidden')
         ->toContain('animate-pulse')
+        ->toContain('formatCrudTemporalValue')
         ->and($panel)
         ->toContain('panelKey: string;')
         ->toContain('embedded')
@@ -154,6 +171,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('spanClasses(field.span)')
         ->toContain('class="contents"')
         ->toContain('field.confirmed && !$slots.default && !readOnly')
+        ->toContain('formatCrudDateTimeLocal')
         ->and(File::exists(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFormPage.vue'))->toBeTrue()
         ->and($field)
         ->toContain('CrudFieldSlotProps')

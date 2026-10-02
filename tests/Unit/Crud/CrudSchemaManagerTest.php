@@ -1223,3 +1223,47 @@ test('filters is empty when a definition does not declare any', function () {
 
     expect($schema['filters'])->toBe([]);
 });
+
+test('it adds temporal metadata to datetime columns using the application timezone', function () {
+    config()->set('app.timezone', 'America/Argentina/Buenos_Aires');
+
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Appointments';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [CrudColumn::make('starts_at')->datetime()];
+        }
+
+        public function fields(): array
+        {
+            return [];
+        }
+    };
+
+    expect(app(CrudSchemaManager::class)->for($definition, 'appointments')['columns'][0])
+        ->toMatchArray([
+            'name' => 'starts_at',
+            'type' => 'datetime',
+            'timezone' => 'America/Argentina/Buenos_Aires',
+        ]);
+});

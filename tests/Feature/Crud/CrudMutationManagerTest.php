@@ -3,6 +3,7 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Modules\Crud\CrudMutationManager;
+use Modules\Crud\CrudRecordSerializer;
 use Tests\Feature\Crud\Fixtures\CreatesCrudTestRecordsTable;
 use Tests\Feature\Crud\Fixtures\CrudTestRecord;
 use Tests\Feature\Crud\Fixtures\CrudTestRecordAuthorizedDefinition;
@@ -60,6 +61,27 @@ test('it normalizes casted values before persisting records', function () {
 
     expect($record->getRawOriginal('is_active'))->toBeTrue()
         ->and($record->getRawOriginal('duration_minutes'))->toBe(15);
+});
+
+test('it persists CRUD datetimes as UTC and serializes them with the application timezone', function () {
+    config()->set('app.timezone', 'America/Argentina/Buenos_Aires');
+
+    $record = app(CrudMutationManager::class)->create(
+        definition: new CrudTestRecordDefinition,
+        data: [
+            'name' => 'Ada',
+            'email' => 'ada@example.com',
+            'starts_at' => '2026-08-08T15:00',
+        ],
+    );
+
+    $serialized = app(CrudRecordSerializer::class)->serialize(
+        $record->refresh(),
+        new CrudTestRecordDefinition,
+    );
+
+    expect($record->getRawOriginal('starts_at'))->toBe('2026-08-08 18:00:00')
+        ->and($serialized['starts_at'])->toBe('2026-08-08T15:00:00-03:00');
 });
 
 test('it normalizes unchecked boolean values before persisting records', function () {

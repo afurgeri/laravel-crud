@@ -22,6 +22,8 @@ final class CrudColumn
 
     private bool $fixedWidth = false;
 
+    private ?string $temporalType = null;
+
     private function __construct(private readonly string $name) {}
 
     public static function make(string $name): self
@@ -126,6 +128,33 @@ final class CrudColumn
     public function searchable(bool $searchable = true): self
     {
         $this->searchable = $searchable;
+
+        return $this;
+    }
+
+    public function date(): self
+    {
+        return $this->temporal('date');
+    }
+
+    public function time(): self
+    {
+        return $this->temporal('time');
+    }
+
+    public function datetime(): self
+    {
+        return $this->temporal('datetime');
+    }
+
+    public function temporalType(): ?string
+    {
+        return $this->temporalType;
+    }
+
+    private function temporal(string $type): self
+    {
+        $this->temporalType = $type;
 
         return $this;
     }

@@ -28,6 +28,8 @@ export type CrudColumn = {
     min_width?: string;
     max_width?: string;
     fixed?: boolean;
+    type?: CrudTemporalType;
+    timezone?: string;
 };
 
 export type CrudField = {

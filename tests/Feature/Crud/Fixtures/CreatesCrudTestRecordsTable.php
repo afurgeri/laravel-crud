@@ -27,6 +27,7 @@ trait CreatesCrudTestRecordsTable
             $table->boolean('is_active')->nullable();
             $table->unsignedInteger('duration_minutes')->nullable();
             $table->decimal('amount', 8, 2)->nullable();
+            $table->dateTime('starts_at')->nullable();
             $table->text('internal_notes')->nullable();
             $table->timestamps();
         });

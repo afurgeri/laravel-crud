@@ -232,7 +232,7 @@ test('it keeps all model attributes available to the index mapping layer', funct
     $record = $paginator->items()[0];
 
     expect(array_keys($record->getAttributes()))
-        ->toEqualCanonicalizing(['id', 'name', 'email', 'professional_id', 'is_active', 'duration_minutes', 'amount', 'internal_notes', 'created_at', 'updated_at']);
+        ->toEqualCanonicalizing(['id', 'name', 'email', 'professional_id', 'is_active', 'duration_minutes', 'amount', 'starts_at', 'internal_notes', 'created_at', 'updated_at']);
 });
 
 test('it keeps foreign keys available for eager loaded belongs to relations', function () {
