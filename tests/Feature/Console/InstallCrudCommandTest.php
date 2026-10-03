@@ -70,7 +70,8 @@ test('crud install copies the local time composable when it is missing', functio
             ->assertExitCode(0);
 
         expect(File::exists($target))->toBeTrue()
-            ->and(File::get($target))->toContain('export function useLocalTime()');
+            ->and(File::get($target))->toContain('export function useLocalTime()')
+            ->toContain('const dateOnlyMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(input);');
     } finally {
         File::delete($target);
     }

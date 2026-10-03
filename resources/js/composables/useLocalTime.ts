@@ -29,6 +29,15 @@ function parseUtcDate(value: DateInput): Date | undefined {
     }
 
     const input = value.trim();
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input);
+
+    if (dateOnlyMatch) {
+        const [, year, month, day] = dateOnlyMatch;
+        const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+        return Number.isNaN(date.getTime()) ? undefined : date;
+    }
+
     const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(input);
     const date = new Date(hasTimezone ? input : `${input}Z`);
 
