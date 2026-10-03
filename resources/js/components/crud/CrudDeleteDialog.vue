@@ -2,6 +2,7 @@
 import { Form } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
+import type { Component } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -29,11 +30,13 @@ withDefaults(
         description?: string;
         confirmLabel?: string;
         cancelLabel?: string;
+        icon?: Component;
     }>(),
     {
         description: undefined,
         confirmLabel: undefined,
         cancelLabel: undefined,
+        icon: Trash2,
     },
 );
 
@@ -52,7 +55,7 @@ const { t } = useTranslation();
                         size="icon-sm"
                         :aria-label="triggerLabel"
                     >
-                        <Trash2 class="size-4" />
+                        <component :is="icon" class="size-4" />
                     </Button>
                 </DialogTrigger>
             </TooltipTrigger>

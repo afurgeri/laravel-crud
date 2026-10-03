@@ -1,4 +1,5 @@
 import type { Method } from '@inertiajs/core';
+import type { Component } from 'vue';
 
 export type CrudHref =
     | string
@@ -198,6 +199,8 @@ export type CrudCreateConfig = {
     submitLabel?: string;
 };
 
+export type CrudOperationIcon = Component;
+
 export type CrudEditConfig<T extends CrudRecord> = {
     action: (record: T) => FormAction;
     href?: (record: T) => CrudHref;
@@ -206,6 +209,7 @@ export type CrudEditConfig<T extends CrudRecord> = {
     title?: (record: T) => string;
     description?: string;
     submitLabel?: string;
+    icon?: CrudOperationIcon;
 };
 
 export type CrudShowConfig<T extends CrudRecord> = {
@@ -213,6 +217,7 @@ export type CrudShowConfig<T extends CrudRecord> = {
     can?: (record: T) => boolean;
     label?: string;
     title?: (record: T) => string;
+    icon?: CrudOperationIcon;
 };
 
 export type CrudDestroyConfig<T extends CrudRecord> = {
@@ -223,4 +228,5 @@ export type CrudDestroyConfig<T extends CrudRecord> = {
     description?: string;
     confirmLabel?: string;
     cancelLabel?: string;
+    icon?: CrudOperationIcon;
 };

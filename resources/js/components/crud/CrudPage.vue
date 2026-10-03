@@ -530,7 +530,10 @@ function handleClearFilters(): void {
                                     :aria-label="show.label ?? t('Show')"
                                     :title="show.title?.(record) ?? t('Show')"
                                 >
-                                    <Eye class="size-4" />
+                                    <component
+                                        :is="show.icon ?? Eye"
+                                        class="size-4"
+                                    />
                                 </Link>
                             </TooltipTrigger>
                             <TooltipContent>{{
@@ -553,7 +556,10 @@ function handleClearFilters(): void {
                                     :aria-label="edit.label ?? t('Edit')"
                                     :title="editRecordTitle(record)"
                                 >
-                                    <Pencil class="size-4" />
+                                    <component
+                                        :is="edit.icon ?? Pencil"
+                                        class="size-4"
+                                    />
                                 </Link>
                             </TooltipTrigger>
                             <TooltipContent>{{
@@ -582,7 +588,10 @@ function handleClearFilters(): void {
                                     size="icon-sm"
                                     :aria-label="edit.label ?? t('Edit')"
                                 >
-                                    <Pencil class="size-4" />
+                                    <component
+                                        :is="edit.icon ?? Pencil"
+                                        class="size-4"
+                                    />
                                 </Button>
                             </template>
                             <template
@@ -625,6 +634,7 @@ function handleClearFilters(): void {
                                 t('Delete')
                             "
                             :cancel-label="destroy.cancelLabel ?? t('Cancel')"
+                            :icon="destroy.icon"
                         />
 
                         <span

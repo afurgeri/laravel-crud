@@ -222,7 +222,13 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain("form_mode: 'dialog' | 'page';")
         ->toContain('operations:')
         ->toContain('export type CrudShowConfig<T extends CrudRecord>')
-        ->toContain('id: string | number;');
+        ->toContain('export type CrudOperationIcon = Component;')
+        ->toContain('icon?: CrudOperationIcon;')
+        ->toContain('id: string | number;')
+        ->and($page)
+        ->toContain(':is="show.icon ?? Eye"')
+        ->toContain(':is="edit.icon ?? Pencil"')
+        ->toContain(':icon="destroy.icon"');
 });
 
 test('crud frontend resources expose the translation helper and catalog', function () {
