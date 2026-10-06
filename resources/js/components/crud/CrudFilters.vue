@@ -8,7 +8,6 @@ import CrudTemporalInput from '@/components/crud/CrudTemporalInput.vue';
 import MobileCrudPicker from '@/components/crud/MobileCrudPicker.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -34,6 +33,7 @@ const props = defineProps<{
     searchValue: string;
     filterValues: Record<string, CrudFilterValue>;
     clearLabel?: string;
+    hideSearch?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -262,12 +262,12 @@ function clearFilter(filter: CrudFilter | string): void {
 <template>
     <div>
         <div
-            v-if="search.enabled || filters.length > 0"
+            v-if="(search.enabled && !hideSearch) || filters.length > 0"
             class="flex flex-col gap-4 rounded-xl bg-card p-4"
         >
             <div class="grid grid-cols-12 items-start gap-4">
                 <div
-                    v-if="search.enabled"
+                    v-if="search.enabled && !hideSearch"
                     :class="[
                         'flex w-full flex-col gap-2',
                         spanClasses(search.span),
@@ -315,15 +315,33 @@ function clearFilter(filter: CrudFilter | string): void {
 
                         <div class="relative w-full">
                             <MobileCrudPicker
-                                v-if="['select', 'combobox', 'remote-select'].includes(entry.filter.type)"
+                                v-if="
+                                    [
+                                        'select',
+                                        'combobox',
+                                        'remote-select',
+                                    ].includes(entry.filter.type)
+                                "
                                 :id="`filter-${entry.filter.name}`"
-                                :model-value="entry.filter.multiple ? filterArrayValue(entry.filter.name) : filterTextValue(entry.filter.name)"
+                                :model-value="
+                                    entry.filter.multiple
+                                        ? filterArrayValue(entry.filter.name)
+                                        : filterTextValue(entry.filter.name)
+                                "
                                 :options="entry.filter.options ?? []"
                                 :remote="entry.filter.remote"
                                 :placeholder="entry.filter.label"
                                 :multiple="entry.filter.multiple"
                                 :searchable="entry.filter.type === 'combobox'"
-                                @update:model-value="(value) => emit('filter', entry.filter.name, value, true)"
+                                @update:model-value="
+                                    (value) =>
+                                        emit(
+                                            'filter',
+                                            entry.filter.name,
+                                            value,
+                                            true,
+                                        )
+                                "
                             />
                             <RemoteCombobox
                                 v-if="entry.filter.type === 'remote-select'"

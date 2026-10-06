@@ -118,7 +118,13 @@ function fieldDefault(
                 :field-id-prefix="fieldIdPrefix"
                 :fields-after="fieldsAfter"
                 form-class="grid w-full grid-cols-12 gap-6"
+                guard-navigation
             >
+                <template #cancel>
+                    <Button as-child variant="outline">
+                        <Link :href="backHref">{{ t('Cancel') }}</Link>
+                    </Button>
+                </template>
                 <template
                     v-for="field in (fields ?? schema.fields).filter((field) =>
                         hasFieldSlot(field.name),

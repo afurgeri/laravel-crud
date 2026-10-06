@@ -3,9 +3,9 @@ import { X } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CrudCombobox from '@/components/crud/CrudCombobox.vue';
 import CrudComboboxMultiple from '@/components/crud/CrudComboboxMultiple.vue';
+import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import MobileCrudPicker from '@/components/crud/MobileCrudPicker.vue';
 import RemoteCombobox from '@/components/crud/RemoteCombobox.vue';
-import CrudSelectMultiple from '@/components/crud/CrudSelectMultiple.vue';
 import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -163,6 +163,8 @@ const textareaClearButtonClass =
 const fieldId = computed(() =>
     props.idPrefix ? `${props.idPrefix}-${props.field.name}` : props.field.name,
 );
+
+const errorId = computed(() => `${fieldId.value}-error`);
 
 const dependencyValues = computed(() =>
     Object.fromEntries(
@@ -454,7 +456,15 @@ function clearValue(): void {
 <template>
     <div v-if="field.visible" class="contents">
         <div :class="['space-y-2', spanClasses(field.span)]">
-            <Label :for="fieldId" :class="labelClass">{{ field.label }}</Label>
+            <Label :for="fieldId" :class="labelClass"
+                >{{ field.label
+                }}<span
+                    v-if="field.required && !readOnly"
+                    class="ml-0.5 text-destructive"
+                    aria-hidden="true"
+                    >*</span
+                ></Label
+            >
             <slot
                 v-if="$slots.default"
                 v-bind="{
@@ -517,7 +527,9 @@ function clearValue(): void {
                                 v-if="hasClearableValue"
                                 type="button"
                                 :class="clearButtonClass"
-                                :aria-label="t('Clear :label', { label: field.label })"
+                                :aria-label="
+                                    t('Clear :label', { label: field.label })
+                                "
                                 @click="clearValue"
                             >
                                 <X class="size-3.5" />
@@ -577,6 +589,7 @@ function clearValue(): void {
                     v-model="checkboxValue"
                     :disabled="disabled"
                     :aria-invalid="error ? 'true' : undefined"
+                    :aria-describedby="error ? errorId : undefined"
                 />
                 <button
                     v-if="hasClearableValue"
@@ -616,7 +629,11 @@ function clearValue(): void {
                 />
             </template>
             <MobileCrudPicker
-                v-if="!$slots.default && ['select', 'combobox'].includes(field.type) && !field.multiple"
+                v-if="
+                    !$slots.default &&
+                    ['select', 'combobox'].includes(field.type) &&
+                    !field.multiple
+                "
                 v-model="selectValue"
                 :id="fieldId"
                 :options="availableOptions"
@@ -626,7 +643,11 @@ function clearValue(): void {
                 :searchable="field.type === 'combobox'"
             />
             <MobileCrudPicker
-                v-if="!$slots.default && ['select', 'combobox'].includes(field.type) && field.multiple"
+                v-if="
+                    !$slots.default &&
+                    ['select', 'combobox'].includes(field.type) &&
+                    field.multiple
+                "
                 v-model="multipleValues"
                 :id="fieldId"
                 :options="availableOptions"
@@ -661,6 +682,7 @@ function clearValue(): void {
                         "
                         class="w-full"
                         :aria-invalid="error ? 'true' : undefined"
+                        :aria-describedby="error ? errorId : undefined"
                     >
                         <SelectValue :placeholder="field.label" />
                     </SelectTrigger>
@@ -792,6 +814,7 @@ function clearValue(): void {
                     :required="field.required"
                     :disabled="disabled"
                     :aria-invalid="error ? 'true' : undefined"
+                    :aria-describedby="error ? errorId : undefined"
                     :class="hasClearableValue ? 'pr-9' : undefined"
                     v-model="textValue"
                 />
@@ -813,6 +836,7 @@ function clearValue(): void {
                 :required="field.required"
                 :disabled="disabled"
                 :aria-invalid="error ? 'true' : undefined"
+                :aria-describedby="error ? errorId : undefined"
             />
             <div
                 v-if="
@@ -840,6 +864,7 @@ function clearValue(): void {
                         field.type === 'password' ? 'new-password' : undefined
                     "
                     :aria-invalid="error ? 'true' : undefined"
+                    :aria-describedby="error ? errorId : undefined"
                     :class="inputClassForField(field)"
                     v-model="textValue"
                 />
@@ -859,7 +884,9 @@ function clearValue(): void {
                 :name="`${field.name}__clear`"
                 value="1"
             />
-            <InputError :message="arrayInputError ?? error" />
+            <div :id="errorId" role="alert">
+                <InputError :message="arrayInputError ?? error" />
+            </div>
         </div>
 
         <div

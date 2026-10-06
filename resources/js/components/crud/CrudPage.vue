@@ -7,7 +7,9 @@ import {
     Eye,
     Pencil,
     Plus,
+    Search,
     SlidersHorizontal,
+    X,
 } from '@lucide/vue';
 import { computed, reactive, ref, useSlots } from 'vue';
 import CrudCellValue from '@/components/crud/CrudCellValue.vue';
@@ -17,6 +19,14 @@ import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
 import CrudTable from '@/components/crud/CrudTable.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Tooltip,
     TooltipContent,
@@ -186,8 +196,35 @@ const activeFilterCount = computed(
             ([name, value]) =>
                 !Object.hasOwn(props.fixedFilters, name) &&
                 hasFilterValue(value),
-        ).length + (searchValue.value !== '' ? 1 : 0),
+        ).length,
 );
+
+const hasActiveQuery = computed(
+    () => activeFilterCount.value > 0 || searchValue.value !== '',
+);
+
+const searchPlaceholder = computed(() => {
+    const fields = props.schema.search.fields ?? [];
+
+    if (fields.length === 0) {
+        return t('Search records...');
+    }
+
+    const shown = fields
+        .slice(0, 4)
+        .map((field) => t(field).toLocaleLowerCase())
+        .join(', ');
+
+    return t('Search by :fields', {
+        fields: fields.length > 4 ? `${shown}…` : shown,
+    });
+});
+
+const defaultPerPage = props.records.per_page;
+const perPageOptions = [...new Set([10, 25, 50, 100, defaultPerPage])].sort(
+    (a, b) => a - b,
+);
+const perPage = ref(props.records.per_page);
 
 let navigateTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -197,6 +234,7 @@ type CrudQuery = {
     direction?: 'asc' | 'desc';
     search?: string;
     filters?: Record<string, CrudFilterValue>;
+    per_page?: number;
 };
 
 function filterSchemaValue(
@@ -231,6 +269,10 @@ function navigate(page = 1): void {
 
     if (searchValue.value) {
         query.search = searchValue.value;
+    }
+
+    if (perPage.value !== defaultPerPage) {
+        query.per_page = perPage.value;
     }
 
     const activeFilters = Object.fromEntries(
@@ -295,6 +337,31 @@ const isLengthAwarePaginator = computed(
 function navigateDebounced(): void {
     clearTimeout(navigateTimer);
     navigateTimer = setTimeout(navigate, 400);
+}
+
+function handlePerPage(value: unknown): void {
+    const next = Number(value);
+
+    if (!Number.isInteger(next) || next === perPage.value) {
+        return;
+    }
+
+    perPage.value = next;
+    navigate();
+}
+
+function canClickRow(record: T): boolean {
+    return Boolean(props.show) && canShowRecord(record);
+}
+
+function openRecord(record: T): void {
+    if (!props.show) {
+        return;
+    }
+
+    const href = props.show.href(record);
+
+    router.visit(typeof href === 'string' ? href : href.url);
 }
 
 function handleSort(column: string): void {
@@ -444,41 +511,84 @@ function handleClearFilters(): void {
                 :sort="schema.sort"
                 :loading="isLoading"
                 :empty-label="schema.empty_label ?? t('No records found.')"
+                :clickable="canClickRow"
                 @sort="handleSort"
+                @row-click="openRecord"
             >
                 <template
                     v-if="schema.search?.enabled || visibleFilters.length > 0"
                     #toolbar
                 >
                     <div
-                        class="flex items-center justify-end border-b border-border/70 px-3 py-2 sm:px-4"
+                        class="flex flex-col gap-2 border-b border-border/70 px-3 py-2 sm:flex-row sm:items-center sm:px-4"
                     >
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            :aria-expanded="filtersOpen"
-                            :aria-controls="`${schema.resource}-filters`"
-                            class="gap-2 text-muted-foreground hover:text-foreground"
-                            @click="filtersOpen = !filtersOpen"
+                        <div
+                            v-if="schema.search?.enabled"
+                            class="relative min-w-0 flex-1"
                         >
-                            <SlidersHorizontal class="size-3.5" />
-                            {{ t('Filters') }}
-                            <Badge
-                                v-if="activeFilterCount > 0"
-                                variant="secondary"
-                                class="min-w-5 justify-center rounded-full px-1.5 text-[10px]"
-                            >
-                                {{ activeFilterCount }}
-                            </Badge>
-                            <ChevronDown
-                                class="size-3.5 transition-transform duration-300 ease-out"
-                                :class="filtersOpen && 'rotate-180'"
+                            <Search
+                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                aria-hidden="true"
                             />
-                        </Button>
+                            <Input
+                                :id="`${schema.resource}-search`"
+                                type="search"
+                                :model-value="searchValue"
+                                :placeholder="searchPlaceholder"
+                                :aria-label="t('Search')"
+                                class="w-full bg-muted/40 pl-9"
+                                @update:model-value="
+                                    (value) => handleSearch(String(value))
+                                "
+                            />
+                        </div>
+
+                        <div
+                            :class="[
+                                'flex items-center justify-end gap-2',
+                                !schema.search?.enabled && 'w-full',
+                            ]"
+                        >
+                            <Button
+                                v-if="hasActiveQuery"
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                class="gap-1.5 text-muted-foreground hover:text-foreground"
+                                @click="handleClearFilters"
+                            >
+                                <X class="size-3.5" />
+                                {{ t('Clear filters') }}
+                            </Button>
+                            <Button
+                                v-if="visibleFilters.length > 0"
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                :aria-expanded="filtersOpen"
+                                :aria-controls="`${schema.resource}-filters`"
+                                class="gap-2 text-muted-foreground hover:text-foreground"
+                                @click="filtersOpen = !filtersOpen"
+                            >
+                                <SlidersHorizontal class="size-3.5" />
+                                {{ t('Filters') }}
+                                <Badge
+                                    v-if="activeFilterCount > 0"
+                                    variant="secondary"
+                                    class="min-w-5 justify-center rounded-full px-1.5 text-[10px]"
+                                >
+                                    {{ activeFilterCount }}
+                                </Badge>
+                                <ChevronDown
+                                    class="size-3.5 transition-transform duration-300 ease-out"
+                                    :class="filtersOpen && 'rotate-180'"
+                                />
+                            </Button>
+                        </div>
                     </div>
 
                     <Transition
+                        v-if="visibleFilters.length > 0"
                         enter-active-class="grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out"
                         enter-from-class="grid-rows-[0fr]"
                         enter-to-class="grid-rows-[1fr]"
@@ -497,6 +607,7 @@ function handleClearFilters(): void {
                                     :filters="visibleFilters"
                                     :search-value="searchValue"
                                     :filter-values="visibleFilterValues"
+                                    hide-search
                                     @search="handleSearch"
                                     @filter="handleFilter"
                                     @clear="handleClearFilters"
@@ -504,6 +615,41 @@ function handleClearFilters(): void {
                             </div>
                         </div>
                     </Transition>
+                </template>
+
+                <template #empty>
+                    <div class="flex flex-col items-center gap-3 py-2">
+                        <p>
+                            {{
+                                hasActiveQuery
+                                    ? t('No records match your filters.')
+                                    : (schema.empty_label ??
+                                      t('No records found.'))
+                            }}
+                        </p>
+                        <Button
+                            v-if="hasActiveQuery"
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="handleClearFilters"
+                        >
+                            {{ t('Clear filters') }}
+                        </Button>
+                        <Link
+                            v-else-if="
+                                schema.operations.create &&
+                                create.can &&
+                                usesFullPageForms() &&
+                                create.href
+                            "
+                            :href="create.href"
+                            class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                        >
+                            <Plus class="size-4" />
+                            {{ create.label ?? t('Create') }}
+                        </Link>
+                    </div>
                 </template>
 
                 <template
@@ -657,7 +803,10 @@ function handleClearFilters(): void {
                 </template>
                 <template #footer>
                     <div
-                        v-if="hasPaginationControls"
+                        v-if="
+                            hasPaginationControls ||
+                            (records.total ?? 0) > perPageOptions[0]
+                        "
                         class="flex flex-col gap-3 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
                     >
                         <span>
@@ -681,8 +830,34 @@ function handleClearFilters(): void {
                         </span>
 
                         <div
-                            class="flex items-center justify-between gap-3 sm:justify-end"
+                            class="flex flex-wrap items-center justify-between gap-3 sm:justify-end"
                         >
+                            <div class="flex items-center gap-2">
+                                <span class="whitespace-nowrap">{{
+                                    t('Rows per page')
+                                }}</span>
+                                <Select
+                                    :model-value="String(perPage)"
+                                    @update:model-value="handlePerPage"
+                                >
+                                    <SelectTrigger
+                                        size="sm"
+                                        class="w-[4.5rem]"
+                                        :aria-label="t('Rows per page')"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in perPageOptions"
+                                            :key="option"
+                                            :value="String(option)"
+                                        >
+                                            {{ option }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <Button
                                 type="button"
                                 variant="outline"

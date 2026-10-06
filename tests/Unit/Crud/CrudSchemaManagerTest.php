@@ -539,6 +539,7 @@ test('it exposes search metadata when a definition has searchable columns', func
         'enabled' => true,
         'value' => 'ada',
         'span' => ['base' => 12],
+        'fields' => ['Name'],
     ]);
 });
 
@@ -582,6 +583,7 @@ test('search is disabled when a definition has no searchable columns', function 
         'enabled' => false,
         'value' => null,
         'span' => ['base' => 12],
+        'fields' => [],
     ]);
 });
 
@@ -1330,4 +1332,44 @@ test('the display locale falls back to the application locale', function () {
     app()->setLocale('es');
 
     expect(CrudFormat::displayLocale())->toBe('es');
+});
+
+test('it marks the columns kept in the compact mobile card', function () {
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Users';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [CrudColumn::make('name')->mobile(), CrudColumn::make('email')];
+        }
+
+        public function fields(): array
+        {
+            return [];
+        }
+    };
+
+    $columns = collect(app(CrudSchemaManager::class)->for($definition, 'users')['columns'])->keyBy('name');
+
+    expect($columns['name']['mobile'])->toBeTrue()
+        ->and($columns['email'])->not->toHaveKey('mobile');
 });

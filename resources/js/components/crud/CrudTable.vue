@@ -13,11 +13,68 @@ const props = withDefaults(
         actionsLabel?: string;
         emptyLabel?: string;
         loading?: boolean;
+        clickable?: (record: T) => boolean;
     }>(),
     {
         loading: false,
+        clickable: undefined,
     },
 );
+
+const emit = defineEmits<{
+    sort: [column: string];
+    'row-click': [record: T];
+}>();
+
+const interactiveSelector =
+    'a, button, input, select, textarea, label, summary, [role="button"], [data-row-click="ignore"]';
+
+function isClickable(record: T): boolean {
+    return props.clickable?.(record) ?? false;
+}
+
+function handleRowClick(event: MouseEvent, record: T): void {
+    if (!isClickable(record)) {
+        return;
+    }
+
+    if (
+        event.target instanceof Element &&
+        event.target.closest(interactiveSelector)
+    ) {
+        return;
+    }
+
+    if (window.getSelection()?.toString()) {
+        return;
+    }
+
+    emit('row-click', record);
+}
+
+const mobileColumns = computed(() => {
+    const flagged = props.columns.filter((column) => column.mobile === true);
+    const primary = flagged.length > 0 ? flagged : props.columns.slice(0, 4);
+
+    return {
+        primary,
+        secondary: props.columns.filter((column) => !primary.includes(column)),
+    };
+});
+
+function ariaSort(
+    column: CrudColumn,
+): 'ascending' | 'descending' | 'none' | undefined {
+    if (!column.sortable) {
+        return undefined;
+    }
+
+    if (props.sort?.column !== column.name) {
+        return 'none';
+    }
+
+    return props.sort.direction === 'asc' ? 'ascending' : 'descending';
+}
 
 // Keep the list height stable while a new page of results is loading.
 const loadingRows = computed(() => Math.max(props.records.length, 1));
@@ -40,10 +97,6 @@ function columnStyle(column: CrudColumn): Record<string, string> {
 
     return style;
 }
-
-defineEmits<{
-    sort: [column: string];
-}>();
 </script>
 
 <template>
@@ -61,6 +114,8 @@ defineEmits<{
                         <th
                             v-for="column in columns"
                             :key="column.name"
+                            scope="col"
+                            :aria-sort="ariaSort(column)"
                             class="px-4 py-3 text-[11px] font-semibold tracking-wide"
                             :style="columnStyle(column)"
                         >
@@ -91,6 +146,7 @@ defineEmits<{
                             </template>
                         </th>
                         <th
+                            scope="col"
                             class="px-4 py-3 text-right text-[11px] font-semibold tracking-wide uppercase"
                         >
                             {{ actionsLabel ?? t('Actions') }}
@@ -124,7 +180,11 @@ defineEmits<{
                         v-else
                         v-for="record in records"
                         :key="record.id"
-                        class="transition-colors hover:bg-indigo-50/40 dark:hover:bg-indigo-400/5"
+                        :class="[
+                            'transition-colors hover:bg-indigo-50/40 dark:hover:bg-indigo-400/5',
+                            isClickable(record) && 'cursor-pointer',
+                        ]"
+                        @click="handleRowClick($event, record)"
                     >
                         <td
                             v-for="column in columns"
@@ -153,7 +213,9 @@ defineEmits<{
                             :colspan="columns.length + 1"
                             class="px-5 py-12 text-center text-muted-foreground"
                         >
-                            {{ emptyLabel ?? t('No records found.') }}
+                            <slot name="empty">
+                                {{ emptyLabel ?? t('No records found.') }}
+                            </slot>
                         </td>
                     </tr>
                 </tbody>
@@ -184,11 +246,15 @@ defineEmits<{
                 v-else
                 v-for="record in records"
                 :key="record.id"
-                class="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+                :class="[
+                    'rounded-xl border border-border/70 bg-card p-4 shadow-sm',
+                    isClickable(record) && 'cursor-pointer',
+                ]"
+                @click="handleRowClick($event, record)"
             >
                 <dl class="flex flex-col gap-2">
                     <div
-                        v-for="column in columns"
+                        v-for="column in mobileColumns.primary"
                         :key="column.name"
                         class="flex items-baseline justify-between gap-4"
                     >
@@ -213,6 +279,43 @@ defineEmits<{
                     </div>
                 </dl>
 
+                <details
+                    v-if="mobileColumns.secondary.length > 0"
+                    class="group mt-2"
+                >
+                    <summary
+                        class="cursor-pointer py-1 text-xs font-medium text-primary select-none"
+                    >
+                        {{ t('More details') }}
+                    </summary>
+                    <dl class="mt-2 flex flex-col gap-2">
+                        <div
+                            v-for="column in mobileColumns.secondary"
+                            :key="column.name"
+                            class="flex items-baseline justify-between gap-4"
+                        >
+                            <dt
+                                class="shrink-0 text-xs font-medium text-muted-foreground"
+                            >
+                                {{ t(column.label) }}
+                            </dt>
+                            <dd class="text-right text-sm break-words">
+                                <slot
+                                    :name="`cell-${column.name}`"
+                                    :column="column"
+                                    :record="record"
+                                    :value="record[column.name]"
+                                >
+                                    <CrudCellValue
+                                        :column="column"
+                                        :record="record"
+                                    />
+                                </slot>
+                            </dd>
+                        </div>
+                    </dl>
+                </details>
+
                 <div
                     class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3"
                 >
@@ -224,7 +327,9 @@ defineEmits<{
                 v-if="!loading && records.length === 0"
                 class="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground"
             >
-                {{ emptyLabel ?? t('No records found.') }}
+                <slot name="empty">
+                    {{ emptyLabel ?? t('No records found.') }}
+                </slot>
             </div>
 
             <div v-if="$slots.footer">

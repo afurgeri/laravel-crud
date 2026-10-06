@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useSlots } from 'vue';
+import { computed, ref, useSlots } from 'vue';
 import CrudForm from '@/components/crud/CrudForm.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,9 +15,10 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useTranslation } from '@/composables/useTranslation';
 import type { CrudField, FormAction } from '@/types/crud';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         action: FormAction;
         fields: CrudField[];
@@ -39,8 +40,31 @@ withDefaults(
     },
 );
 
+const { t } = useTranslation();
 const open = ref(false);
+const formRef = ref<InstanceType<typeof CrudForm> | null>(null);
 const slots = useSlots();
+
+// Forms laid out in several columns need more room than the default dialog.
+const isMultiColumn = computed(() =>
+    props.fields.some(
+        (field) => field.visible && (field.span.md ?? field.span.base) < 12,
+    ),
+);
+
+function setOpen(value: boolean): void {
+    if (
+        !value &&
+        formRef.value?.isDirty &&
+        !window.confirm(
+            t('You have unsaved changes. Do you want to leave without saving?'),
+        )
+    ) {
+        return;
+    }
+
+    open.value = value;
+}
 
 function hasFieldSlot(fieldName: string): boolean {
     return Boolean(slots[`field-${fieldName}`]);
@@ -48,7 +72,7 @@ function hasFieldSlot(fieldName: string): boolean {
 </script>
 
 <template>
-    <Dialog v-model:open="open">
+    <Dialog :open="open" @update:open="setOpen">
         <Tooltip v-if="triggerTooltip" :ignore-non-keyboard-focus="true">
             <TooltipTrigger as-child>
                 <DialogTrigger as-child>
@@ -67,7 +91,10 @@ function hasFieldSlot(fieldName: string): boolean {
         </DialogTrigger>
 
         <DialogContent
-            class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+            :class="[
+                'max-h-[calc(100dvh-2rem)] overflow-y-auto',
+                isMultiColumn ? 'sm:max-w-2xl' : 'sm:max-w-lg',
+            ]"
         >
             <DialogHeader class="text-left">
                 <DialogTitle>{{ title }}</DialogTitle>
@@ -77,6 +104,7 @@ function hasFieldSlot(fieldName: string): boolean {
             </DialogHeader>
 
             <CrudForm
+                ref="formRef"
                 :action="action"
                 :fields="fields"
                 :initial-values="initialValues"
@@ -84,7 +112,9 @@ function hasFieldSlot(fieldName: string): boolean {
                 :reset-on-success="resetOnSuccess"
                 :field-id-prefix="fieldIdPrefix"
                 form-class="grid grid-cols-12 gap-4 px-1 pb-6"
+                cancelable
                 @success="open = false"
+                @cancel="setOpen(false)"
             >
                 <template
                     v-for="field in fields.filter((field) =>
@@ -93,10 +123,7 @@ function hasFieldSlot(fieldName: string): boolean {
                     :key="field.name"
                     #[`field-${field.name}`]="slotProps"
                 >
-                    <slot
-                        :name="`field-${field.name}`"
-                        v-bind="slotProps"
-                    />
+                    <slot :name="`field-${field.name}`" v-bind="slotProps" />
                 </template>
                 <template #fields="slotProps">
                     <slot name="fields" v-bind="slotProps" />

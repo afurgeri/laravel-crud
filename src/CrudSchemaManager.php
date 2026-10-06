@@ -33,7 +33,7 @@ class CrudSchemaManager
      *     columns: list<array{name: string, label: string, sortable: bool, width?: string, min_width?: string, max_width?: string, fixed?: bool}>,
      *     fields: list<array{name: string, label: string, type: string, confirmed: bool, required: bool, rules: list<string>, unique_items?: bool, visible: bool, visible_on_update: bool, span: array<string, int>, defaultValue?: mixed, options?: list<array<string, mixed>>, depends_on?: list<string>}>,
      *     sort: array{column: ?string, direction: 'asc'|'desc'},
-     *     search: array{enabled: bool, value: ?string, span: array<string, int>},
+     *     search: array{enabled: bool, value: ?string, span: array<string, int>, fields: list<string>},
      *     filters: list<array{name: string, label: string, type: string, operator: string, relation: bool, clearable: bool, range: ?string, value: mixed, span: array<string, int>, step?: string, options?: list<array{value: string, label: string}>, remote?: array{url: string, min_chars: int, debounce: int}, max_date?: ?string}>
      * }
      */
@@ -78,6 +78,7 @@ class CrudSchemaManager
                 'enabled' => $this->hasSearchableColumns($definition),
                 'value' => $search,
                 'span' => $this->searchSpan($definition),
+                'fields' => $this->searchableLabels($definition),
             ],
             'filters' => $definition instanceof HasCrudFilters
                 ? array_map(
@@ -115,7 +116,7 @@ class CrudSchemaManager
 
     /**
      * @param  list<CrudField>  $fields
-     * @return array{name: string, label: string, sortable: bool, type?: 'date'|'time'|'datetime'|'money', timezone?: string, locale?: string, currency?: string, currency_column?: string, labels?: array<string, string>, badges?: array<string, string>, width?: string, min_width?: string, max_width?: string, fixed?: bool}
+     * @return array{name: string, label: string, sortable: bool, mobile?: bool, type?: 'date'|'time'|'datetime'|'money', timezone?: string, locale?: string, currency?: string, currency_column?: string, labels?: array<string, string>, badges?: array<string, string>, width?: string, min_width?: string, max_width?: string, fixed?: bool}
      */
     private function columnSchema(CrudColumn $column, array $fields): array
     {
@@ -139,6 +140,10 @@ class CrudSchemaManager
 
         if ($column->hasFixedWidth()) {
             $schema['fixed'] = true;
+        }
+
+        if ($column->isMobile() !== null) {
+            $schema['mobile'] = $column->isMobile();
         }
 
         $field = collect($fields)->first(fn (CrudField $field): bool => $field->name() === $column->name());
@@ -388,6 +393,17 @@ class CrudSchemaManager
         }
 
         return $normalized;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function searchableLabels(CrudDefinition $definition): array
+    {
+        return array_values(array_map(
+            fn (CrudColumn $column): string => $this->label($column->labelKey(), $column->name()),
+            array_filter($definition->columns(), fn (CrudColumn $column): bool => $column->isSearchable()),
+        ));
     }
 
     private function label(?string $labelKey, string $name): string

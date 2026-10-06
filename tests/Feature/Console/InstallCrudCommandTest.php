@@ -116,6 +116,34 @@ test('crud remote pickers resolve the selected label while disabled', function (
         ->toContain('if (!props.remote || (props.disabled && !selectedValue)) {');
 });
 
+test('crud frontend resources guard unsaved input and surface form and list feedback', function () {
+    $resources = fn (string $name): string => File::get(dirname(__DIR__, 3)."/resources/js/components/crud/{$name}.vue");
+
+    expect($resources('CrudForm'))
+        ->toContain("router.on('before'")
+        ->toContain('beforeunload')
+        ->toContain("toast.error(t('Please fix the highlighted fields.'))")
+        ->toContain('scrollIntoView')
+        ->and($resources('CrudFormDialog'))
+        ->toContain('window.confirm')
+        ->toContain('sm:max-w-2xl')
+        ->and($resources('CrudFormPage'))
+        ->toContain('guard-navigation')
+        ->and($resources('CrudDeleteDialog'))
+        ->toContain('role="alert"')
+        ->and($resources('CrudField'))
+        ->toContain('aria-describedby')
+        ->toContain('field.required && !readOnly')
+        ->and($resources('CrudTable'))
+        ->toContain(':aria-sort="ariaSort(column)"')
+        ->toContain('scope="col"')
+        ->toContain('@click="handleRowClick($event, record)"')
+        ->and($resources('CrudPage'))
+        ->toContain('searchPlaceholder')
+        ->toContain("t('Rows per page')")
+        ->toContain('#empty');
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $panel = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPanel.vue');
@@ -169,7 +197,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('SlidersHorizontal')
         ->toContain('bg-muted/40')
         ->toContain('justify-self-end')
-        ->toContain('v-if="search.enabled || filters.length > 0"')
+        ->toContain('hideSearch')
         ->toContain("import CrudCombobox from '@/components/crud/CrudCombobox.vue';")
         ->toContain("entry.filter.type === 'combobox'")
         ->and($field)

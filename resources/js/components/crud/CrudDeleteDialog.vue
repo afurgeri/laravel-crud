@@ -36,16 +36,25 @@ withDefaults(
         description: undefined,
         confirmLabel: undefined,
         cancelLabel: undefined,
-        icon: Trash2,
+        icon: () => Trash2,
     },
 );
 
 const open = ref(false);
+const formRef = ref<{ clearErrors: () => void } | null>(null);
 const { t } = useTranslation();
+
+function handleOpenChange(value: boolean): void {
+    open.value = value;
+
+    if (!value) {
+        formRef.value?.clearErrors();
+    }
+}
 </script>
 
 <template>
-    <Dialog v-model:open="open">
+    <Dialog :open="open" @update:open="handleOpenChange">
         <Tooltip :ignore-non-keyboard-focus="true">
             <TooltipTrigger as-child>
                 <DialogTrigger as-child>
@@ -64,9 +73,10 @@ const { t } = useTranslation();
 
         <DialogContent>
             <Form
+                ref="formRef"
                 v-bind="action"
                 @success="open = false"
-                v-slot="{ processing }"
+                v-slot="{ processing, errors, hasErrors }"
             >
                 <DialogHeader class="space-y-3">
                     <DialogTitle>{{ title }}</DialogTitle>
@@ -74,6 +84,14 @@ const { t } = useTranslation();
                         {{ description }}
                     </DialogDescription>
                 </DialogHeader>
+
+                <p
+                    v-if="hasErrors"
+                    role="alert"
+                    class="mt-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
+                    {{ Object.values(errors).join(' ') }}
+                </p>
 
                 <DialogFooter class="mt-6 gap-2">
                     <DialogClose as-child>

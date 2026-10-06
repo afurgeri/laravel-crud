@@ -44,6 +44,8 @@ final class CrudColumn
 
     private bool $isBadge = false;
 
+    private ?bool $mobile = null;
+
     private const BADGE_VARIANTS = ['neutral', 'info', 'success', 'warning', 'danger'];
 
     private function __construct(private readonly string $name) {}
@@ -184,6 +186,22 @@ final class CrudColumn
         $this->currencyColumn = $currencyColumn;
 
         return $this;
+    }
+
+    /**
+     * Keep the column visible in the compact card shown on small screens.
+     * When no column is marked, the first columns are shown and the rest are collapsed.
+     */
+    public function mobile(bool $mobile = true): self
+    {
+        $this->mobile = $mobile;
+
+        return $this;
+    }
+
+    public function isMobile(): ?bool
+    {
+        return $this->mobile;
     }
 
     public function isMoney(): bool

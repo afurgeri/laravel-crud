@@ -39,5 +39,11 @@
     "View :name": "View :name",
     "Type :count characters to search.": "Type :count characters to search.",
     "This value is already included.": "This value is already included.",
-    "No values.": "No values."
+    "No values.": "No values.",
+    "Search by :fields": "Search by :fields",
+    "No records match your filters.": "No records match your filters.",
+    "Rows per page": "Rows per page",
+    "More details": "More details",
+    "You have unsaved changes. Do you want to leave without saving?": "You have unsaved changes. Do you want to leave without saving?",
+    "Please fix the highlighted fields.": "Please fix the highlighted fields."
 }

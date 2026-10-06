@@ -502,6 +502,9 @@ CrudColumn::make('permission_ids')->computed();
 | `money('ARS')` / `money(currencyColumn: 'currency_code')` | Formats the value as an amount in a fixed currency or in the currency stored in another column. |
 | `labels(['PAID' => __('Paid')])` | Shows a label instead of the raw value. Select fields with the same name provide labels automatically. |
 | `badge(['PAID' => 'success'])` | Renders the value as a badge. Variants: `neutral`, `info`, `success`, `warning`, `danger`. |
+| `mobile()` | Keeps the column in the compact card shown on small screens. Without any marked column the first four are shown and the rest are collapsed under "More details". |
+
+The search box is always visible above the table and its placeholder lists the labels of the `searchable()` columns. Rows are clickable when the page defines a `show` action, forms ask for confirmation before discarding changes, and failed submissions scroll to the first invalid field.
 
 Dates and amounts use `config('crud.locale')` (`CRUD_LOCALE`), falling back to the application locale. The frontend helpers in `composables/useCrudFormat.ts` and the `CrudBadge` component can be reused by custom cells.
 

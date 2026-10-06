@@ -28,6 +28,7 @@ export type CrudColumn = {
     name: string;
     label: string;
     sortable: boolean;
+    mobile?: boolean;
     width?: string;
     min_width?: string;
     max_width?: string;
@@ -107,6 +108,7 @@ export type CrudSearch = {
     enabled: boolean;
     value: string | null;
     span: CrudSpan;
+    fields?: string[];
 };
 
 export type CrudOption = {
