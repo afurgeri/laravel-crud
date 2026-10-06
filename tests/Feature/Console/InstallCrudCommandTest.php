@@ -109,6 +109,13 @@ test('crud install includes the full-screen mobile picker used by CRUD fields an
     }
 });
 
+test('crud remote pickers resolve the selected label while disabled', function () {
+    expect(File::get(dirname(__DIR__, 3).'/resources/js/components/crud/RemoteCombobox.vue'))
+        ->toContain('if (props.disabled && selected === undefined) {')
+        ->and(File::get(dirname(__DIR__, 3).'/resources/js/components/crud/MobileCrudPicker.vue'))
+        ->toContain('if (!props.remote || (props.disabled && !selectedValue)) {');
+});
+
 test('crud frontend resources expose the paginator contract', function () {
     $component = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPage.vue');
     $panel = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudPanel.vue');

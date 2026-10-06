@@ -82,7 +82,7 @@ function normalizeOptions(payload: unknown): CrudOption[] {
 }
 
 async function loadOptions(search: string, selected?: string): Promise<void> {
-    if (props.disabled) {
+    if (props.disabled && selected === undefined) {
         options.value = [];
 
         return;
@@ -203,7 +203,7 @@ watch(
         options.value = [];
         selectedOption.value = undefined;
 
-        if (!props.disabled && props.modelValue !== '') {
+        if (props.modelValue !== '') {
             void loadOptions('', props.modelValue);
         }
     },

@@ -93,7 +93,7 @@ const label = computed(() => {
 });
 
 async function loadOptions(selectedValue?: string): Promise<void> {
-    if (!props.remote || props.disabled) {
+    if (!props.remote || (props.disabled && !selectedValue)) {
         return;
     }
 
