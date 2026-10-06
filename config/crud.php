@@ -2,6 +2,7 @@
 
 return [
     'default_page_size' => 10,
+    'locale' => env('CRUD_LOCALE'),
     'default_filters_open' => true,
     'pagination' => [
         'driver' => env('CRUD_PAGINATION_DRIVER', 'length_aware'),

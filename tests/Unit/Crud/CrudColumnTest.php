@@ -61,3 +61,7 @@ test('crud columns can declare temporal types', function () {
         ->and(CrudColumn::make('starts_at')->time()->temporalType())->toBe('time')
         ->and(CrudColumn::make('scheduled_at')->datetime()->temporalType())->toBe('datetime');
 });
+
+test('crud columns reject unknown badge variants', function () {
+    CrudColumn::make('status')->badge(['PAID' => 'green']);
+})->throws(InvalidArgumentException::class);

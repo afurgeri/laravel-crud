@@ -115,7 +115,7 @@ class CrudSchemaManager
 
     /**
      * @param  list<CrudField>  $fields
-     * @return array{name: string, label: string, sortable: bool, type?: 'date'|'time'|'datetime', timezone?: string, width?: string, min_width?: string, max_width?: string, fixed?: bool}
+     * @return array{name: string, label: string, sortable: bool, type?: 'date'|'time'|'datetime'|'money', timezone?: string, locale?: string, currency?: string, currency_column?: string, labels?: array<string, string>, badges?: array<string, string>, width?: string, min_width?: string, max_width?: string, fixed?: bool}
      */
     private function columnSchema(CrudColumn $column, array $fields): array
     {
@@ -141,13 +141,46 @@ class CrudSchemaManager
             $schema['fixed'] = true;
         }
 
-        $temporalType = $column->temporalType() ?? collect($fields)
-            ->first(fn (CrudField $field): bool => $field->name() === $column->name())
-            ?->type();
+        $field = collect($fields)->first(fn (CrudField $field): bool => $field->name() === $column->name());
+        $temporalType = $column->temporalType() ?? $field?->type();
 
         if (in_array($temporalType, ['date', 'time', 'datetime'], true)) {
             $schema['type'] = $temporalType;
             $schema['timezone'] = CrudTemporal::displayTimezone();
+            $schema['locale'] = CrudFormat::displayLocale();
+        }
+
+        if ($column->isMoney()) {
+            $schema['type'] = 'money';
+            $schema['locale'] = CrudFormat::displayLocale();
+
+            if ($column->currency() !== null) {
+                $schema['currency'] = $column->currency();
+            }
+
+            if ($column->currencyColumn() !== null) {
+                $schema['currency_column'] = $column->currencyColumn();
+            }
+        }
+
+        $labels = $column->labelsMap();
+
+        if ($labels === null && $field !== null && in_array($field->type(), ['select', 'combobox'], true)) {
+            $labels = [];
+
+            foreach ($this->fieldOptions($field->options()) as $option) {
+                if (is_scalar($option['value'] ?? null) && is_string($option['label'] ?? null)) {
+                    $labels[$this->optionValue($option['value'])] = $option['label'];
+                }
+            }
+        }
+
+        if ($labels !== null && $labels !== []) {
+            $schema['labels'] = $labels;
+        }
+
+        if ($column->isBadge()) {
+            $schema['badges'] = $column->badgeVariants();
         }
 
         return $schema;

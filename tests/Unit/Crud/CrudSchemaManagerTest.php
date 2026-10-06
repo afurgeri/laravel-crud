@@ -8,6 +8,7 @@ use Modules\Crud\CrudColumn;
 use Modules\Crud\CrudDefinition;
 use Modules\Crud\CrudField;
 use Modules\Crud\CrudFilter;
+use Modules\Crud\CrudFormat;
 use Modules\Crud\CrudFormMode;
 use Modules\Crud\CrudLayoutWidth;
 use Modules\Crud\CrudSchemaManager;
@@ -1266,4 +1267,67 @@ test('it adds temporal metadata to datetime columns using the application timezo
             'type' => 'datetime',
             'timezone' => 'America/Argentina/Buenos_Aires',
         ]);
+});
+
+test('it adds display formatting metadata to money, label and badge columns', function () {
+    config()->set('crud.locale', 'es_AR');
+
+    $definition = new class implements CrudDefinition
+    {
+        public function model(): string
+        {
+            return Model::class;
+        }
+
+        public function title(): string
+        {
+            return 'Invoices';
+        }
+
+        public function description(): ?string
+        {
+            return null;
+        }
+
+        public function emptyLabel(): ?string
+        {
+            return null;
+        }
+
+        public function columns(): array
+        {
+            return [
+                CrudColumn::make('total')->money(currencyColumn: 'currency_code'),
+                CrudColumn::make('fee')->money('USD'),
+                CrudColumn::make('status')->labels(['DRAFT' => 'Draft', 'PAID' => 'Paid'])->badge(['PAID' => 'success']),
+                CrudColumn::make('kind'),
+                CrudColumn::make('issued_on')->date(),
+            ];
+        }
+
+        public function fields(): array
+        {
+            return [
+                CrudField::make('kind', ['required'])->select(['A' => 'Product', 'B' => 'Service']),
+            ];
+        }
+    };
+
+    $columns = collect(app(CrudSchemaManager::class)->for($definition, 'invoices')['columns'])->keyBy('name');
+
+    expect($columns['total'])->toMatchArray(['type' => 'money', 'currency_column' => 'currency_code', 'locale' => 'es-AR'])
+        ->and($columns['fee'])->toMatchArray(['type' => 'money', 'currency' => 'USD'])
+        ->and($columns['status'])->toMatchArray([
+            'labels' => ['DRAFT' => 'Draft', 'PAID' => 'Paid'],
+            'badges' => ['PAID' => 'success'],
+        ])
+        ->and($columns['kind']['labels'])->toBe(['A' => 'Product', 'B' => 'Service'])
+        ->and($columns['issued_on'])->toMatchArray(['type' => 'date', 'locale' => 'es-AR']);
+});
+
+test('the display locale falls back to the application locale', function () {
+    config()->set('crud.locale', null);
+    app()->setLocale('es');
+
+    expect(CrudFormat::displayLocale())->toBe('es');
 });

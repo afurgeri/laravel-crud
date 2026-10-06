@@ -404,7 +404,7 @@ function addArrayValue(): void {
     }
 
     if (props.field.unique_items && arrayValues.value.includes(value)) {
-        arrayInputError.value = 'This value is already included.';
+        arrayInputError.value = t('This value is already included.');
 
         return;
     }
@@ -487,7 +487,7 @@ function clearValue(): void {
                         v-if="arrayValues.length === 0"
                         class="text-sm text-muted-foreground"
                     >
-                        No values.
+                        {{ t('No values.') }}
                     </span>
                 </div>
 
@@ -517,7 +517,7 @@ function clearValue(): void {
                                 v-if="hasClearableValue"
                                 type="button"
                                 :class="clearButtonClass"
-                                :aria-label="`Clear ${field.label}`"
+                                :aria-label="t('Clear :label', { label: field.label })"
                                 @click="clearValue"
                             >
                                 <X class="size-3.5" />
@@ -582,7 +582,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     class="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -678,7 +678,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="selectClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -702,7 +702,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="selectClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -728,7 +728,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="selectClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -754,7 +754,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="selectClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -776,7 +776,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="selectClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -799,7 +799,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="textareaClearButtonClass"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -847,7 +847,7 @@ function clearValue(): void {
                     v-if="hasClearableValue"
                     type="button"
                     :class="clearButtonClassForField(field)"
-                    :aria-label="`Clear ${field.label}`"
+                    :aria-label="t('Clear :label', { label: field.label })"
                     @click="clearValue"
                 >
                     <X class="size-3.5" />
@@ -873,7 +873,7 @@ function clearValue(): void {
                         : `${field.name}_confirmation`
                 "
                 :class="labelClass"
-                >Confirm {{ field.label }}</Label
+                >{{ t('Confirm :label', { label: field.label }) }}</Label
             >
             <Input
                 :id="

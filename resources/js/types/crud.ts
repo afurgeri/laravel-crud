@@ -12,6 +12,9 @@ export type CrudLayoutWidth = 'standard' | 'wide' | 'full';
 
 export type CrudTemporalType = 'date' | 'time' | 'datetime';
 
+export type CrudBadgeVariant =
+    'neutral' | 'info' | 'success' | 'warning' | 'danger';
+
 export type CrudSpan = {
     base: number;
     sm?: number;
@@ -29,8 +32,13 @@ export type CrudColumn = {
     min_width?: string;
     max_width?: string;
     fixed?: boolean;
-    type?: CrudTemporalType;
+    type?: CrudTemporalType | 'money';
     timezone?: string;
+    locale?: string;
+    currency?: string;
+    currency_column?: string;
+    labels?: Record<string, string>;
+    badges?: Record<string, CrudBadgeVariant> | [];
 };
 
 export type CrudField = {

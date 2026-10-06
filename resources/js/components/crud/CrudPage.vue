@@ -10,6 +10,7 @@ import {
     SlidersHorizontal,
 } from '@lucide/vue';
 import { computed, reactive, ref, useSlots } from 'vue';
+import CrudCellValue from '@/components/crud/CrudCellValue.vue';
 import CrudDeleteDialog from '@/components/crud/CrudDeleteDialog.vue';
 import CrudFilters from '@/components/crud/CrudFilters.vue';
 import CrudFormDialog from '@/components/crud/CrudFormDialog.vue';
@@ -511,7 +512,10 @@ function handleClearFilters(): void {
                     #[`cell-${column.name}`]="slotProps"
                 >
                     <slot :name="`cell-${column.name}`" v-bind="slotProps">
-                        {{ slotProps.value }}
+                        <CrudCellValue
+                            :column="column"
+                            :record="slotProps.record"
+                        />
                     </slot>
                 </template>
 

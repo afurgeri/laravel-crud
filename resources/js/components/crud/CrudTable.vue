@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { ChevronDown, ChevronUp } from '@lucide/vue';
 import { computed } from 'vue';
-import { formatCrudTemporalValue } from '@/composables/useCrudTemporal';
+import CrudCellValue from '@/components/crud/CrudCellValue.vue';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudColumn, CrudRecord, CrudSort } from '@/types/crud';
 
@@ -138,13 +138,10 @@ defineEmits<{
                                 :record="record"
                                 :value="record[column.name]"
                             >
-                                {{
-                                    formatCrudTemporalValue(
-                                        record[column.name],
-                                        column.type,
-                                        column.timezone,
-                                    )
-                                }}
+                                <CrudCellValue
+                                    :column="column"
+                                    :record="record"
+                                />
                             </slot>
                         </td>
                         <td class="px-5 py-3 text-right">
@@ -207,13 +204,10 @@ defineEmits<{
                                 :record="record"
                                 :value="record[column.name]"
                             >
-                                {{
-                                    formatCrudTemporalValue(
-                                        record[column.name],
-                                        column.type,
-                                        column.timezone,
-                                    )
-                                }}
+                                <CrudCellValue
+                                    :column="column"
+                                    :record="record"
+                                />
                             </slot>
                         </dd>
                     </div>

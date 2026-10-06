@@ -37,5 +37,7 @@
     "Update the :name details.": "Update the :name details.",
     "View": "View",
     "View :name": "View :name",
-    "Type :count characters to search.": "Type :count characters to search."
+    "Type :count characters to search.": "Type :count characters to search.",
+    "This value is already included.": "This value is already included.",
+    "No values.": "No values."
 }

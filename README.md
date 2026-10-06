@@ -498,6 +498,12 @@ CrudColumn::make('permission_ids')->computed();
 | `sortable()` / `sortable(false)` | Allows or disallows sorting by the column. |
 | `searchable()` / `searchable(false)` | Includes or excludes the column from text search. |
 | `computed()` / `computed(false)` | Marks whether the column is computed instead of a database column. |
+| `date()` / `datetime()` / `time()` | Formats the value as a date, date and time, or time with the display locale and timezone. |
+| `money('ARS')` / `money(currencyColumn: 'currency_code')` | Formats the value as an amount in a fixed currency or in the currency stored in another column. |
+| `labels(['PAID' => __('Paid')])` | Shows a label instead of the raw value. Select fields with the same name provide labels automatically. |
+| `badge(['PAID' => 'success'])` | Renders the value as a badge. Variants: `neutral`, `info`, `success`, `warning`, `danger`. |
+
+Dates and amounts use `config('crud.locale')` (`CRUD_LOCALE`), falling back to the application locale. The frontend helpers in `composables/useCrudFormat.ts` and the `CrudBadge` component can be reused by custom cells.
 
 ## Fields and validation
 

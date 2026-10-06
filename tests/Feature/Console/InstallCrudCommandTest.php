@@ -161,7 +161,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->and($table)
         ->toContain('md:hidden')
         ->toContain('animate-pulse')
-        ->toContain('formatCrudTemporalValue')
+        ->toContain('<CrudCellValue')
         ->and($panel)
         ->toContain('panelKey: string;')
         ->toContain('embedded')
