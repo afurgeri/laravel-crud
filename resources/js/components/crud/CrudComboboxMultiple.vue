@@ -145,7 +145,9 @@ function displayValue(): string {
                                     :class="
                                         cn(
                                             'size-4',
-                                            selectedValues.includes(option.value)
+                                            selectedValues.includes(
+                                                option.value,
+                                            )
                                                 ? 'opacity-100'
                                                 : 'opacity-0',
                                         )

@@ -63,6 +63,7 @@ const props = withDefaults(
         hiddenColumns?: string[];
         hiddenFields?: string[];
         fixedFilters?: Record<string, CrudFilterValue>;
+        itemsClass?: string;
     }>(),
     {
         lockedLabel: undefined,
@@ -169,6 +170,10 @@ const visibleColumns = computed(() =>
     props.schema.columns.filter(
         (column) => !props.hiddenColumns.includes(column.name),
     ),
+);
+
+const sortableColumns = computed(() =>
+    visibleColumns.value.filter((column) => column.sortable),
 );
 
 const visibleFields = computed(() =>
@@ -374,6 +379,20 @@ function handleSort(column: string): void {
     navigate();
 }
 
+function handleItemSort(event: Event): void {
+    const [column, direction] = (event.target as HTMLSelectElement).value.split(
+        ':',
+    );
+
+    if (!column || (direction !== 'asc' && direction !== 'desc')) {
+        return;
+    }
+
+    sortState.column = column;
+    sortState.direction = direction;
+    navigate();
+}
+
 function handleSearch(value: string): void {
     searchValue.value = value;
     navigateDebounced();
@@ -508,15 +527,20 @@ function handleClearFilters(): void {
             <CrudTable
                 :columns="visibleColumns"
                 :records="records.data"
-                :sort="schema.sort"
+                :sort="sortState"
                 :loading="isLoading"
+                :items-class="itemsClass"
                 :empty-label="schema.empty_label ?? t('No records found.')"
                 :clickable="canClickRow"
                 @sort="handleSort"
                 @row-click="openRecord"
             >
                 <template
-                    v-if="schema.search?.enabled || visibleFilters.length > 0"
+                    v-if="
+                        schema.search?.enabled ||
+                        visibleFilters.length > 0 ||
+                        ($slots.item && sortableColumns.length > 0)
+                    "
                     #toolbar
                 >
                     <div
@@ -549,6 +573,36 @@ function handleClearFilters(): void {
                                 !schema.search?.enabled && 'w-full',
                             ]"
                         >
+                            <label
+                                v-if="$slots.item && sortableColumns.length > 0"
+                                class="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                                {{ t('Sort') }}
+                                <select
+                                    class="rounded-md border border-border bg-card px-2 py-1.5 text-foreground"
+                                    :value="
+                                        sortState.column
+                                            ? `${sortState.column}:${sortState.direction}`
+                                            : ''
+                                    "
+                                    @change="handleItemSort"
+                                >
+                                    <option value="" disabled>
+                                        {{ t('Sort') }}
+                                    </option>
+                                    <template
+                                        v-for="column in sortableColumns"
+                                        :key="column.name"
+                                    >
+                                        <option :value="`${column.name}:asc`">
+                                            {{ t(column.label) }} ↑
+                                        </option>
+                                        <option :value="`${column.name}:desc`">
+                                            {{ t(column.label) }} ↓
+                                        </option>
+                                    </template>
+                                </select>
+                            </label>
                             <Button
                                 v-if="hasActiveQuery"
                                 type="button"
@@ -615,6 +669,10 @@ function handleClearFilters(): void {
                             </div>
                         </div>
                     </Transition>
+                </template>
+
+                <template v-if="$slots.item" #item="slotProps">
+                    <slot name="item" v-bind="slotProps" />
                 </template>
 
                 <template #empty>

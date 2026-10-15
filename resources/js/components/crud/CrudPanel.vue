@@ -28,6 +28,7 @@ const props = withDefaults(
         hiddenFields?: string[];
         fixedFilters?: Record<string, CrudFilterValue>;
         lockedLabel?: string;
+        itemsClass?: string;
     }>(),
     {
         reloadProp: undefined,

@@ -68,7 +68,9 @@ function updateOption(value: string, checked: boolean): void {
                 <ChevronDown class="size-4 shrink-0 opacity-50" />
             </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-[var(--reka-dropdown-menu-trigger-width)]">
+        <DropdownMenuContent
+            class="w-[var(--reka-dropdown-menu-trigger-width)]"
+        >
             <DropdownMenuCheckboxItem
                 v-for="option in options"
                 :key="option.value"

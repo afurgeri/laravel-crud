@@ -109,6 +109,29 @@ test('crud install includes the full-screen mobile picker used by CRUD fields an
     }
 });
 
+test('crud install copies the custom record presentation to pages, panels and tables', function () {
+    $files = ['CrudPage.vue', 'CrudPanel.vue', 'CrudTable.vue'];
+
+    foreach ($files as $file) {
+        File::delete(base_path('resources/js/components/crud/'.$file));
+    }
+
+    try {
+        $this->artisan('crud:install', ['--skip-existing' => true])
+            ->assertExitCode(0);
+
+        foreach ($files as $file) {
+            expect(File::get(base_path('resources/js/components/crud/'.$file)))
+                ->toBe(File::get(dirname(__DIR__, 3).'/resources/js/components/crud/'.$file))
+                ->toContain('itemsClass?: string;');
+        }
+    } finally {
+        foreach ($files as $file) {
+            File::delete(base_path('resources/js/components/crud/'.$file));
+        }
+    }
+});
+
 test('crud remote pickers resolve the selected label while disabled', function () {
     expect(File::get(dirname(__DIR__, 3).'/resources/js/components/crud/RemoteCombobox.vue'))
         ->toContain('if (props.disabled && selected === undefined) {')

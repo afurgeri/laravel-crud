@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends CrudRecord">
 import { ChevronDown, ChevronUp } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, useSlots } from 'vue';
 import CrudCellValue from '@/components/crud/CrudCellValue.vue';
 import { useTranslation } from '@/composables/useTranslation';
 import type { CrudColumn, CrudRecord, CrudSort } from '@/types/crud';
@@ -14,6 +14,7 @@ const props = withDefaults(
         emptyLabel?: string;
         loading?: boolean;
         clickable?: (record: T) => boolean;
+        itemsClass?: string;
     }>(),
     {
         loading: false,
@@ -79,6 +80,10 @@ function ariaSort(
 // Keep the list height stable while a new page of results is loading.
 const loadingRows = computed(() => Math.max(props.records.length, 1));
 const { t } = useTranslation();
+const slots = useSlots();
+
+const RecordActions = ({ record }: { record: T }) =>
+    slots.actions?.({ record });
 
 function columnStyle(column: CrudColumn): Record<string, string> {
     const style: Record<string, string> = {};
@@ -107,7 +112,47 @@ function columnStyle(column: CrudColumn): Record<string, string> {
             <slot name="toolbar" />
         </div>
 
-        <div class="hidden overflow-x-auto md:block">
+        <template v-if="$slots.item">
+            <div
+                v-if="loading"
+                :class="
+                    itemsClass ??
+                    'grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3'
+                "
+                aria-hidden="true"
+            >
+                <div
+                    v-for="row in loadingRows"
+                    :key="row"
+                    class="h-48 animate-pulse rounded-xl bg-muted"
+                />
+            </div>
+            <div
+                v-else-if="records.length > 0"
+                :class="
+                    itemsClass ??
+                    'grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3'
+                "
+            >
+                <template v-for="record in records" :key="record.id">
+                    <slot
+                        name="item"
+                        :record="record"
+                        :Actions="RecordActions"
+                    />
+                </template>
+            </div>
+            <div v-else class="px-5 py-12 text-center text-muted-foreground">
+                <slot name="empty">
+                    {{ emptyLabel ?? t('No records found.') }}
+                </slot>
+            </div>
+            <div v-if="$slots.footer" class="border-t border-border/70">
+                <slot name="footer" />
+            </div>
+        </template>
+
+        <div v-else class="hidden overflow-x-auto md:block">
             <table class="w-full text-left text-sm">
                 <thead class="border-b bg-muted/30 text-muted-foreground">
                     <tr>
@@ -225,7 +270,7 @@ function columnStyle(column: CrudColumn): Record<string, string> {
             </div>
         </div>
 
-        <div class="flex flex-col gap-3 p-3 md:hidden">
+        <div v-if="!$slots.item" class="flex flex-col gap-3 p-3 md:hidden">
             <template v-if="loading">
                 <div
                     v-for="row in loadingRows"
