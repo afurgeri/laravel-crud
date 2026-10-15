@@ -242,7 +242,7 @@ final class CrudColumn
     /**
      * Render the value as a badge. Variants: neutral, info, success, warning or danger.
      *
-     * @param  array<int|string, 'neutral'|'info'|'success'|'warning'|'danger'>  $variants
+     * @param  array<int|string, string>  $variants
      */
     public function badge(array $variants = []): self
     {
