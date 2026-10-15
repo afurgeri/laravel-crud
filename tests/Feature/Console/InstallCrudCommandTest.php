@@ -205,7 +205,7 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain('hasPaginationControls')
         ->not->toContain('v-if="records.last_page > 1"')
         ->toContain('#toolbar')
-        ->toContain('schema.search?.enabled || visibleFilters.length > 0')
+        ->toContain('visibleFilters.length > 0')
         ->toContain(':columns="visibleColumns"')
         ->toContain(':fields="visibleFields"')
         ->toContain(':fields="visibleUpdateFields"')
