@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Crud\CrudRouteRegistrar;
 
-test('crud route registration adds the options endpoint before resource routes', function () {
+test('crud route registration adds export and options endpoints before resource routes', function () {
     app(CrudRouteRegistrar::class)->register(
         'appointments',
         'App\\Http\\Controllers\\AppointmentController',
@@ -11,7 +11,10 @@ test('crud route registration adds the options endpoint before resource routes',
     );
     Route::getRoutes()->refreshNameLookups();
 
-    expect(Route::getRoutes()->getByName('appointments.options'))->not->toBeNull()
+    expect(Route::getRoutes()->getByName('appointments.export'))->not->toBeNull()
+        ->and(Route::getRoutes()->getByName('appointments.export')?->uri())
+        ->toBe('appointments/export')
+        ->and(Route::getRoutes()->getByName('appointments.options'))->not->toBeNull()
         ->and(Route::getRoutes()->getByName('appointments.options')?->uri())
         ->toBe('appointments/options/{filter}');
 });

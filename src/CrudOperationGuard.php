@@ -3,12 +3,17 @@
 namespace Modules\Crud;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Modules\Crud\Contracts\HasCrudExport;
 use Modules\Crud\Contracts\HasCrudOperations;
 
 final class CrudOperationGuard
 {
     public static function isEnabled(CrudDefinition $definition, CrudOperation $operation): bool
     {
+        if ($operation === CrudOperation::Export && ! $definition instanceof HasCrudExport) {
+            return false;
+        }
+
         if (! $definition instanceof HasCrudOperations) {
             return true;
         }

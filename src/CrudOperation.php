@@ -8,4 +8,5 @@ enum CrudOperation: string
     case Create = 'create';
     case Update = 'update';
     case Delete = 'delete';
+    case Export = 'export';
 }

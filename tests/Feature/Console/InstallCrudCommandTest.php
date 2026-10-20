@@ -289,6 +289,18 @@ test('crud frontend resources expose the paginator contract', function () {
         ->toContain(':icon="destroy.icon"');
 });
 
+test('numeric range filters use numeric inputs and compare bounds as numbers', function () {
+    $filters = File::get(dirname(__DIR__, 3).'/resources/js/components/crud/CrudFilters.vue');
+
+    expect($filters)
+        ->toContain('v-if="isTemporalFilter(entry.from.type)"')
+        ->toContain('v-if="isTemporalFilter(entry.to.type)"')
+        ->toContain(':type="inputType(entry.from)"')
+        ->toContain(':type="inputType(entry.to)"')
+        ->toContain('Number(from) > Number(to)')
+        ->not->toContain(": 'date'");
+});
+
 test('crud frontend resources expose the translation helper and catalog', function () {
     $composable = File::get(dirname(__DIR__, 3).'/resources/js/composables/useTranslation.ts');
     $translations = File::get(dirname(__DIR__, 3).'/resources/lang/en.json');

@@ -166,7 +166,9 @@ export type CrudSchema = {
         create: boolean;
         update: boolean;
         delete: boolean;
+        export?: boolean;
     };
+    export_url: string | null;
     title: string;
     description: string | null;
     empty_label: string | null;

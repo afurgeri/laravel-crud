@@ -11,6 +11,8 @@ interface HasCrudPaginationHooks
 {
     /**
      * @param  Builder<Model>  $query
+     *
+     * Applied to both the index and export query so query restrictions remain consistent.
      */
     public function beforePaginate(Builder $query): void;
 

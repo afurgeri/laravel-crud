@@ -4,6 +4,7 @@ import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
+    Download,
     Eye,
     Pencil,
     Plus,
@@ -207,6 +208,37 @@ const activeFilterCount = computed(
 const hasActiveQuery = computed(
     () => activeFilterCount.value > 0 || searchValue.value !== '',
 );
+
+const exportHref = computed(() => {
+    if (!props.schema.operations.export || !props.schema.export_url) {
+        return null;
+    }
+
+    const query = new URLSearchParams();
+
+    if (sortState.column) {
+        query.set('sort', sortState.column);
+        query.set('direction', sortState.direction);
+    }
+
+    if (searchValue.value) {
+        query.set('search', searchValue.value);
+    }
+
+    for (const [name, value] of Object.entries(filterValues)) {
+        if (Array.isArray(value)) {
+            value.forEach((item) => query.append(`filters[${name}][]`, item));
+        } else if (value !== '') {
+            query.set(`filters[${name}]`, value);
+        }
+    }
+
+    const queryString = query.toString();
+
+    return queryString
+        ? `${props.schema.export_url}?${queryString}`
+        : props.schema.export_url;
+});
 
 const searchPlaceholder = computed(() => {
     const fields = props.schema.search.fields ?? [];
@@ -441,6 +473,7 @@ function handleClearFilters(): void {
             <div
                 v-if="
                     !embedded ||
+                    exportHref ||
                     (schema.operations.create && create.can) ||
                     $slots['toolbar-actions']
                 "
@@ -468,6 +501,13 @@ function handleClearFilters(): void {
 
                 <div class="ml-auto flex items-center gap-2">
                     <slot name="toolbar-actions" />
+
+                    <Button v-if="exportHref" variant="outline" as-child>
+                        <a :href="exportHref">
+                            <Download class="size-4" />
+                            {{ t('Export CSV') }}
+                        </a>
+                    </Button>
 
                     <Link
                         v-if="

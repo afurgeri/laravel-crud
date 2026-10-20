@@ -230,7 +230,15 @@ function rangeInvalid(entry: { from: CrudFilter; to: CrudFilter }): boolean {
     const from = props.filterValues[entry.from.name];
     const to = props.filterValues[entry.to.name];
 
-    return typeof from === 'string' && typeof to === 'string' && from > to;
+    if (typeof from !== 'string' || typeof to !== 'string' || !from || !to) {
+        return false;
+    }
+
+    if (entry.from.type === 'number' && entry.to.type === 'number') {
+        return Number(from) > Number(to);
+    }
+
+    return from > to;
 }
 
 function hasFilterValue(value: CrudFilterValue): boolean {
@@ -542,19 +550,16 @@ function clearFilter(filter: CrudFilter | string): void {
                             }}</Label>
                             <div class="relative w-full">
                                 <CrudTemporalInput
+                                    v-if="isTemporalFilter(entry.from.type)"
                                     :id="`filter-${entry.from.name}`"
-                                    :type="
-                                        isTemporalFilter(entry.from.type)
-                                            ? entry.from.type
-                                            : 'date'
-                                    "
+                                    :type="entry.from.type"
                                     :model-value="
                                         filterTextValue(entry.from.name)
                                     "
                                     :max-value="
                                         entry.from.max_date ?? undefined
                                     "
-                                    :aria-invalid="rangeInvalid(entry)"
+                                    :invalid="rangeInvalid(entry)"
                                     class="w-full"
                                     @update:model-value="
                                         (value) =>
@@ -562,6 +567,26 @@ function clearFilter(filter: CrudFilter | string): void {
                                                 'filter',
                                                 entry.from.name,
                                                 value,
+                                                false,
+                                            )
+                                    "
+                                />
+                                <Input
+                                    v-else
+                                    :id="`filter-${entry.from.name}`"
+                                    :type="inputType(entry.from)"
+                                    :model-value="
+                                        filterTextValue(entry.from.name)
+                                    "
+                                    :step="entry.from.step"
+                                    :aria-invalid="rangeInvalid(entry)"
+                                    class="w-full"
+                                    @update:model-value="
+                                        (value) =>
+                                            emit(
+                                                'filter',
+                                                entry.from.name,
+                                                String(value),
                                                 false,
                                             )
                                     "
@@ -610,17 +635,14 @@ function clearFilter(filter: CrudFilter | string): void {
                             }}</Label>
                             <div class="relative w-full">
                                 <CrudTemporalInput
+                                    v-if="isTemporalFilter(entry.to.type)"
                                     :id="`filter-${entry.to.name}`"
-                                    :type="
-                                        isTemporalFilter(entry.to.type)
-                                            ? entry.to.type
-                                            : 'date'
-                                    "
+                                    :type="entry.to.type"
                                     :model-value="
                                         filterTextValue(entry.to.name)
                                     "
                                     :max-value="entry.to.max_date ?? undefined"
-                                    :aria-invalid="rangeInvalid(entry)"
+                                    :invalid="rangeInvalid(entry)"
                                     class="w-full"
                                     @update:model-value="
                                         (value) =>
@@ -628,6 +650,26 @@ function clearFilter(filter: CrudFilter | string): void {
                                                 'filter',
                                                 entry.to.name,
                                                 value,
+                                                false,
+                                            )
+                                    "
+                                />
+                                <Input
+                                    v-else
+                                    :id="`filter-${entry.to.name}`"
+                                    :type="inputType(entry.to)"
+                                    :model-value="
+                                        filterTextValue(entry.to.name)
+                                    "
+                                    :step="entry.to.step"
+                                    :aria-invalid="rangeInvalid(entry)"
+                                    class="w-full"
+                                    @update:model-value="
+                                        (value) =>
+                                            emit(
+                                                'filter',
+                                                entry.to.name,
+                                                String(value),
                                                 false,
                                             )
                                     "

@@ -2,6 +2,7 @@
 
 namespace Modules\Crud;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -26,7 +27,8 @@ class CrudSchemaManager
      *     page_width: 'standard'|'wide'|'full',
      *     form_width: 'standard'|'wide'|'full',
      *     filters_open: bool,
-     *     operations: array{show: bool, create: bool, update: bool, delete: bool},
+     *     operations: array{show: bool, create: bool, update: bool, delete: bool, export: bool},
+     *     export_url: ?string,
      *     title: string,
      *     description: string|null,
      *     empty_label: string|null,
@@ -45,6 +47,8 @@ class CrudSchemaManager
             : [];
 
         $operations = array_fill_keys(array_column(CrudOperation::cases(), 'value'), true);
+        $operations['export'] = CrudOperationGuard::isEnabled($definition, CrudOperation::Export)
+            && Gate::allows('export', $definition->model());
 
         if ($definition instanceof HasCrudOperations) {
             foreach ($definition->disabledOperations() as $operation) {
@@ -59,6 +63,9 @@ class CrudSchemaManager
             'form_width' => $this->formWidth($definition)->value,
             'filters_open' => (bool) config('crud.default_filters_open', true),
             'operations' => $operations,
+            'export_url' => $operations['export'] && Route::has("{$resource}.export")
+                ? route("{$resource}.export")
+                : null,
             'title' => $definition->title(),
             'description' => $definition->description(),
             'empty_label' => $definition->emptyLabel(),

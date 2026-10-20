@@ -12,6 +12,8 @@ final class {{ entity }}Permissions
 
     public const DELETE = '{{ resource }}.delete';
 
+    public const EXPORT = '{{ resource }}.export';
+
     /**
      * @return list<string>
      */
@@ -22,6 +24,7 @@ final class {{ entity }}Permissions
             self::CREATE,
             self::UPDATE,
             self::DELETE,
+            self::EXPORT,
         ];
     }
 }

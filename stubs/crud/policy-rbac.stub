@@ -8,6 +8,11 @@ use Modules\Rbac\Contracts\HasPermissions;
 
 class {{ entity }}Policy
 {
+    public function export(HasPermissions $user): bool
+    {
+        return $user->hasPermission({{ entity }}Permissions::EXPORT);
+    }
+
     public function viewAny(HasPermissions $user): bool
     {
         return $user->hasPermission({{ entity }}Permissions::VIEW);
