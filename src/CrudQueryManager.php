@@ -5,6 +5,9 @@ namespace Modules\Crud;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use Modules\Crud\Contracts\AuthorizesCrudIndex;
@@ -63,11 +66,17 @@ class CrudQueryManager
         }
 
         if ($sort !== null) {
-            if (! in_array($sort, $this->sortableColumnNames($definition), true)) {
+            $column = collect($definition->columns())->first(
+                fn (CrudColumn $column): bool => $column->name() === $sort
+                    && $column->isSortable()
+                    && (! $column->isComputed() || $column->sortRelation() !== null),
+            );
+
+            if ($column === null) {
                 throw InvalidCrudSortColumn::forColumn($sort);
             }
 
-            $query->orderBy($sort, $direction);
+            $this->applySort($query, $column, $direction);
         }
 
         if ($definition instanceof HasCrudPaginationHooks) {
@@ -344,14 +353,39 @@ class CrudQueryManager
     }
 
     /**
-     * @return list<string>
+     * @param  Builder<Model>  $query
+     * @param  'asc'|'desc'  $direction
      */
-    private function sortableColumnNames(CrudDefinition $definition): array
+    private function applySort(Builder $query, CrudColumn $column, string $direction): void
     {
-        return $this->columnNamesWhere(
-            $definition,
-            fn (CrudColumn $column): bool => $column->isSortable() && ! $column->isComputed(),
-        );
+        $sortRelation = $column->sortRelation();
+
+        if ($sortRelation === null) {
+            $query->orderBy($column->name(), $direction);
+
+            return;
+        }
+
+        if ($query->getModel()->getConnection()->getDriverName() === 'mongodb') {
+            throw new InvalidArgumentException('CRUD relation sorting requires a SQL connection.');
+        }
+
+        $relation = $query->getRelation($sortRelation['relation']);
+
+        if ((! $relation instanceof BelongsTo && ! $relation instanceof HasOne) || $relation instanceof MorphTo) {
+            throw new InvalidArgumentException("CRUD relation sorting only supports BelongsTo and HasOne relations [{$sortRelation['relation']}].");
+        }
+
+        if ($relation->getRelated()->getConnection()->getName() !== $query->getModel()->getConnection()->getName()) {
+            throw new InvalidArgumentException('CRUD relation sorting requires models on the same connection.');
+        }
+
+        $subquery = $relation->getRelationExistenceQuery($relation->getRelated()->newQuery(), $query)
+            ->mergeConstraintsFrom($relation->getQuery());
+
+        $subquery->select($subquery->getModel()->qualifyColumn($sortRelation['column']))->limit(1);
+
+        $query->orderBy($subquery, $direction);
     }
 
     /**

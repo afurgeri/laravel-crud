@@ -10,6 +10,11 @@ final class CrudColumn
 
     private bool $sortable = false;
 
+    /**
+     * @var array{relation: string, column: string}|null
+     */
+    private ?array $sortRelation = null;
+
     private bool $searchable = false;
 
     private bool $computed = false;
@@ -147,6 +152,21 @@ final class CrudColumn
         $this->computed = $computed;
 
         return $this;
+    }
+
+    public function sortByRelation(string $relation, string $column): self
+    {
+        $this->sortRelation = ['relation' => $relation, 'column' => $column];
+
+        return $this;
+    }
+
+    /**
+     * @return array{relation: string, column: string}|null
+     */
+    public function sortRelation(): ?array
+    {
+        return $this->sortRelation;
     }
 
     public function searchable(bool $searchable = true): self

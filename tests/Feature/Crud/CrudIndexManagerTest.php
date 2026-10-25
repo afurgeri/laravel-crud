@@ -8,6 +8,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Crud\Contracts\EagerLoadsCrudRelations;
 use Modules\Crud\Contracts\HasCrudFilters;
 use Modules\Crud\Contracts\HasDefaultCrudPageSize;
+use Modules\Crud\CrudColumn;
 use Modules\Crud\CrudFilter;
 use Modules\Crud\CrudIndexManager;
 use Modules\Crud\Exceptions\InvalidCrudFilterRange;
@@ -275,6 +276,152 @@ test('it rejects sorting by non sortable columns', function () {
         sort: 'email',
     );
 })->throws(InvalidCrudSortColumn::class);
+
+test('it sorts by a belongs to column instead of the displayed column', function (bool $computed, string $direction, array $expected) {
+    $ada = CrudTestRecordProfessional::query()->create(['name' => 'Ada']);
+    $grace = CrudTestRecordProfessional::query()->create(['name' => 'Grace']);
+    CrudTestRecord::query()->create(['name' => 'First', 'email' => 'first@example.com', 'professional_id' => $grace->id]);
+    CrudTestRecord::query()->create(['name' => 'Second', 'email' => 'second@example.com', 'professional_id' => $ada->id]);
+
+    $definition = new class($computed) extends CrudTestRecordDefinition
+    {
+        public function __construct(private readonly bool $computed) {}
+
+        public function columns(): array
+        {
+            return [CrudColumn::make('professional_label')->computed($this->computed)->sortable()->sortByRelation('professional', 'name')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate($definition, sort: 'professional_label', direction: $direction);
+
+    expect(collect($paginator->items())->pluck('name')->all())->toBe($expected);
+})->with([
+    'ascending' => [false, 'asc', ['Second', 'First']],
+    'descending computed' => [true, 'desc', ['First', 'Second']],
+]);
+
+test('relation sorting preserves missing relations and ignores soft deleted related values', function () {
+    $deleted = CrudTestRecordProfessional::query()->create(['name' => 'Zulu']);
+    $deleted->delete();
+    $active = CrudTestRecordProfessional::query()->create(['name' => 'Ada']);
+    CrudTestRecord::query()->create(['name' => 'Deleted', 'email' => 'deleted@example.com', 'professional_id' => $deleted->id]);
+    CrudTestRecord::query()->create(['name' => 'Active', 'email' => 'active@example.com', 'professional_id' => $active->id]);
+    CrudTestRecord::query()->create(['name' => 'Missing', 'email' => 'missing@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('professional')->sortable()->sortByRelation('professional', 'name')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate($definition, sort: 'professional', direction: 'desc');
+
+    expect($paginator->total())->toBe(3)
+        ->and($paginator->items()[0]->name)->toBe('Active');
+    expect(collect($paginator->items())->pluck('name')->all())->toContain('Deleted', 'Missing');
+});
+
+test('has one sorting respects relation constraints without duplicating paginated records', function () {
+    $first = CrudTestRecord::query()->create(['name' => 'First', 'email' => 'first@example.com']);
+    $second = CrudTestRecord::query()->create(['name' => 'Second', 'email' => 'second@example.com']);
+    CrudTestRecordNote::query()->create(['crud_test_record_id' => $first->id, 'body' => 'Excluded']);
+    CrudTestRecordNote::query()->create(['crud_test_record_id' => $first->id, 'body' => 'Zulu']);
+    CrudTestRecordNote::query()->create(['crud_test_record_id' => $second->id, 'body' => 'Middle']);
+
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('note')->sortable()->sortByRelation('visibleNote', 'body')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate($definition, perPage: 1, sort: 'note');
+
+    expect($paginator->total())->toBe(2)
+        ->and($paginator->items())->toHaveCount(1)
+        ->and($paginator->items()[0]->name)->toBe('Second');
+});
+
+test('relation sorting supports self relations with custom keys', function () {
+    CrudTestRecord::query()->create(['name' => 'Grace', 'email' => 'grace@example.com']);
+    CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);
+
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('matching')->sortable()->sortByRelation('matchingRecord', 'name')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate($definition, sort: 'matching');
+
+    expect(collect($paginator->items())->pluck('name')->all())->toBe(['Ada', 'Grace']);
+});
+
+test('relation sorting still requires sortable to be enabled', function () {
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('professional')->sortByRelation('professional', 'name')];
+        }
+    };
+
+    app(CrudIndexManager::class)->paginate($definition, sort: 'professional');
+})->throws(InvalidCrudSortColumn::class);
+
+test('relation sorting is applied when it is the definition default sort', function () {
+    $ada = CrudTestRecordProfessional::query()->create(['name' => 'Ada']);
+    $grace = CrudTestRecordProfessional::query()->create(['name' => 'Grace']);
+    CrudTestRecord::query()->create(['name' => 'First', 'email' => 'first@example.com', 'professional_id' => $ada->id]);
+    CrudTestRecord::query()->create(['name' => 'Second', 'email' => 'second@example.com', 'professional_id' => $grace->id]);
+
+    $definition = new class extends CrudTestRecordDefaultSortDefinition
+    {
+        public function defaultSortColumn(): string
+        {
+            return 'professional';
+        }
+
+        public function columns(): array
+        {
+            return [CrudColumn::make('professional')->sortable()->sortByRelation('professional', 'name')];
+        }
+    };
+
+    $paginator = app(CrudIndexManager::class)->paginate($definition);
+
+    expect(collect($paginator->items())->pluck('name')->all())->toBe(['Second', 'First']);
+});
+
+test('computed columns without an explicit relation sort remain unsortable', function () {
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('label')->computed()->sortable()];
+        }
+    };
+
+    app(CrudIndexManager::class)->paginate($definition, sort: 'label');
+})->throws(InvalidCrudSortColumn::class);
+
+test('relation sorting rejects to many relations', function () {
+    $definition = new class extends CrudTestRecordDefinition
+    {
+        public function columns(): array
+        {
+            return [CrudColumn::make('note')->sortable()->sortByRelation('notes', 'body')];
+        }
+    };
+
+    app(CrudIndexManager::class)->paginate($definition, sort: 'note');
+})->throws(InvalidArgumentException::class, 'CRUD relation sorting only supports BelongsTo and HasOne relations [notes].');
 
 test('it paginates without querying computed columns', function () {
     CrudTestRecord::query()->create(['name' => 'Ada', 'email' => 'ada@example.com']);

@@ -14,6 +14,7 @@ trait CreatesCrudTestRecordsTable
         Schema::create('crud_test_record_professionals', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->softDeletes();
             $table->timestamps();
         });
 
