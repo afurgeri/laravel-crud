@@ -40,6 +40,28 @@ composer require afurgeri/laravel-crud:^0.4
 
 Remove the temporary VCS repository once Packagist is available again. The VCS fallback is only an installation workaround; it does not change the package or its version constraints.
 
+## Application shell
+
+`crud:install-shell` installs the sidebar and navigation used across the applications built on these packages. Run it on a new starter kit application or again on an existing one to pick up improvements:
+
+```bash
+php artisan crud:install-shell --locale=es
+php artisan crud:install-shell --force
+```
+
+It installs:
+
+- `AppSidebar`, `NavMain`, `NavFooter`, `UserMenuContent`, `Breadcrumbs` and `AppearanceTabs`, plus the sidebar primitives they rely on. Groups hide their labels without blocking clicks when the sidebar is collapsed, the collapsed sidebar scrolls, swiping opens and closes it on mobile, and links close it on mobile.
+- `resources/js/navigation.ts`, the application's menu. It is created once and never replaced. Items with a `permission` are shown only when it appears in `auth.permissions` (shared by `afurgeri/laravel-rbac`).
+- `permission` and `NavGroup` in `resources/js/types/navigation.ts`, and base styles in `resources/css/app.css`.
+- With `--locale=es`: the Spanish validation, auth, password and pagination messages, the locale in `.env.example` and `.env`, and English forced in `phpunit.xml`.
+
+Components that differ from the package version are kept and reported unless `--force` is given. An `AppSidebar.vue` that still declares its own menu is never replaced: move its groups into `resources/js/navigation.ts` and run the command again with `--force`.
+
+### Translations
+
+The package shares `translations` with Inertia as a once prop: it is sent on the first visit and reused by the client afterwards, keyed by the application locale. It holds the JSON translations of the application and every package that registered its own, so applications do not need to share them. The package ships English and Spanish translations for its components and the shell.
+
 ## Optional MongoDB integration
 
 Install `mongodb/laravel-mongodb` in the consuming application when a CRUD model should use MongoDB:

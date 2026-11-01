@@ -47,5 +47,21 @@
     "Rows per page": "Rows per page",
     "More details": "More details",
     "You have unsaved changes. Do you want to leave without saving?": "You have unsaved changes. Do you want to leave without saving?",
-    "Please fix the highlighted fields.": "Please fix the highlighted fields."
+    "Please fix the highlighted fields.": "Please fix the highlighted fields.",
+    "Home": "Home",
+    "Administration": "Administration",
+    "Dashboard": "Dashboard",
+    "Settings": "Settings",
+    "Log out": "Log out",
+    "Light": "Light",
+    "Dark": "Dark",
+    "System": "System",
+    "Profile": "Profile",
+    "Security": "Security",
+    "Appearance": "Appearance",
+    "Manage your profile and account settings": "Manage your profile and account settings",
+    "Sidebar": "Sidebar",
+    "Displays the mobile sidebar.": "Displays the mobile sidebar.",
+    "Toggle Sidebar": "Toggle Sidebar",
+    "Toggle sidebar": "Toggle sidebar"
 }
